@@ -1,0 +1,212 @@
+/* ==========================================================================
+   EduGT — Hoja de estilos principal (Bootstrap 5.3 + capa propia)
+   Paleta lavanda/violeta (referencias del usuario) · WCAG 2.1 AA
+   Regla del proyecto: NUNCA Tailwind junto a Bootstrap (doc. tesis).
+   ========================================================================== */
+
+:root {
+  /* Marca */
+  --edugt-primary: #6D4AEF;        /* violeta principal (botones, enlaces) */
+  --edugt-primary-dark: #5A38D6;   /* hover */
+  --edugt-primary-soft: #EDE9FE;   /* fondos suaves violeta */
+  --edugt-pink: #F472B6;           /* acento rosa (tarjetas destacadas) */
+  --edugt-pink-soft: #FCE7F3;
+  --edugt-green: #16A34A;          /* éxito */
+  --edugt-green-soft: #DCFCE7;
+  --edugt-amber: #B45309;          /* advertencia/progreso */
+  --edugt-amber-soft: #FEF3C7;
+
+  /* Neutrales */
+  --edugt-bg: #F1EFFB;             /* fondo general lavanda muy claro */
+  --edugt-card: #FFFFFF;
+  --edugt-text: #2A2440;           /* texto principal (violeta-negro) */
+  --edugt-muted: #5B5578;          /* texto secundario */
+  --edugt-border: #E4E1F5;
+
+  /* Sidebar */
+  --edugt-sidebar-bg: #FFFFFF;
+  --edugt-sidebar-active: #6D4AEF;
+
+  --edugt-radius: 20px;
+  --edugt-shadow: 0 10px 30px rgba(109, 74, 239, .10);
+  --edugt-shadow-soft: 0 4px 14px rgba(109, 74, 239, .08);
+}
+
+body {
+  background: var(--edugt-bg);
+  color: var(--edugt-text);
+  font-family: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* ---------- Tarjetas ---------- */
+.card-edugt {
+  background: var(--edugt-card);
+  border: none;
+  border-radius: var(--edugt-radius);
+  box-shadow: var(--edugt-shadow-soft);
+}
+
+.card-hero {
+  background: linear-gradient(135deg, #653AE8 0%, #4C2EC2 100%);
+  color: #fff;
+  border-radius: var(--edugt-radius);
+  box-shadow: var(--edugt-shadow);
+}
+
+.card-accent-pink {
+  background: linear-gradient(135deg, #DB2777 0%, #BE185D 100%);
+  color: #fff;
+  border-radius: var(--edugt-radius);
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar-edugt {
+  background: var(--edugt-sidebar-bg);
+  border-radius: 24px;
+  box-shadow: var(--edugt-shadow-soft);
+}
+
+.sidebar-edugt .nav-link {
+  color: var(--edugt-muted);
+  border-radius: 14px;
+  padding: .65rem .9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+}
+
+.sidebar-edugt .nav-link:hover { background: var(--edugt-primary-soft); color: var(--edugt-primary); }
+
+.sidebar-edugt .nav-link.active {
+  background: var(--edugt-primary);
+  color: #fff;
+}
+
+.logo-edugt {
+  width: 42px; height: 42px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #7C5CFC, #5A38D6);
+  color: #fff;
+  display: grid; place-items: center;
+  font-weight: 800;
+}
+
+/* ---------- Botones ---------- */
+.btn-edugt {
+  background: var(--edugt-primary);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-weight: 700;
+  padding: .65rem 1.4rem;
+}
+.btn-edugt:hover, .btn-edugt:focus { background: var(--edugt-primary-dark); color: #fff; }
+
+.btn-google {
+  background: #fff;
+  border: 1.5px solid var(--edugt-border);
+  border-radius: 14px;
+  font-weight: 700;
+  color: var(--edugt-text);
+  padding: .65rem 1.4rem;
+  display: inline-flex; align-items: center; gap: .6rem;
+}
+.btn-google:hover { background: #F8F7FF; border-color: #C9C2F2; }
+
+/* ---------- Stat cards ---------- */
+.stat-icon {
+  width: 46px; height: 46px;
+  border-radius: 14px;
+  display: grid; place-items: center;
+  font-size: 1.25rem;
+}
+
+/* ---------- Formularios ---------- */
+.form-control-edugt {
+  border-radius: 14px;
+  border: 1.5px solid var(--edugt-border);
+  padding: .65rem 1rem;
+  background: #FBFAFF;
+}
+.form-control-edugt:focus {
+  border-color: var(--edugt-primary);
+  box-shadow: 0 0 0 .2rem rgba(109, 74, 239, .15);
+  background: #fff;
+}
+
+/* ---------- Progreso ---------- */
+.progress-edugt {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--edugt-primary-soft);
+  overflow: hidden;
+}
+.progress-edugt .bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7C5CFC, #5A38D6);
+  min-width: 14px; /* perceptible incluso en 1/14 */
+  transition: width .25s ease;
+}
+
+/* ---------- Pastillas de estado (se ven, no se explican) ---------- */
+.pill-edugt {
+  border-radius: 999px;
+  padding: .25rem .8rem;
+  font-size: .78rem;
+  font-weight: 800;
+  display: inline-flex; align-items: center; gap: .35rem;
+}
+.pill-done   { background: var(--edugt-green-soft); color: #14532D; }
+.pill-now    { background: var(--edugt-primary); color: #fff; }
+.pill-locked { background: #E8E5F3; color: #4A4463; }
+
+/* ---------- Opciones Card-Flow ---------- */
+.btn-option {
+  background: #FBFAFF;
+  border: 1.5px solid var(--edugt-border);
+  border-radius: 14px;
+  padding: .8rem 1.1rem;
+  font-weight: 600;
+  color: var(--edugt-text);
+  text-align: left;
+  transition: border-color .15s, background .15s;
+}
+.btn-option:hover:not(:disabled) {
+  border-color: var(--edugt-primary);
+  background: var(--edugt-primary-soft);
+}
+.btn-option .option-letter {
+  display: inline-grid; place-items: center;
+  width: 28px; height: 28px;
+  border-radius: 9px;
+  background: var(--edugt-primary-soft);
+  color: var(--edugt-primary);
+  font-weight: 800;
+  font-size: .85rem;
+}
+
+/* ---------- Nav inferior móvil (mobile-first) ---------- */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #fff;
+  box-shadow: 0 -6px 20px rgba(42, 36, 64, .08);
+  border-radius: 20px 20px 0 0;
+  z-index: 1030;
+}
+.bottom-nav a {
+  color: var(--edugt-muted);
+  text-align: center;
+  font-size: .68rem;
+  font-weight: 700;
+  padding: .5rem 0 .65rem;
+  text-decoration: none;
+}
+.bottom-nav a.active { color: var(--edugt-primary); }
+.bottom-nav a i { display: block; font-size: 1.25rem; margin-bottom: 2px; }
+
+@media (min-width: 992px) {
+  .bottom-nav { display: none; }
+}
