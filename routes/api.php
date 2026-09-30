@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\GamificationController;
 use App\Http\Controllers\Api\V1\OfflineSyncController;
 use App\Http\Controllers\Api\V1\QuizController;
 use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\SupportAuditController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -92,6 +93,9 @@ Route::prefix('v1')->group(function (): void {
             ->name('reports.analytics');
         Route::post('/reports', [ReportController::class, 'generate'])->name('reports.generate');
 
+        // ---- Soporte (RF-24) ----
+        Route::post('/support/tickets', [SupportAuditController::class, 'createTicket'])->name('support.tickets.store');
+
         // ---- Offline (RF-25..27) ----
         Route::get('/offline/bundle', [OfflineSyncController::class, 'bundle'])->name('offline.bundle');
         Route::post('/offline/sync', [OfflineSyncController::class, 'sync'])->name('offline.sync');
@@ -104,6 +108,12 @@ Route::prefix('v1')->group(function (): void {
                 ->name('admin.teachers.approve');
             Route::post('/teachers/{id}/reject', [AdminController::class, 'rejectTeacher'])
                 ->name('admin.teachers.reject');
+            Route::get('/support-tickets', [SupportAuditController::class, 'listTickets'])
+                ->name('admin.tickets.index');
+            Route::post('/support-tickets/{id}/status', [SupportAuditController::class, 'setTicketStatus'])
+                ->name('admin.tickets.status');
+            Route::get('/audit-logs', [SupportAuditController::class, 'auditLogs'])
+                ->name('admin.audit-logs');
         });
     });
 });
