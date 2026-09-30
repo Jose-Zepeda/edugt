@@ -11,3 +11,5 @@ database/database.sqlite
 .idea/
 .vscode/
 *.iml
+.playwright-cli/
+*.png
