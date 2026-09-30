@@ -13,6 +13,11 @@ class Lesson extends Model
         'estimated_minutes', 'xp_reward', 'order_index', 'requires_quiz_pass', 'status',
     ];
 
+    public function scopePublished($query)
+    {
+        return $query->where('status', 'published');
+    }
+
     protected function casts(): array
     {
         return [

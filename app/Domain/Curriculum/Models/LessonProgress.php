@@ -19,6 +19,7 @@ class LessonProgress extends Model
             'started_at' => 'datetime',
             'last_visited_at' => 'datetime',
             'completed_at' => 'datetime',
+            'completed' => 'boolean',
         ];
     }
 

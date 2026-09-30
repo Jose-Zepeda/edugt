@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\ClassroomController;
 use App\Http\Controllers\Api\V1\CurriculumController;
 use App\Http\Controllers\Api\V1\DiagnosticController;
 use App\Http\Controllers\Api\V1\GamificationController;
+use App\Http\Controllers\Api\V1\OfflineSyncController;
 use App\Http\Controllers\Api\V1\QuizController;
 use App\Http\Controllers\Api\V1\ReportController;
 use Illuminate\Support\Facades\Route;
@@ -90,6 +91,10 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/classrooms/{id}/analytics', [ReportController::class, 'classroomAnalytics'])
             ->name('reports.analytics');
         Route::post('/reports', [ReportController::class, 'generate'])->name('reports.generate');
+
+        // ---- Offline (RF-25..27) ----
+        Route::get('/offline/bundle', [OfflineSyncController::class, 'bundle'])->name('offline.bundle');
+        Route::post('/offline/sync', [OfflineSyncController::class, 'sync'])->name('offline.sync');
 
         // ---- Admin (RF-4, RB-02, RB-09) ----
         Route::prefix('admin')->group(function (): void {
