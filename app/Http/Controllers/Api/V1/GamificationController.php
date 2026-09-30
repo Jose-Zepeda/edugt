@@ -19,6 +19,7 @@ final class GamificationController extends Controller
         private readonly XpLedger $xpLedger,
         private readonly StreakService $streak,
         private readonly CompleteLesson $completeLesson,
+        private readonly \App\Domain\Gamification\Contracts\RankingService $rankings,
     ) {}
 
     /** POST /api/v1/lessons/{id}/complete {time_spent_seconds} */
@@ -62,6 +63,56 @@ final class GamificationController extends Controller
         return response()->json([
             'current' => $this->streak->current($user->id),
             'longest' => $this->streak->longest($user->id),
+        ]);
+    }
+
+    /** GET /api/v1/me/badges — catálogo: obtenidas + bloqueadas (RF-17) */
+    public function badges(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $obtained = \App\Domain\Gamification\Models\UserBadge::query()
+            ->where('user_id', $user->id)
+            ->with('badge')
+            ->get()
+            ->map(fn ($ub) => [
+                'id' => $ub->badge->id,
+                'slug' => $ub->badge->slug,
+                'title' => $ub->badge->title,
+                'description' => $ub->badge->description,
+                'awarded_at' => $ub->awarded_at?->toIso8601String(),
+            ]);
+
+        $obtainedIds = $obtained->pluck('id');
+
+        $locked = \App\Domain\Gamification\Models\Badge::query()
+            ->whereNotIn('id', $obtainedIds)
+            ->get(['id', 'slug', 'title', 'description'])
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'slug' => $b->slug,
+                'title' => $b->title,
+                'description' => $b->description,
+            ]);
+
+        return response()->json([
+            'obtained' => $obtained,
+            'locked' => $locked,
+        ]);
+    }
+
+    /** GET /api/v1/rankings?scope=global|classroom&classroom_id= */
+    public function rankings(Request $request): JsonResponse
+    {
+        $scope = $request->query('scope', 'global');
+
+        $rows = $scope === 'classroom'
+            ? $this->rankings->forClassroom((int) $request->query('classroom_id'))
+            : $this->rankings->global();
+
+        return response()->json([
+            'scope' => $scope,
+            'data' => $rows,
         ]);
     }
 

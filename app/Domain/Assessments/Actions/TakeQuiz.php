@@ -22,6 +22,8 @@ final readonly class TakeQuiz
     public function __construct(
         private QuizGrader $grader,
         private XpLedger $xpLedger,
+        private \App\Domain\Gamification\Contracts\BadgeAwarder $badges,
+        private \App\Domain\Gamification\Contracts\StreakService $streak,
     ) {}
 
     /** RF-11/RB-10: payload sin is_correct ni feedback de otras opciones. */
@@ -127,6 +129,14 @@ final readonly class TakeQuiz
                 $attempt->forceFill(['xp_awarded' => true, 'xp_amount' => $xp])->save();
                 $xpAwarded = true;
                 $xpAmount = $xp;
+
+                // RF-17: insignias por reglas + actividad de racha (RB-16)
+                $this->badges->evaluate('quiz_passed', [
+                    'quiz_id' => $attempt->quiz_id,
+                    'attempt_number' => $attempt->attempt_number,
+                    'count' => 1, // cada aprobación suma 1 al contador del evento
+                ]);
+                $this->streak->markActivity($user->id);
             }
 
             return [

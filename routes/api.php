@@ -56,6 +56,8 @@ Route::prefix('v1')->group(function (): void {
         // ---- Gamificación (RF-17) ----
         Route::get('/me/xp', [GamificationController::class, 'xp'])->name('gamification.xp');
         Route::get('/me/streak', [GamificationController::class, 'streak'])->name('gamification.streak');
+        Route::get('/me/badges', [GamificationController::class, 'badges'])->name('gamification.badges');
+        Route::get('/rankings', [GamificationController::class, 'rankings'])->name('gamification.rankings');
 
         // ---- Diagnostic (RF-6, RF-7, RF-28) ----
         Route::get('/diagnostic/tests/{kind}', [DiagnosticController::class, 'show'])
