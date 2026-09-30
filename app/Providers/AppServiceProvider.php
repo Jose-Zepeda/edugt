@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Domain\Auth\Actions\SocialiteGoogleGateway;
 use App\Domain\Auth\Contracts\GoogleOAuthGateway;
+use App\Domain\Audit\Contracts\AuditLogger;
+use App\Domain\Audit\Services\DatabaseAuditLogger;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -15,6 +17,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // DIP: el controlador depende del contrato; Socialite es detalle de implementación
         $this->app->bind(GoogleOAuthGateway::class, SocialiteGoogleGateway::class);
+        $this->app->bind(AuditLogger::class, DatabaseAuditLogger::class);
     }
 
     public function boot(): void

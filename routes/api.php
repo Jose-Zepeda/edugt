@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,5 +42,15 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
+
+        // ---- Admin (RF-4, RB-02, RB-09) ----
+        Route::prefix('admin')->group(function (): void {
+            Route::get('/teachers', [AdminController::class, 'pendingTeachers'])
+                ->name('admin.teachers.pending');
+            Route::post('/teachers/{id}/approve', [AdminController::class, 'approveTeacher'])
+                ->name('admin.teachers.approve');
+            Route::post('/teachers/{id}/reject', [AdminController::class, 'rejectTeacher'])
+                ->name('admin.teachers.reject');
+        });
     });
 });

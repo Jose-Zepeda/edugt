@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    // Google OAuth (RF-2) — Socialite
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', 'http://localhost:8080/api/v1/auth/google/callback'),
+    ],
+
 ];
