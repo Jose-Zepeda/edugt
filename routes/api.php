@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CurriculumController;
+use App\Http\Controllers\Api\V1\DiagnosticController;
 use App\Http\Controllers\Api\V1\GamificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,6 +55,14 @@ Route::prefix('v1')->group(function (): void {
         // ---- Gamificación (RF-17) ----
         Route::get('/me/xp', [GamificationController::class, 'xp'])->name('gamification.xp');
         Route::get('/me/streak', [GamificationController::class, 'streak'])->name('gamification.streak');
+
+        // ---- Diagnostic (RF-6, RF-7, RF-28) ----
+        Route::get('/diagnostic/tests/{kind}', [DiagnosticController::class, 'show'])
+            ->where('kind', 'pre|post')->name('diagnostic.show');
+        Route::post('/diagnostic/tests/{kind}/answers', [DiagnosticController::class, 'answer'])
+            ->where('kind', 'pre|post')->name('diagnostic.answer');
+        Route::post('/diagnostic/tests/{kind}/submit', [DiagnosticController::class, 'submit'])
+            ->where('kind', 'pre|post')->name('diagnostic.submit');
 
         // ---- Admin (RF-4, RB-02, RB-09) ----
         Route::prefix('admin')->group(function (): void {
