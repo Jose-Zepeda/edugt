@@ -16,7 +16,12 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password')->nullable();          // nullable: cuentas Google sin password
+            $table->string('role')->default('student');      // student|teacher|admin (RB-01: admin jamás desde registro público)
+            $table->string('status')->default('active');     // active|pending_approval|suspended (RB-02)
+            $table->string('learning_track')->nullable();    // beginner|intermediate|advanced — asignado por pretest (§3.1.3)
+            $table->string('google_id')->nullable()->unique();
+            $table->string('avatar_url')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
