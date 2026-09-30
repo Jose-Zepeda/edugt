@@ -23,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Domain\Curriculum\Contracts\UnlockEvaluator::class, \App\Domain\Curriculum\Services\UnlockEvaluatorService::class);
         $this->app->bind(\App\Domain\Gamification\Contracts\BadgeAwarder::class, \App\Domain\Gamification\Services\BadgeAwarderService::class);
         $this->app->bind(\App\Domain\Gamification\Contracts\RankingService::class, \App\Domain\Gamification\Services\RankingServiceDb::class);
+        $this->app->bind(\App\Domain\Analytics\Contracts\AnalyticsQuery::class, \App\Domain\Analytics\Services\AnalyticsQueryDb::class);
+        $this->app->bind(\App\Domain\Reporting\Contracts\ReportExporter::class, \App\Domain\Reporting\Services\DompdfReportExporter::class);
     }
 
     public function boot(): void

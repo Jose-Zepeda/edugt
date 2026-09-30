@@ -11,6 +11,7 @@ class QuizAttempt extends Model
 {
     protected $fillable = [
         'user_id', 'quiz_id', 'attempt_number', 'started_at',
+        'submitted_at', 'score', 'status', 'xp_awarded', 'xp_amount',
     ];
 
     protected function casts(): array

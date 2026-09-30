@@ -9,7 +9,11 @@ use App\Domain\Users\Models\User;
 
 class DiagnosticAttempt extends Model
 {
-    protected $fillable = ['user_id', 'diagnostic_test_id', 'kind', 'started_at'];
+    // Campos servidor-side incluidos: solo el dominio los escribe (RB-10)
+    protected $fillable = [
+        'user_id', 'diagnostic_test_id', 'kind', 'started_at',
+        'submitted_at', 'score_total', 'dimension_scores', 'status',
+    ];
 
     protected function casts(): array
     {
