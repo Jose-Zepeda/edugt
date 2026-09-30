@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\ClassroomController;
 use App\Http\Controllers\Api\V1\CurriculumController;
 use App\Http\Controllers\Api\V1\DiagnosticController;
 use App\Http\Controllers\Api\V1\GamificationController;
@@ -73,6 +74,16 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/quizzes/{id}/attempts/{aid}/answers', [QuizController::class, 'answer'])->name('quiz.answer');
         Route::post('/quizzes/{id}/attempts/{aid}/submit', [QuizController::class, 'submit'])->name('quiz.submit');
         Route::get('/quizzes/{id}/attempts', [QuizController::class, 'history'])->name('quiz.history');
+
+        // ---- Aulas (RF-19) ----
+        Route::post('/classrooms', [ClassroomController::class, 'store'])->name('classroom.store');
+        Route::get('/classrooms', [ClassroomController::class, 'index'])->name('classroom.index');
+        Route::post('/classrooms/join', [ClassroomController::class, 'join'])->name('classroom.join');
+        Route::get('/classrooms/{id}/students', [ClassroomController::class, 'students'])->name('classroom.students');
+        Route::post('/classrooms/{id}/students/{studentId}/state', [ClassroomController::class, 'setStudentState'])
+            ->name('classroom.student.state');
+        Route::post('/classrooms/{id}/codes/regenerate', [ClassroomController::class, 'regenerateCode'])
+            ->name('classroom.codes.regenerate');
 
         // ---- Admin (RF-4, RB-02, RB-09) ----
         Route::prefix('admin')->group(function (): void {
