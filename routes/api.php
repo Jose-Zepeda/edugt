@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CurriculumController;
 use App\Http\Controllers\Api\V1\DiagnosticController;
 use App\Http\Controllers\Api\V1\GamificationController;
+use App\Http\Controllers\Api\V1\QuizController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -63,6 +64,13 @@ Route::prefix('v1')->group(function (): void {
             ->where('kind', 'pre|post')->name('diagnostic.answer');
         Route::post('/diagnostic/tests/{kind}/submit', [DiagnosticController::class, 'submit'])
             ->where('kind', 'pre|post')->name('diagnostic.submit');
+
+        // ---- Quizzes (RF-11..RF-16) ----
+        Route::get('/quizzes/{id}', [QuizController::class, 'show'])->name('quiz.show');
+        Route::post('/quizzes/{id}/attempts', [QuizController::class, 'start'])->name('quiz.start');
+        Route::post('/quizzes/{id}/attempts/{aid}/answers', [QuizController::class, 'answer'])->name('quiz.answer');
+        Route::post('/quizzes/{id}/attempts/{aid}/submit', [QuizController::class, 'submit'])->name('quiz.submit');
+        Route::get('/quizzes/{id}/attempts', [QuizController::class, 'history'])->name('quiz.history');
 
         // ---- Admin (RF-4, RB-02, RB-09) ----
         Route::prefix('admin')->group(function (): void {

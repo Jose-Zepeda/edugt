@@ -11,6 +11,13 @@ class QuestionOption extends Model
         'question_id', 'option_text', 'is_correct', 'feedback', 'order_index',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'is_correct' => 'boolean',
+        ];
+    }
+
     public function question(): BelongsTo
     {
         return $this->belongsTo(Question::class);
