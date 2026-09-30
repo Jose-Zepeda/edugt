@@ -1,0 +1,26 @@
+- main [ref=f1e2]:
+  - generic [ref=f1e3]:
+    - generic [ref=f1e4]: E
+    - heading "EduGT" [level=1] [ref=f1e5]
+    - paragraph [ref=f1e6]: Aprende lógica de programación jugando
+  - generic [ref=f1e7]:
+    - heading "Inicia sesión" [level=2] [ref=f1e8]
+    - generic [ref=f1e9]:
+      - generic [ref=f1e10]:
+        - generic [ref=f1e11]: Correo electrónico
+        - textbox "Correo electrónico" [ref=f1e12]:
+          - /placeholder: tucorreo@ejemplo.com
+      - generic [ref=f1e13]:
+        - generic [ref=f1e14]: Contraseña
+        - textbox "Contraseña" [ref=f1e15]:
+          - /placeholder: ••••••••
+      - button "Entrar" [ref=f1e16] [cursor=pointer]
+      - generic [ref=f1e17]: — o —
+      - link "Continuar con Google" [ref=f1e18] [cursor=pointer]:
+        - /url: http://localhost:8080/api/v1/auth/google/redirect
+    - paragraph [ref=f1e24]:
+      - text: ¿No tienes cuenta?
+      - link "Regístrate" [ref=f1e25] [cursor=pointer]:
+        - /url: "#"
+  - text:  
+  - paragraph [ref=f1e26]: EduGT · Plataforma educativa gamificada · Jutiapa, Guatemala

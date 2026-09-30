@@ -71,11 +71,16 @@ class ContentSeeder extends Seeder
                 'status' => 'published',
             ]);
 
+            // Títulos temáticos por lección (crítica de render: 4 títulos idénticos gritan "beta")
+            $lessonTitles = $i === 0
+                ? ['¿Qué es una variable?', 'Tipos de datos', 'Asignación y operaciones', 'Evaluación del módulo']
+                : ['La decisión si-entonces', 'Si-entonces-sino', 'Condicionales anidadas', 'Evaluación del módulo'];
+
             foreach (range(1, 4) as $n) {
                 Lesson::query()->create([
                     'module_id' => $module->id,
-                    'title' => "Lección {$n}: {$moduleTitle}",
-                    'content_markdown' => "# {$moduleTitle}\n\nContenido de la lección {$n}. (Markdown editable por el admin.)",
+                    'title' => $lessonTitles[$n - 1],
+                    'content_markdown' => "# {$lessonTitles[$n - 1]}\n\nContenido de la lección {$n} de {$moduleTitle}. (Markdown editable por el admin.)",
                     'pseudocode_json' => ['ejemplo' => "variable <- valor\nsi condicion entonces\n    imprimir mensaje\nfin_si"],
                     'estimated_minutes' => 10,
                     'xp_reward' => 10,
@@ -123,6 +128,52 @@ class ContentSeeder extends Seeder
             'algorithms', 'variables', 'conditionals', 'loops',
         ];
 
+        // Contenido real por dimensión (crítica de render: placeholders "[pre]/decomposition" confunden)
+        $demo = [
+            'abstraction' => [
+                'statement' => 'Para crear una app que registre las notas de tu clase, ¿cuál es el dato MÁS importante que debe guardar el programa?',
+                'options' => ['La nota de cada estudiante', 'El color del aula', 'La marca de las computadoras'],
+                'correct' => 0,
+                'explanation' => 'Abstraer es quedarse solo con lo esencial del problema: las notas.',
+            ],
+            'decomposition' => [
+                'statement' => 'Quieres hacer un programa que calcule tu promedio. ¿Cuál es la mejor forma de dividir el problema?',
+                'options' => ['Sumar las notas, dividir entre el total de materias', 'Comprar una computadora más rápida', 'Pintar la pantalla de otro color'],
+                'correct' => 0,
+                'explanation' => 'Descomponer es dividir el problema en pasos pequeños y manejables.',
+            ],
+            'pattern_recognition' => [
+                'statement' => 'Observa: 2, 4, 6, 8... ¿qué instrucción repetida genera esta lista?',
+                'options' => ['sumar 2 al último número', 'restar 1', 'multiplicar por 10'],
+                'correct' => 0,
+                'explanation' => 'Reconocer patrones es ver qué se repite y con qué regla.',
+            ],
+            'algorithms' => [
+                'statement' => '¿Cuál es el orden correcto de un algoritmo para cepillarse los dientes?',
+                'options' => ['Tomar el cepillo → poner pasta → cepillar → enjuagar', 'Enjuagar → cepillar → tomar el cepillo', 'Cepillar → tomar el cepillo → poner pasta'],
+                'correct' => 0,
+                'explanation' => 'Un algoritmo es una secuencia ORDENADA de pasos.',
+            ],
+            'variables' => [
+                'statement' => 'En pseudocódigo: edad ← 15, luego edad ← edad + 1. ¿Cuánto vale edad al final?',
+                'options' => ['16', '15', 'No se puede saber'],
+                'correct' => 0,
+                'explanation' => 'La variable se actualiza: 15 + 1 = 16.',
+            ],
+            'conditionals' => [
+                'statement' => 'Si nota >= 60 entonces imprimir "Aprobado" sino imprimir "Reprobado". Con nota = 60, ¿qué imprime?',
+                'options' => ['Aprobado', 'Reprobado', 'Nada'],
+                'correct' => 0,
+                'explanation' => '60 >= 60 es verdadero → entra por la rama "entonces".',
+            ],
+            'loops' => [
+                'statement' => 'Mientras i <= 3: imprimir i, i ← i + 1 (i empieza en 1). ¿Cuántas veces se imprime?',
+                'options' => ['3 veces', '4 veces', 'Infinitas veces'],
+                'correct' => 0,
+                'explanation' => 'Se imprime con i = 1, 2, 3. Cuando i = 4 la condición falla y termina.',
+            ],
+        ];
+
         foreach (['pre' => 1, 'post' => 1] as $kind => $version) {
             $test = DiagnosticTest::query()->create([
                 'kind' => $kind,
@@ -134,13 +185,22 @@ class ContentSeeder extends Seeder
 
             foreach ($dimensions as $i => $dim) {
                 foreach ([1, 2] as $j) {
+                    $d = $demo[$dim];
+                    // Variante B del postest comparable (RB-17): mismo enunciado-base, opciones reordenadas
+                    $variantB = $kind === 'post';
+
+                    $options = $variantB ? array_reverse($d['options']) : $d['options'];
+                    $correctIndex = $variantB ? count($options) - 1 - $d['correct'] : $d['correct'];
+
                     DiagnosticQuestion::query()->create([
                         'diagnostic_test_id' => $test->id,
                         'dimension' => $dim,
-                        'statement' => "[$kind] Pregunta de {$dim} ".($i * 2 + $j).' — enunciado breve de teoría o mini-ejercicio de pseudocódigo.',
-                        'options' => ['Opción A', 'Opción B', 'Opción C'],
-                        'correct_index' => 0,
-                        'explanation' => "Explicación pedagógica para {$dim}.",
+                        'statement' => $j === 1
+                            ? $d['statement']
+                            : $d['statement'].' (variante '.$j.')',
+                        'options' => $options,
+                        'correct_index' => $variantB ? $correctIndex : ($j === 1 ? $d['correct'] : ($d['correct'] + 1) % 3),
+                        'explanation' => $d['explanation'],
                         'order_index' => $i * 2 + $j,
                     ]);
                 }

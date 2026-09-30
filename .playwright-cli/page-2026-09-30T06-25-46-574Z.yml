@@ -1,0 +1,83 @@
+- generic [active] [ref=f4e1]:
+  - generic [ref=f4e3]:
+    - complementary [ref=f4e4]:
+      - navigation "Navegación principal" [ref=f4e5]:
+        - generic [ref=f4e6]:
+          - generic [ref=f4e7]: E
+          - generic [ref=f4e8]: EduGT
+        - list [ref=f4e9]:
+          - listitem [ref=f4e10]:
+            - link " Inicio" [ref=f4e11] [cursor=pointer]:
+              - /url: estudiante.html
+              - generic [ref=f4e12]: 
+              - text: Inicio
+          - listitem [ref=f4e13]:
+            - link " Mi ruta" [ref=f4e14] [cursor=pointer]:
+              - /url: estudiante.html#ruta
+              - generic [ref=f4e15]: 
+              - text: Mi ruta
+          - listitem [ref=f4e16]:
+            - link " Insignias" [ref=f4e17] [cursor=pointer]:
+              - /url: estudiante.html#insignias
+              - generic [ref=f4e18]: 
+              - text: Insignias
+          - listitem [ref=f4e19]:
+            - link " Ranking" [ref=f4e20] [cursor=pointer]:
+              - /url: estudiante.html#ranking
+              - generic [ref=f4e21]: 
+              - text: Ranking
+          - listitem [ref=f4e22]:
+            - link " Aulas" [ref=f4e23] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=f4e24]: 
+              - text: Aulas
+        - button " Salir" [ref=f4e25] [cursor=pointer]:
+          - generic [ref=f4e26]: 
+          - text: Salir
+    - main [ref=f4e27]:
+      - generic [ref=f4e28]:
+        - generic [ref=f4e29]:
+          - text: Buenos días
+          - heading "Estudiante 1 👋" [level=1] [ref=f4e30]
+        - generic [ref=f4e31]:
+          - generic [ref=f4e32]: Completa tu pretest
+          - generic "Estudiante 1" [ref=f4e33]: E1
+        - text: 
+      - generic [ref=f4e34]:
+        - region "Progreso de experiencia" [ref=f4e36]:
+          - generic [ref=f4e37]:
+            - generic [ref=f4e38]:
+              - text: Nivel de experiencia
+              - heading "Nivel —" [level=2] [ref=f4e39]
+            - generic [ref=f4e40]:
+              - generic [ref=f4e41]: 
+              - text: — XP
+          - progressbar "Progreso al siguiente nivel" [ref=f4e42]
+          - generic [ref=f4e44]:
+            - generic [ref=f4e45]: 0 XP
+            - generic [ref=f4e46]: 100 XP
+        - region "Racha de días activos" [ref=f4e48]:
+          - generic [ref=f4e49]:
+            - generic [ref=f4e50]:
+              - text: Racha de días
+              - heading "0" [level=2] [ref=f4e51]
+            - generic [ref=f4e52]: 
+          - generic [ref=f4e53]:
+            - text: "Mejor racha:"
+            - strong [ref=f4e54]: 0 días
+      - generic [ref=f4e56]:
+        - generic [ref=f4e57]:
+          - 'heading "Empieza aquí: tu prueba inicial" [level=2] [ref=f4e58]'
+          - paragraph [ref=f4e59]: 14 preguntas, 15 minutos. No da XP ni afecta tu ranking — nos dice por dónde empezar.
+        - button "Hacer mi prueba inicial" [ref=f4e60] [cursor=pointer]
+      - heading " Mi ruta de aprendizaje" [level=2] [ref=f4e63]:
+        - generic [ref=f4e64]: 
+        - text: Mi ruta de aprendizaje
+      - generic [ref=f4e65]:
+        - heading " Mis insignias" [level=2] [ref=f4e68]:
+          - generic [ref=f4e69]: 
+          - text: Mis insignias
+        - heading " Ranking global" [level=2] [ref=f4e72]:
+          - generic [ref=f4e73]: 
+          - text: Ranking global
+  - text:    
