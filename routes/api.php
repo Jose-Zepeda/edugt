@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CurriculumController;
+use App\Http\Controllers\Api\V1\GamificationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -42,6 +44,16 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
+
+        // ---- Curriculum (RF-8, RF-9, RF-10) ----
+        Route::get('/me/missions', [CurriculumController::class, 'missions'])->name('curriculum.missions');
+        Route::get('/lessons/{id}', [CurriculumController::class, 'showLesson'])->name('curriculum.lessons.show');
+        Route::post('/lessons/{id}/complete', [GamificationController::class, 'completeLesson'])
+            ->name('curriculum.lessons.complete');
+
+        // ---- Gamificación (RF-17) ----
+        Route::get('/me/xp', [GamificationController::class, 'xp'])->name('gamification.xp');
+        Route::get('/me/streak', [GamificationController::class, 'streak'])->name('gamification.streak');
 
         // ---- Admin (RF-4, RB-02, RB-09) ----
         Route::prefix('admin')->group(function (): void {

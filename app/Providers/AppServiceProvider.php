@@ -18,6 +18,9 @@ class AppServiceProvider extends ServiceProvider
         // DIP: el controlador depende del contrato; Socialite es detalle de implementación
         $this->app->bind(GoogleOAuthGateway::class, SocialiteGoogleGateway::class);
         $this->app->bind(AuditLogger::class, DatabaseAuditLogger::class);
+        $this->app->bind(\App\Domain\Gamification\Contracts\XpLedger::class, \App\Domain\Gamification\Services\XpLedgerService::class);
+        $this->app->bind(\App\Domain\Gamification\Contracts\StreakService::class, \App\Domain\Gamification\Services\StreakService::class);
+        $this->app->bind(\App\Domain\Curriculum\Contracts\UnlockEvaluator::class, \App\Domain\Curriculum\Services\UnlockEvaluatorService::class);
     }
 
     public function boot(): void
