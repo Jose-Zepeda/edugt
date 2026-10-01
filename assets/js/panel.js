@@ -21,9 +21,8 @@ function renderGreeting() {
   $('#greeting-kicker').textContent = kicker;
   $('#greeting').textContent = `${Auth.user.name} 👋`;
 
-  const initials = Auth.user.name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
-  $('#avatar').textContent = initials || 'E';
-  $('#avatar').title = Auth.user.name;
+  // El avatar AHORA es el logo de la plataforma (id avatar = <img>); el nombre va en title
+  $('#avatar')?.setAttribute('title', Auth.user.name);
 
   $('#pill-track').textContent = TRACK_LABEL[Auth.user.learning_track] ?? 'Completa tu pretest';
 }
