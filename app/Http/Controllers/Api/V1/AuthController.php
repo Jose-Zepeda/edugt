@@ -77,7 +77,7 @@ final class AuthController extends Controller
     }
 
     /** GET /api/v1/auth/google/callback — RF-2, RB-03, RB-04 */
-    public function googleCallback(): JsonResponse
+    public function googleCallback(): \Symfony\Component\HttpFoundation\RedirectResponse
     {
         $outcome = $this->googleGateway->resolve();
 
@@ -85,27 +85,32 @@ final class AuthController extends Controller
             $user = $outcome->user;
 
             if ($user->status === 'pending_approval') {
-                return response()->json([
-                    'message' => __('auth.teacher_pending'),
-                    'code' => 'TEACHER_PENDING_APPROVAL',
-                    'status' => $user->status,
-                ], 423);
+                // RB-02: docente pendiente → FE con mensaje claro
+                return redirect()->away($this->feUrl('/index.html?google_status=pending'));
             }
 
-            return response()->json([
-                'user' => $this->userResource($user),
-                'token' => $user->createToken('spa')->plainTextToken,
-            ]);
+            return redirect()->away($this->feUrl('/google-landing.html?token=').\Laravel\Sanctum\PersonalAccessToken::query()->create([
+                'tokenable' => $user,
+                'name' => 'google-oauth',
+            ])->plainTextToken.'&user_id='.$user->id);
         }
 
         /** @var \App\Domain\Auth\Data\RequireRoleChoice $outcome */
-        return response()->json([
-            'needs_role_choice' => true,
+        // Usuario nuevo → FE con formulario posterior de nombre y rol (RF-2)
+        $params = http_build_query([
             'google_id' => $outcome->googleId,
             'email' => $outcome->email,
-            'name' => $outcome->name,
-            'avatar_url' => $outcome->avatarUrl,
+            'name' => $outcome->name ?? '',
+            'avatar_url' => $outcome->avatarUrl ?? '',
         ]);
+
+        return redirect()->away($this->feUrl('/google-landing.html?'.$params));
+    }
+
+    /** ORIGEN del frontend (para redirects 302 desde callbacks) */
+    private function feUrl(string $path): string
+    {
+        return rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:5500')), '/').$path;
     }
 
     /** POST /api/v1/auth/google/complete — RF-2 (formulario posterior nombre+rol) */
