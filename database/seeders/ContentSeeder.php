@@ -131,19 +131,19 @@ class ContentSeeder extends Seeder
         // Contenido real por dimensión (crítica de render: placeholders "[pre]/decomposition" confunden)
         $demo = [
             'abstraction' => [
-                'statement' => 'Para crear una app que registre las notas de tu clase, ¿cuál es el dato MÁS importante que debe guardar el programa?',
+                'statement' => 'Para registrar las notas de tu clase, ¿cuál es el dato MÁS importante que debe guardar el programa?',
                 'options' => ['La nota de cada estudiante', 'El color del aula', 'La marca de las computadoras'],
                 'correct' => 0,
                 'explanation' => 'Abstraer es quedarse solo con lo esencial del problema: las notas.',
             ],
             'decomposition' => [
                 'statement' => 'Quieres hacer un programa que calcule tu promedio. ¿Cuál es la mejor forma de dividir el problema?',
-                'options' => ['Sumar las notas, dividir entre el total de materias', 'Comprar una computadora más rápida', 'Pintar la pantalla de otro color'],
+                'options' => ['Sumar las notas y dividirlas entre el total', 'Comprar una computadora más rápida', 'Pintar la pantalla de otro color'],
                 'correct' => 0,
                 'explanation' => 'Descomponer es dividir el problema en pasos pequeños y manejables.',
             ],
             'pattern_recognition' => [
-                'statement' => 'Observa: 2, 4, 6, 8... ¿qué instrucción repetida genera esta lista?',
+                'statement' => 'Observa la secuencia: 2, 4, 6, 8... ¿qué instrucción repetida la genera?',
                 'options' => ['sumar 2 al último número', 'restar 1', 'multiplicar por 10'],
                 'correct' => 0,
                 'explanation' => 'Reconocer patrones es ver qué se repite y con qué regla.',
@@ -162,7 +162,7 @@ class ContentSeeder extends Seeder
             ],
             'conditionals' => [
                 'statement' => 'Si nota >= 60 entonces imprimir "Aprobado" sino imprimir "Reprobado". Con nota = 60, ¿qué imprime?',
-                'options' => ['Aprobado', 'Reprobado', 'Nada'],
+                'options' => ['Aprobado', 'Reprobado', 'No imprime nada'],
                 'correct' => 0,
                 'explanation' => '60 >= 60 es verdadero → entra por la rama "entonces".',
             ],
@@ -171,6 +171,53 @@ class ContentSeeder extends Seeder
                 'options' => ['3 veces', '4 veces', 'Infinitas veces'],
                 'correct' => 0,
                 'explanation' => 'Se imprime con i = 1, 2, 3. Cuando i = 4 la condición falla y termina.',
+            ],
+
+        ];
+
+        // ---------------- VARIANTE (j=2) — misma dimensión, problema distinto ----------------
+        $variante = [
+            'abstraction' => [
+                'statement' => 'Una app de la biblioteca registra libros. ¿Cuál dato es esencial para saber si un libro está disponible?',
+                'options' => ['Si está prestado o no', 'El color de la portada', 'El nombre del editor'],
+                'correct' => 0,
+                'explanation' => 'Para "disponibilidad" lo esencial es el estado préstamo: sí o no.',
+            ],
+            'decomposition' => [
+                'statement' => 'Un juego necesita saber el puntaje final de un jugador: suma de puntos y restas de penalizaciones. ¿Cómo lo divides?',
+                'options' => ['Paso 1: sumar puntos, paso 2: restar penalizaciones', 'Paso 1: dibujar el personaje, paso 2: sonar la música', 'Buscar el promedio y no pensarlo más'],
+                'correct' => 0,
+                'explanation' => 'Dos pasos separados: primero puntos, luego penalizaciones.',
+            ],
+            'pattern_recognition' => [
+                'statement' => 'Observa: 100, 90, 80, 70... ¿qué instrucción repetida genera la lista?',
+                'options' => ['restar 10 al último número', 'sumar 5', 'dividir entre 2'],
+                'correct' => 0,
+                'explanation' => 'El patrón es restar 10 en cada paso.',
+            ],
+            'algorithms' => [
+                'statement' => 'Para hacer un sándwich, ¿qué secuencia de pasos es correcta?',
+                'options' => ['Sacar pan → untar mantequilla → poner queso → tapar con otro pan', 'Tapar con otro pan → poner queso → sacar pan', 'Poner queso → sacar pan → untar mantequilla'],
+                'correct' => 0,
+                'explanation' => 'Un algoritmo exige que el orden produzca el resultado.',
+            ],
+            'variables' => [
+                'statement' => 'En pseudocódigo: saldo ← 50, saldo ← saldo - 20, saldo ← saldo * 2. ¿Cuánto vale saldo?',
+                'options' => ['60', '30', '20'],
+                'correct' => 0,
+                'explanation' => '50 - 20 = 30, luego 30 × 2 = 60.',
+            ],
+            'conditionals' => [
+                'statement' => 'Si edad >= 18 entonces imprimir "Adulto" sino imprimir "Menor". Con edad = 17, ¿qué imprime?',
+                'options' => ['Menor', 'Adulto', 'Error'],
+                'correct' => 0,
+                'explanation' => '17 >= 18 es falso → va por el "sino".',
+            ],
+            'loops' => [
+                'statement' => 'Repetir 4 veces: imprimir "EduGT". ¿Cuántas líneas se muestran?',
+                'options' => ['4', '3', '5'],
+                'correct' => 0,
+                'explanation' => 'El bucle fijo ejecuta el cuerpo exactamente 4 veces.',
             ],
         ];
 
@@ -184,22 +231,37 @@ class ContentSeeder extends Seeder
             ]);
 
             foreach ($dimensions as $i => $dim) {
-                foreach ([1, 2] as $j) {
-                    $d = $demo[$dim];
-                    // Variante B del postest comparable (RB-17): mismo enunciado-base, opciones reordenadas
-                    $variantB = $kind === 'post';
+                // j=1 pregunta base, j=2 variante distinta (misma dimensión, problema equivalente)
+                // RB-17: pre y post comparten estructura; el postest reordena opciones (anti-memoria)
+                $base = [$demo[$dim], $variante[$dim]];
 
-                    $options = $variantB ? array_reverse($d['options']) : $d['options'];
-                    $correctIndex = $variantB ? count($options) - 1 - $d['correct'] : $d['correct'];
+                foreach ([1, 2] as $j) {
+                    $d = $base[$j - 1];
+                    $isPost = ($kind === 'post');
+
+                    // Rotación DETERMINISTA de la posición correcta: no todas son "A"
+                    // patrón por pregunta global: A, B, C, A, C, B... (i*2+j) manda
+                    $rotaciones = [0, 1, 2, 0, 2, 1, 0, 1, 2, 0, 2, 1, 0, 1]; // 14 preguntas
+                    $indiceGlobal = $i * 2 + $j - 1;                          // 0..13
+                    $posCorrecta = $rotaciones[$indiceGlobal % count($rotaciones)];
+
+                    // Opciones finales: correcta en la posición rotada, distractoras en el resto
+                    $correcta = $d['options'][$d['correct']];
+                    $distractoras = array_values(array_diff($d['options'], [$correcta]));
+                    $final = [];
+                    $di = 0;
+                    for ($pos = 0; $pos < 3; $pos++) {
+                        $final[$pos] = ($pos === $posCorrecta) ? $correcta : $distractoras[$di++];
+                    }
 
                     DiagnosticQuestion::query()->create([
                         'diagnostic_test_id' => $test->id,
                         'dimension' => $dim,
-                        'statement' => $j === 1
-                            ? $d['statement']
-                            : $d['statement'].' (variante '.$j.')',
-                        'options' => $options,
-                        'correct_index' => $variantB ? $correctIndex : ($j === 1 ? $d['correct'] : ($d['correct'] + 1) % 3),
+                        'statement' => $isPost && $j === 1
+                            ? $d['statement'].' (versión postest)'
+                            : $d['statement'],
+                        'options' => $final,
+                        'correct_index' => $posCorrecta,
                         'explanation' => $d['explanation'],
                         'order_index' => $i * 2 + $j,
                     ]);
