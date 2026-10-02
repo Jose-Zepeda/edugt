@@ -26,30 +26,32 @@ Route::prefix('v1')->group(function (): void {
     ]))->name('api.health');
 
     // ---- Auth (RF-1, RF-2) ----
-    Route::prefix('auth')->group(function (): void {
-        Route::post('/register', [AuthController::class, 'register'])
-            ->middleware('throttle:register')  // named limiter: 1/min por IP
-            ->name('auth.register');
+    // Google redirect/callback requieren SESIÓN (parámetro state anti-CSRF de OAuth):
+    // se les agrega el stack web aunque vivan bajo /api (Sanctum stateful lo permite).
+    Route::get('/auth/google/redirect', [AuthController::class, 'googleRedirect'])
+        ->middleware(['web'])
+        ->name('auth.google.redirect');
 
-        Route::post('/login', [AuthController::class, 'login'])
-            ->middleware('throttle:login')    // named limiter: 5/min por email+IP (§10.3)
-            ->name('auth.login');
+    Route::get('/auth/google/callback', [AuthController::class, 'googleCallback'])
+        ->middleware(['web'])
+        ->name('auth.google.callback');
 
-        Route::get('/google/redirect', [AuthController::class, 'googleRedirect'])
-            ->name('auth.google.redirect');
+    // Registro/login/logout tradicional puro API (stateless)
+    Route::post('/auth/register', [AuthController::class, 'register'])
+        ->middleware('throttle:register')  // named limiter: 1/min por IP
+        ->name('auth.register');
 
-        Route::get('/google/callback', [AuthController::class, 'googleCallback'])
-            ->name('auth.google.callback');
-
-        Route::post('/google/complete', [AuthController::class, 'googleComplete'])
-            ->middleware('throttle:register')
-            ->name('auth.google.complete');
-    });
+    Route::post('/auth/login', [AuthController::class, 'login'])
+        ->middleware('throttle:login')    // named limiter: 5/min por email+IP (§10.3)
+        ->name('auth.login');
 
     // ---- Autenticado (Sanctum) ----
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
+        Route::post('/auth/google/complete', [AuthController::class, 'googleComplete'])
+            ->middleware('throttle:register')  // 1/min por IP (anti-abuso)
+            ->name('auth.google.complete');
 
         // ---- Curriculum (RF-8, RF-9, RF-10) ----
         Route::get('/me/missions', [CurriculumController::class, 'missions'])->name('curriculum.missions');
