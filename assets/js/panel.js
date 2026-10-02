@@ -82,7 +82,9 @@ async function loadMissions() {
                 <small style="color:var(--edugt-muted)">${l.estimated_minutes} min · ${l.xp_reward} XP</small>
               </div>
             </div>
-            ${statePill}
+            ${state !== 'locked'
+              ? `<a href="leccion.html?id=${l.id}" class="btn btn-sm btn-edugt">Abrir</a>`
+              : statePill}
           </div>`);
       }
 
@@ -90,7 +92,9 @@ async function loadMissions() {
         <div class="mb-2">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <h3 class="h6 fw-bold mb-0">${esc(mod.title)}</h3>
-            <small style="color:var(--edugt-muted)">Nivel requerido: ${mod.required_level}</small>
+            <a href="quiz.html?id=${mod.quiz_id ?? ''}" class="btn btn-sm btn-google ${mod.quiz_id ? '' : 'd-none'}" data-quiz="${mod.id}">
+              <i class="bi bi-clipboard-check"></i> Evaluación del módulo
+            </a>
           </div>
           <div class="d-flex flex-column gap-2">${lessons.join('')}</div>
         </div>`);
