@@ -146,11 +146,13 @@ async function loadBadges() {
   box.innerHTML = obtained.join('') + locked.join('');
 }
 
-/* ---------------- Ranking (RF-18) ---------------- */
-async function loadRankings() {
-  const { data } = await api('/rankings?scope=global');
+/* ---------------- Ranking (RF-18) — global y por aula ---------------- */
+let rankingScope = 'global';
 
-  const rows = data.data.slice(0, 8).map((r, i) => {
+async function loadRankings() {
+  const { data } = await api(`/rankings?scope=${rankingScope}`);
+
+  const rows = data.data.map((r, i) => {
     const medal = ['🥇', '🥈', '🥉'][i] ?? `<span style="color:var(--edugt-muted);font-weight:700">${r.position}</span>`;
     const me = r.user_id === Auth.user.id;
 
@@ -164,8 +166,22 @@ async function loadRankings() {
       </div>`;
   });
 
-  $('#rankings').innerHTML = rows.join('') || '<p class="mb-0" style="color:var(--edugt-muted)">Aún no hay puntajes. ¡Sé el primero!</p>';
+  $('#rankings').innerHTML = rows.join('') || '<p class="mb-0" style="color:var(--edugt-muted)">Aún no hay puntajes en este ámbito.</p>';
 }
+
+$('#rk-global')?.addEventListener('click', async () => {
+  rankingScope = 'global';
+  $('#rk-global').className = 'btn btn-sm btn-edugt';
+  $('#rk-classroom').className = 'btn btn-sm btn-google';
+  await loadRankings();
+});
+
+$('#rk-classroom')?.addEventListener('click', async () => {
+  rankingScope = 'classroom';
+  $('#rk-classroom').className = 'btn btn-sm btn-edugt';
+  $('#rk-global').className = 'btn btn-sm btn-google';
+  await loadRankings();
+});
 
 /* ---------------- Logout ---------------- */
 async function logout() {
