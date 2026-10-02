@@ -71,6 +71,11 @@ final class CurriculumController extends Controller
                                 'requires_quiz_pass' => $fullLesson->requires_quiz_pass,
                             ];
                         }),
+                        // RFC-11: id del quiz del módulo (el FE arma el enlace a la evaluación)
+                        'quiz_id' => $module->quiz()->value('id'),
+                        'lessons_completed' => $module->lessons->filter(
+                            fn ($lesson) => $progressMap->get($lesson->id)?->completed,
+                        )->count(),
                     ];
                 }),
             ];
