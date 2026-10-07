@@ -1,11 +1,57 @@
 /* ==========================================================================
    EduGT — Login / Registro (RF-1, RF-2, RF-3)
+   Protección Anti-bot: Cloudflare Turnstile + Honeypot
    ========================================================================== */
 'use strict';
 
 Auth.load();
 
 const $ = (sel) => document.querySelector(sel);
+
+const TURNSTILE_SITE_KEY = '1x00000000000000000000AA'; // Clave de prueba de Cloudflare (Always passes)
+let loginWidgetId = null;
+let regWidgetId = null;
+
+function renderTurnstile() {
+  if (typeof turnstile === 'undefined') return;
+
+  const loginContainer = document.getElementById('turnstile-login');
+  if (loginContainer && loginWidgetId === null && !loginContainer.hasChildNodes()) {
+    try {
+      loginWidgetId = turnstile.render('#turnstile-login', {
+        sitekey: TURNSTILE_SITE_KEY,
+        theme: 'light',
+      });
+    } catch (err) {
+      console.warn('Turnstile login render:', err);
+    }
+  }
+
+  const regContainer = document.getElementById('turnstile-register');
+  if (regContainer && regWidgetId === null && !regContainer.hasChildNodes()) {
+    try {
+      regWidgetId = turnstile.render('#turnstile-register', {
+        sitekey: TURNSTILE_SITE_KEY,
+        theme: 'light',
+      });
+    } catch (err) {
+      console.warn('Turnstile reg render:', err);
+    }
+  }
+}
+
+// Inicializar Turnstile cuando el script de Cloudflare esté disponible
+if (typeof turnstile !== 'undefined') {
+  renderTurnstile();
+} else {
+  const checkTurnstile = setInterval(() => {
+    if (typeof turnstile !== 'undefined') {
+      clearInterval(checkTurnstile);
+      renderTurnstile();
+    }
+  }, 100);
+  setTimeout(() => clearInterval(checkTurnstile), 10000);
+}
 
 function showAlert(message, kind = 'danger') {
   const el = $('#alert');
@@ -39,6 +85,12 @@ $('#form-login')?.addEventListener('submit', async (e) => {
   btn.disabled = true;
   btn.textContent = 'Entrando...';
 
+  const hpValue = $('#login-website-hp')?.value || '';
+  let token = '';
+  if (typeof turnstile !== 'undefined' && loginWidgetId !== null) {
+    token = turnstile.getResponse(loginWidgetId) || '';
+  }
+
   try {
     const { data } = await api('/auth/login', {
       method: 'POST',
@@ -46,6 +98,8 @@ $('#form-login')?.addEventListener('submit', async (e) => {
       body: {
         email: $('#login-email').value.trim(),
         password: $('#login-password').value,
+        website_hp: hpValue,
+        turnstile_token: token,
       },
     });
 
@@ -53,8 +107,16 @@ $('#form-login')?.addEventListener('submit', async (e) => {
     Auth.save(data.token, data.user);
     goPanel(data.user);
   } catch (err) {
+    if (typeof turnstile !== 'undefined' && loginWidgetId !== null) {
+      turnstile.reset(loginWidgetId);
+    }
+
     if (err.code === 'TEACHER_PENDING_APPROVAL') {
       showAlert('Tu cuenta de docente está pendiente de aprobación. Te avisaremos cuando sea activada.');
+    } else if (err.errors?.turnstile_token) {
+      showAlert(err.errors.turnstile_token[0]);
+    } else if (err.errors?.website_hp) {
+      showAlert('Solicitud bloqueada por seguridad.');
     } else if (err.errors?.email) {
       const emailErr = err.errors.email[0];
       showAlert(emailErr === 'validation.email' ? 'Credenciales invalidas, revisa el correo o la contraseña' : emailErr);
@@ -77,6 +139,17 @@ $('#form-register')?.addEventListener('submit', async (e) => {
   hideAlert();
 
   const role = document.querySelector('input[name="role"]:checked')?.value;
+  const hpValue = $('#reg-website-hp')?.value || '';
+  let token = '';
+  if (typeof turnstile !== 'undefined' && regWidgetId !== null) {
+    token = turnstile.getResponse(regWidgetId) || '';
+  }
+
+  const btn = $('#btn-register');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Creando cuenta...';
+  }
 
   try {
     const { data } = await api('/auth/register', {
@@ -87,6 +160,8 @@ $('#form-register')?.addEventListener('submit', async (e) => {
         email: $('#reg-email').value.trim(),
         password: $('#reg-password').value,
         role: role || 'student',
+        website_hp: hpValue,
+        turnstile_token: token,
       },
     });
 
@@ -99,11 +174,20 @@ $('#form-register')?.addEventListener('submit', async (e) => {
     Auth.save(data.token, data.user);
     goPanel(data.user);
   } catch (err) {
+    if (typeof turnstile !== 'undefined' && regWidgetId !== null) {
+      turnstile.reset(regWidgetId);
+    }
+
     if (err.errors) {
       const first = Object.values(err.errors)[0];
       showAlert(Array.isArray(first) ? first[0] : String(first));
     } else {
       showAlert(err.message);
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Crear cuenta';
     }
   }
 });
@@ -114,6 +198,7 @@ $('#link-to-register')?.addEventListener('click', (e) => {
   $('#view-login').classList.add('d-none');
   $('#view-register').classList.remove('d-none');
   hideAlert();
+  renderTurnstile();
 });
 
 $('#link-to-login')?.addEventListener('click', (e) => {
@@ -121,9 +206,11 @@ $('#link-to-login')?.addEventListener('click', (e) => {
   $('#view-register').classList.add('d-none');
   $('#view-login').classList.remove('d-none');
   hideAlert();
+  renderTurnstile();
 });
 
 /* ---------------- Sesión activa → panel directamente ---------------- */
 if (Auth.token && Auth.user) {
   goPanel(Auth.user);
 }
+
