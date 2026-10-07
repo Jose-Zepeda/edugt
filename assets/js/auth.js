@@ -8,7 +8,7 @@ Auth.load();
 
 const $ = (sel) => document.querySelector(sel);
 
-const TURNSTILE_SITE_KEY = '2x00000000000000000000AB'; // Clave de prueba interactiva de Cloudflare (Casilla obligatoria)
+const TURNSTILE_SITE_KEY = '1x00000000000000000000AA'; // Clave de prueba de Cloudflare (Pasa siempre / Estable en localhost)
 let loginWidgetId = null;
 let regWidgetId = null;
 
