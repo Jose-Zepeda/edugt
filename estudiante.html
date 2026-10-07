@@ -96,15 +96,20 @@
         </div>
 
         <!-- CTA pretest cuando no hay learning_track -->
-        <div id="cta-pretest" class="card-edugt p-4 mb-4 d-none border-start border-5" style="border-color:var(--edugt-primary)!important;">
+        <div id="cta-pretest" class="card-edugt p-4 mb-4 d-none border-start border-5" style="border-color:var(--edugt-primary)!important;background:linear-gradient(135deg, #FFFFFF 0%, #FAF8FF 100%);">
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-            <div>
-              <h2 class="h5 fw-bold mb-1">Empieza aquí: tu prueba inicial</h2>
-              <p class="mb-0" style="color:var(--edugt-muted)">
-                14 preguntas, 15 minutos. No da XP ni afecta tu ranking — nos dice por dónde empezar.
-              </p>
+            <div class="d-flex align-items-center gap-3">
+              <div class="stat-icon shadow-sm flex-shrink-0" style="width:52px;height:52px;background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:1.6rem;border-radius:16px;">
+                <i class="bi bi-compass-fill"></i>
+              </div>
+              <div>
+                <h2 class="h5 fw-bold mb-1" style="color:var(--edugt-text)">Empieza aquí: tu prueba diagnóstica inicial</h2>
+                <p class="mb-0" style="color:var(--edugt-muted);font-size:.9rem;">
+                  14 preguntas didácticas, 15 minutos. No da XP ni afecta tu ranking — nos permite sugerirte la mejor ruta de aprendizaje.
+                </p>
+              </div>
             </div>
-            <button class="btn btn-edugt btn-lg" id="btn-pretest"><i class="bi bi-play-circle"></i> Hacer mi prueba inicial</button>
+            <button class="btn btn-edugt btn-lg px-4 shadow-sm" id="btn-pretest"><i class="bi bi-play-circle-fill me-1"></i> Iniciar diagnóstico</button>
           </div>
         </div>
 

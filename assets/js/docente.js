@@ -97,11 +97,48 @@ async function loadClassrooms() {
   if (currentClassrooms.length === 0) {
     box.innerHTML = `
       <div class="col-12">
-        <div class="card-edugt p-4 text-center" style="color:var(--edugt-muted)">
-          <i class="bi bi-people" style="font-size:2.5rem;color:var(--edugt-primary)"></i>
-          <h3 class="h6 fw-bold mt-3 mb-1">Aún no tienes aulas registradas</h3>
-          <p class="mt-1 mb-3 small">Crea tu primera aula para compartir el código de inscripción con tus estudiantes.</p>
-          <button class="btn btn-edugt btn-sm" data-bs-toggle="modal" data-bs-target="#modal-aula"><i class="bi bi-plus-lg"></i> Crear aula</button>
+        <div class="card-edugt p-4 p-md-5 text-center" style="background:#FFFFFF;">
+          <div class="stat-icon mx-auto mb-3 shadow-sm" style="width:64px;height:64px;background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:2rem;border-radius:20px;">
+            <i class="bi bi-people-fill"></i>
+          </div>
+          <h3 class="h5 fw-bold mb-1" style="color:var(--edugt-text)">Aún no tienes aulas registradas</h3>
+          <p class="text-muted mb-4 mx-auto" style="max-width:480px;font-size:.9rem;">
+            Crea tu primera aula para generar un código único de inscripción que podrás compartir con tus estudiantes.
+          </p>
+
+          <div class="row g-3 mx-auto mb-4 text-start" style="max-width:740px;">
+            <div class="col-12 col-md-4">
+              <div class="p-3 rounded-4 h-100 border" style="background:#FAF8FF;border-color:var(--edugt-border)!important;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <span class="badge bg-primary rounded-circle" style="width:24px;height:24px;display:grid;place-items:center;font-size:.8rem;">1</span>
+                  <strong class="small" style="color:var(--edugt-text);">Crea tu aula</strong>
+                </div>
+                <p class="small text-muted mb-0">Define el nombre del grupo, grado escolar y ciclo académico.</p>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="p-3 rounded-4 h-100 border" style="background:#FAF8FF;border-color:var(--edugt-border)!important;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <span class="badge bg-primary rounded-circle" style="width:24px;height:24px;display:grid;place-items:center;font-size:.8rem;">2</span>
+                  <strong class="small" style="color:var(--edugt-text);">Comparte el código</strong>
+                </div>
+                <p class="small text-muted mb-0">Entrega el código de 8 caracteres a tus alumnos para que se unan.</p>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="p-3 rounded-4 h-100 border" style="background:#FAF8FF;border-color:var(--edugt-border)!important;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <span class="badge bg-primary rounded-circle" style="width:24px;height:24px;display:grid;place-items:center;font-size:.8rem;">3</span>
+                  <strong class="small" style="color:var(--edugt-text);">Monitorea y evalúa</strong>
+                </div>
+                <p class="small text-muted mb-0">Revisa el avance individual y descarga informes PDF oficiales.</p>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-edugt px-4 py-2.5 shadow-sm" data-bs-toggle="modal" data-bs-target="#modal-aula">
+            <i class="bi bi-plus-lg me-1"></i> Crear mi primera aula
+          </button>
         </div>
       </div>`;
     fillSelect([]);
