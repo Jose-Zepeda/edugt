@@ -338,24 +338,23 @@ async function loadBadges() {
       const config = BADGE_CONFIG[latest.slug] || {
         icon: 'bi-award-fill',
         color: '#D97706',
-        bgColor: '#FEF3C7',
-        border: '#FDE68A'
+        category: 'Logro'
       };
 
       celebrationWrap.innerHTML = `
         <div class="celebration-banner p-3 p-md-4 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
           <div class="d-flex align-items-center gap-3">
-            <div class="celebration-icon shadow-sm" style="background:${config.bgColor};color:${config.color};border-color:${config.border};">
+            <div class="celebration-icon shadow-sm">
               <i class="bi ${config.icon}"></i>
             </div>
             <div>
-              <small class="text-uppercase fw-bold" style="color:#B45309;letter-spacing:.05em;font-size:.75rem;">Insignia Conseguida</small>
-              <h3 class="fw-bold mb-0" style="font-size:1.1rem;color:#78350F;">${esc(latest.title)}</h3>
-              <p class="mb-0 text-muted" style="font-size:.85rem;">${esc(latest.description)}</p>
+              <small class="text-uppercase fw-bold celebration-kicker" style="letter-spacing:.05em;font-size:.75rem;">Insignia Conseguida</small>
+              <h3 class="fw-bold mb-0 celebration-title" style="font-size:1.1rem;">${esc(latest.title)}</h3>
+              <p class="mb-0 celebration-desc text-muted" style="font-size:.85rem;">${esc(latest.description)}</p>
             </div>
           </div>
           <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-bold bg-white" onclick="window.switchStudentTab('insignias')">
+            <button type="button" class="btn btn-sm btn-celebration fw-bold" onclick="window.switchStudentTab('insignias')">
               Ver mi insignia
             </button>
             <button type="button" class="btn-close" aria-label="Cerrar" onclick="this.closest('.celebration-banner').remove()"></button>
@@ -383,21 +382,16 @@ async function loadBadges() {
         ? '<span class="badge-tag-enjuego">EN JUEGO</span>'
         : '<span class="badge-tag-bloqueada">BLOQUEADA</span>';
 
-      const rowClass = isObtained ? 'conseguida' : '';
-      const iconStyle = isObtained
-        ? `background:${cfg.bgColor};color:${cfg.color};border:1.5px solid ${cfg.border};`
-        : isCurrentInGame
-        ? `background:#EDE9FE;color:#6D4AEF;border:1.5px solid #DDD6FE;`
-        : `background:#F1EFFB;color:#948FA8;border:1.5px solid #E2DEEE;`;
+      const rowClass = isObtained ? 'conseguida' : isCurrentInGame ? 'en-juego' : 'bloqueada';
 
       miniList.innerHTML += `
         <div class="mini-badge-row ${rowClass}">
-          <div class="mini-badge-icon shadow-2xs" style="${iconStyle}">
+          <div class="mini-badge-icon shadow-2xs">
             <i class="bi ${cfg.icon}"></i>
           </div>
           <div class="flex-grow-1" style="min-width:0;">
             <div class="d-flex justify-content-between align-items-center mb-0.5">
-              <h5 class="fw-bold mb-0 text-truncate" style="font-size:.88rem;color:var(--edugt-text);">${esc(cfg.category)}</h5>
+              <h5 class="fw-bold mb-0 text-truncate mini-badge-title" style="font-size:.88rem;color:var(--edugt-text);">${esc(cfg.category)}</h5>
               ${statusTag}
             </div>
             <small class="text-muted d-block text-truncate" style="font-size:.76rem;">${esc(cfg.shortCondition)}</small>
@@ -421,9 +415,6 @@ async function loadBadges() {
     obtained.forEach((b) => {
       const config = BADGE_CONFIG[b.slug] || {
         icon: 'bi-award-fill',
-        color: '#6D4AEF',
-        bgColor: '#EDE9FE',
-        border: '#DDD6FE',
         category: 'Insignia'
       };
 
@@ -432,17 +423,17 @@ async function loadBadges() {
           <div class="badge-card unlocked h-100 d-flex flex-column justify-content-between">
             <div>
               <div class="d-flex justify-content-between align-items-center mb-3">
-                <span class="badge rounded-pill" style="background:${config.bgColor};color:${config.color};font-weight:700;font-size:.75rem;">
+                <span class="badge rounded-pill badge-category-pill">
                   ${config.category}
                 </span>
                 <span class="pill-edugt pill-done" style="font-size:.72rem;">
                   <i class="bi bi-patch-check-fill"></i> Desbloqueada
                 </span>
               </div>
-              <div class="badge-icon-lg shadow-sm" style="background:${config.bgColor};color:${config.color};border:2px solid ${config.border};">
+              <div class="badge-icon-lg shadow-sm">
                 <i class="bi ${config.icon}"></i>
               </div>
-              <h4 class="fw-bold text-center mb-1" style="font-size:1.05rem;">${esc(b.title)}</h4>
+              <h4 class="fw-bold text-center mb-1" style="font-size:1.05rem;color:var(--edugt-text);">${esc(b.title)}</h4>
               <p class="text-center mb-3" style="color:var(--edugt-muted);font-size:.85rem;line-height:1.4;">
                 ${esc(b.description)}
               </p>
@@ -459,9 +450,6 @@ async function loadBadges() {
     locked.forEach((b) => {
       const config = BADGE_CONFIG[b.slug] || {
         icon: 'bi-award-fill',
-        color: '#948FA8',
-        bgColor: '#F1EFFB',
-        border: '#E2DEEE',
         category: 'Desafío'
       };
 
@@ -470,14 +458,14 @@ async function loadBadges() {
           <div class="badge-card locked h-100 d-flex flex-column justify-content-between">
             <div>
               <div class="d-flex justify-content-between align-items-center mb-3">
-                <span class="badge rounded-pill bg-light text-muted" style="font-weight:600;font-size:.75rem;">
+                <span class="badge rounded-pill badge-category-pill-locked">
                   ${config.category}
                 </span>
                 <span class="pill-edugt pill-locked" style="font-size:.72rem;">
                   <i class="bi bi-lock-fill"></i> Bloqueada
                 </span>
               </div>
-              <div class="badge-icon-lg" style="background:#F1EFFB;color:#948FA8;border:2px dashed #D5D0E6;">
+              <div class="badge-icon-lg">
                 <i class="bi ${config.icon}"></i>
               </div>
               <h4 class="fw-bold text-center mb-1 text-muted" style="font-size:1.05rem;">${esc(b.title)}</h4>
@@ -523,21 +511,21 @@ async function loadRankings() {
         <div class="col-md-${colSize}">
           <div class="podium-card ${rankClass} h-100 shadow-sm">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="badge rounded-pill bg-white text-dark shadow-xs fw-bold px-2.5 py-1" style="font-size:.75rem;">
+              <span class="badge rounded-pill podium-rank-badge fw-bold px-2.5 py-1" style="font-size:.75rem;">
                 Puesto #${rankNum}
               </span>
               <span style="font-size:1.4rem;">${medal}</span>
             </div>
-            <div class="podium-avatar bg-white shadow-sm">
-              <span class="fw-bold" style="color:var(--edugt-primary);font-size:1.2rem;">${student.name.charAt(0).toUpperCase()}</span>
+            <div class="podium-avatar shadow-sm">
+              <span class="fw-bold" style="font-size:1.2rem;">${student.name.charAt(0).toUpperCase()}</span>
             </div>
-            <h4 class="fw-bold mb-1" style="font-size:1.05rem;">
+            <h4 class="fw-bold mb-1 podium-name" style="font-size:1.05rem;color:var(--edugt-text);">
               ${esc(student.name)}${isMe ? ' <span class="badge bg-primary" style="font-size:.7rem;">Tú</span>' : ''}
             </h4>
-            <div class="d-flex justify-content-center align-items-center gap-2" style="font-size:.85rem;color:var(--edugt-muted);">
+            <div class="d-flex justify-content-center align-items-center gap-2 podium-meta" style="font-size:.85rem;color:var(--edugt-muted);">
               <span>Nv. ${student.xp_level}</span>
               <span>·</span>
-              <span class="fw-bold text-dark">${student.xp_total} XP</span>
+              <span class="fw-bold podium-xp">${student.xp_total} XP</span>
             </div>
           </div>
         </div>`;
@@ -554,19 +542,18 @@ async function loadRankings() {
   }
 
   const rows = list.map((r, i) => {
-    const medal = ['🥇', '🥈', '🥉'][i] ?? `<span style="color:var(--edugt-muted);font-weight:700">#${r.position}</span>`;
+    const medal = ['🥇', '🥈', '🥉'][i] ?? `<span class="text-muted fw-bold">#${r.position}</span>`;
     const me = r.user_id === Auth.user.id;
 
     return `
-      <div class="d-flex align-items-center gap-3 border rounded-4 px-3 py-2.5 ${me ? 'fw-bold border-primary' : ''}"
-           style="border-color:var(--edugt-border)!important;${me ? 'background:var(--edugt-primary-soft);' : 'background:#FFFFFF;'}">
+      <div class="ranking-row d-flex align-items-center gap-3 border rounded-4 px-3 py-2.5 ${me ? 'is-me' : ''}">
         <div style="width:36px;text-align:center;font-size:1.15rem;">${medal}</div>
         <div class="flex-grow-1">
-          <span style="font-size:.95rem;">${esc(r.name)}</span>
+          <span style="font-size:.95rem;color:var(--edugt-text);">${esc(r.name)}</span>
           ${me ? '<span class="badge bg-primary ms-2" style="font-size:.7rem;">Tú</span>' : ''}
         </div>
-        <div style="color:var(--edugt-muted);font-size:.85rem;">Nivel ${r.xp_level}</div>
-        <div class="fw-bold text-end" style="min-width:76px;font-size:.95rem;color:var(--edugt-primary);">
+        <div class="text-muted" style="font-size:.85rem;">Nivel ${r.xp_level}</div>
+        <div class="fw-bold text-end ranking-xp-val" style="min-width:76px;font-size:.95rem;color:var(--edugt-primary);">
           ${r.xp_total} XP
         </div>
       </div>`;

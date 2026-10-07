@@ -177,10 +177,10 @@ async function loadClassrooms() {
             <span>${esc(c.academic_year)}</span>
           </div>
 
-          <div class="border rounded-4 p-3 mt-3 d-flex align-items-center justify-content-between" style="border-color:var(--edugt-border)!important;background:#FBFAFF;">
+          <div class="code-access-box border rounded-4 p-3 mt-3 d-flex align-items-center justify-content-between">
             <div>
-              <small style="color:var(--edugt-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em">Código de acceso</small>
-              <div class="fw-bold" style="font-size:1.15rem;letter-spacing:.12em" data-code="${c.id}">${esc(c.code ?? '—')}</div>
+              <small class="text-muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.05em">Código de acceso</small>
+              <div class="fw-bold code-display-text" style="font-size:1.15rem;letter-spacing:.12em" data-code="${c.id}">${esc(c.code ?? '—')}</div>
             </div>
             <div class="d-flex gap-1">
               <button class="btn btn-sm btn-edugt" data-copy="${c.id}" title="Copiar código" aria-label="Copiar código"><i class="bi bi-clipboard"></i></button>
@@ -191,7 +191,7 @@ async function loadClassrooms() {
           <div class="d-flex align-items-center gap-2 mt-3">
             <i class="bi ${hasStudents ? 'bi-person-check-fill text-success' : 'bi-person text-muted'}"></i>
             <span class="fw-bold">${studentCount}</span>
-            <span style="color:var(--edugt-muted);font-size:.9rem;">${studentCount === 1 ? 'estudiante inscrito' : 'estudiantes inscritos'}</span>
+            <span class="text-muted" style="font-size:.9rem;">${studentCount === 1 ? 'estudiante inscrito' : 'estudiantes inscritos'}</span>
           </div>
         </div>
 
@@ -204,7 +204,7 @@ async function loadClassrooms() {
               <i class="bi bi-people-fill"></i> Ver estudiantes (${studentCount})
             </button>
           ` : `
-            <div class="text-center py-2 border rounded-3" style="font-size:0.83rem;color:var(--edugt-muted);background:#FAF9FF;">
+            <div class="classroom-empty-students text-center py-2 border rounded-3" style="font-size:0.83rem;">
               <i class="bi bi-info-circle me-1"></i> Sin estudiantes inscritos aún
             </div>
           `}

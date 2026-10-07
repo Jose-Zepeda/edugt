@@ -449,6 +449,7 @@ body.auth-body {
   border-radius: var(--edugt-radius);
   box-shadow: 0 6px 20px rgba(217, 119, 6, 0.08);
   animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  color: #78350F;
 }
 
 .celebration-icon {
@@ -463,9 +464,71 @@ body.auth-body {
   font-size: 1.6rem;
 }
 
+.celebration-kicker {
+  color: #B45309;
+}
+
+.celebration-title {
+  color: #78350F;
+}
+
+.btn-celebration {
+  background: #FFFFFF;
+  color: #78350F;
+  border: 1.5px solid #FDE68A;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-celebration:hover {
+  background: #FEF3C7;
+  color: #78350F;
+}
+
+/* Modo Oscuro: Banner de Celebración */
+[data-theme="dark"] .celebration-banner {
+  background: linear-gradient(135deg, #2B1D08 0%, #181103 100%);
+  border-color: #78350F;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  color: #FDE68A;
+}
+
+[data-theme="dark"] .celebration-icon {
+  background: #3D2607;
+  border-color: #78350F;
+  color: #F59E0B;
+}
+
+[data-theme="dark"] .celebration-kicker {
+  color: #F59E0B !important;
+}
+
+[data-theme="dark"] .celebration-title {
+  color: #FDE68A !important;
+}
+
+[data-theme="dark"] .celebration-desc {
+  color: #D1A066 !important;
+}
+
+[data-theme="dark"] .btn-celebration {
+  background: #3D2607;
+  color: #FDE68A;
+  border-color: #78350F;
+}
+
+[data-theme="dark"] .btn-celebration:hover {
+  background: #543306;
+  color: #FEF3C7;
+}
+
+[data-theme="dark"] .celebration-banner .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
 /* ---------- Pill Badges de Cabecera ---------- */
 .header-stat-pill {
-  background: #FFFFFF;
+  background: var(--edugt-card);
   border: 1.5px solid var(--edugt-border);
   border-radius: 999px;
   padding: .4rem 1rem;
@@ -475,8 +538,14 @@ body.auth-body {
   align-items: center;
   gap: .45rem;
   color: var(--edugt-text);
-  box-shadow: 0 2px 6px rgba(42, 36, 64, 0.04);
+  box-shadow: var(--edugt-shadow-soft);
   transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .header-stat-pill {
+  background: var(--edugt-card-subtle);
+  border-color: var(--edugt-border);
+  color: var(--edugt-text);
 }
 
 .header-stat-pill:hover {
@@ -557,7 +626,7 @@ body.auth-body {
   place-items: center;
   font-size: 1.85rem;
   text-decoration: none;
-  background: #FFFFFF;
+  background: var(--edugt-card);
   border: 4.5px solid var(--edugt-border);
   color: var(--edugt-muted);
   box-shadow: 0 8px 24px rgba(42, 36, 64, 0.12);
@@ -607,6 +676,33 @@ body.auth-body {
 
 .snake-node.milestone:hover {
   transform: scale(1.1) translateY(-3px);
+}
+
+/* Modo Oscuro: Nodos del Mapa */
+[data-theme="dark"] .snake-node {
+  background: var(--edugt-card);
+  border-color: var(--edugt-border);
+  color: var(--edugt-muted);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .snake-node.completed {
+  background: #0B291A;
+  border-color: #10B981;
+  color: #34D399;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .snake-node.locked {
+  background: var(--edugt-card-subtle);
+  border-color: var(--edugt-border);
+  color: #554E6F;
+}
+
+[data-theme="dark"] .snake-node.milestone {
+  background: #2D1E0C;
+  border-color: #78350F;
+  color: #F59E0B;
 }
 
 /* Conectores SVG exactos */
@@ -683,7 +779,7 @@ body.auth-body {
 
 /* ---------- Widget Derecho: Mini Insignias Tracker ---------- */
 .mini-badge-row {
-  background: #FFFFFF;
+  background: var(--edugt-card);
   border: 1.5px solid var(--edugt-border);
   border-radius: 16px;
   padding: .75rem .95rem;
@@ -696,12 +792,22 @@ body.auth-body {
 .mini-badge-row:hover {
   transform: translateY(-2px);
   border-color: #C4B5FD;
-  box-shadow: 0 4px 12px rgba(109, 74, 239, 0.08);
+  box-shadow: var(--edugt-shadow-soft);
 }
 
 .mini-badge-row.conseguida {
   background: linear-gradient(135deg, #FFFDF2 0%, #FEFBE8 100%);
   border-color: #FDE68A;
+}
+
+.mini-badge-row.en-juego {
+  background: linear-gradient(135deg, #FAF8FF 0%, #F5F2FF 100%);
+  border-color: #DDD6FE;
+}
+
+.mini-badge-row.bloqueada {
+  background: var(--edugt-card);
+  border-color: var(--edugt-border);
 }
 
 .mini-badge-icon {
@@ -712,8 +818,63 @@ body.auth-body {
   place-items: center;
   font-size: 1.25rem;
   flex-shrink: 0;
+  background: #F1EFFB;
+  color: #948FA8;
+  border: 1.5px solid #E2DEEE;
 }
 
+.mini-badge-row.conseguida .mini-badge-icon {
+  background: #FEF3C7;
+  color: #D97706;
+  border-color: #FDE68A;
+}
+
+.mini-badge-row.en-juego .mini-badge-icon {
+  background: #EDE9FE;
+  color: #6D4AEF;
+  border-color: #DDD6FE;
+}
+
+/* Modo Oscuro: Mini Insignias */
+[data-theme="dark"] .mini-badge-row {
+  background: var(--edugt-card);
+  border-color: var(--edugt-border);
+}
+
+[data-theme="dark"] .mini-badge-row.conseguida {
+  background: linear-gradient(135deg, #2B1D08 0%, #191205 100%);
+  border-color: #78350F;
+}
+
+[data-theme="dark"] .mini-badge-row.conseguida .mini-badge-icon {
+  background: #3D2607;
+  color: #F59E0B;
+  border-color: #78350F;
+}
+
+[data-theme="dark"] .mini-badge-row.en-juego {
+  background: linear-gradient(135deg, #241A45 0%, #15102A 100%);
+  border-color: #5B3CC4;
+}
+
+[data-theme="dark"] .mini-badge-row.en-juego .mini-badge-icon {
+  background: #272048;
+  color: #A78BFA;
+  border-color: #5B3CC4;
+}
+
+[data-theme="dark"] .mini-badge-row.bloqueada {
+  background: var(--edugt-card-subtle);
+  border-color: var(--edugt-border);
+}
+
+[data-theme="dark"] .mini-badge-row.bloqueada .mini-badge-icon {
+  background: #1B172E;
+  color: #5E5879;
+  border-color: #2E2948;
+}
+
+/* Tags de estado */
 .badge-tag-conseguida {
   background: #DCFCE7;
   color: #15803D;
@@ -742,6 +903,25 @@ body.auth-body {
   padding: .2rem .6rem;
   border-radius: 999px;
   letter-spacing: .03em;
+}
+
+[data-theme="dark"] .badge-tag-conseguida {
+  background: #0B291A;
+  color: #34D399;
+}
+
+[data-theme="dark"] .badge-tag-enjuego {
+  background: #272048;
+  color: #A78BFA;
+}
+
+[data-theme="dark"] .badge-tag-bloqueada {
+  background: #201C35;
+  color: #8A83A8;
+}
+
+[data-theme="dark"] .level-segment {
+  background: #231E3C;
 }
 
 /* ---------- Vista de Lección y Ventana de Código ---------- */
@@ -948,10 +1128,68 @@ body.auth-body {
   font-size: 1.85rem;
   margin: 0 auto 1rem auto;
   transition: transform 0.25s ease;
+  background: var(--edugt-primary-soft);
+  color: var(--edugt-primary);
+  border: 2px solid #DDD6FE;
+}
+
+.badge-card.locked .badge-icon-lg {
+  background: #F1EFFB;
+  color: #948FA8;
+  border: 2px dashed #D5D0E6;
+}
+
+.badge-category-pill {
+  background: var(--edugt-primary-soft);
+  color: var(--edugt-primary);
+  font-weight: 700;
+  font-size: .75rem;
+}
+
+.badge-category-pill-locked {
+  background: #F1EFFB;
+  color: #787190;
+  font-weight: 600;
+  font-size: .75rem;
 }
 
 .badge-card:hover .badge-icon-lg {
   transform: scale(1.08) rotate(3deg);
+}
+
+/* Modo Oscuro: Insignias */
+[data-theme="dark"] .badge-card.unlocked {
+  background: var(--edugt-card);
+  border-color: #4C3299;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .badge-card.unlocked .badge-icon-lg {
+  background: #272048;
+  color: #A78BFA;
+  border-color: #5B3CC4;
+}
+
+[data-theme="dark"] .badge-card.unlocked .badge-category-pill {
+  background: #272048;
+  color: #A78BFA;
+}
+
+[data-theme="dark"] .badge-card.locked {
+  background: var(--edugt-card-subtle);
+  border-color: var(--edugt-border);
+  opacity: 0.8;
+}
+
+[data-theme="dark"] .badge-card.locked .badge-icon-lg {
+  background: #181528;
+  color: #5E5879;
+  border-color: #2E2948;
+}
+
+[data-theme="dark"] .badge-card.locked .badge-category-pill-locked {
+  background: #201C35;
+  color: #8A83A8;
 }
 
 /* ---------- Podio del Ranking ---------- */
@@ -994,6 +1232,45 @@ body.auth-body {
   place-items: center;
   font-size: 1.5rem;
   margin: 0 auto .75rem auto;
+  background: #FFFFFF;
+  border: 1.5px solid var(--edugt-border);
+}
+
+/* Modo Oscuro: Podio */
+[data-theme="dark"] .podium-1 {
+  background: linear-gradient(135deg, #2B1D08 0%, #181103 100%);
+  border-color: #78350F;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .podium-1 .podium-avatar {
+  background: #3D2607;
+  color: #F59E0B;
+  border-color: #78350F;
+}
+
+[data-theme="dark"] .podium-2 {
+  background: linear-gradient(135deg, #1C2230 0%, #11151E 100%);
+  border-color: #334155;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .podium-2 .podium-avatar {
+  background: #252D3D;
+  color: #94A3B8;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .podium-3 {
+  background: linear-gradient(135deg, #2A170A 0%, #1A0E04 100%);
+  border-color: #6C2E08;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .podium-3 .podium-avatar {
+  background: #3C1F0C;
+  color: #FB923C;
+  border-color: #6C2E08;
 }
 
 /* ---------- Nav inferior móvil ---------- */
@@ -1050,6 +1327,131 @@ body.auth-body {
   0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(109, 74, 239, 0.5); }
   70% { transform: scale(1.02); box-shadow: 0 0 0 12px rgba(109, 74, 239, 0); }
   100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(109, 74, 239, 0); }
+}
+
+/* ---------- Adaptación Global para Modo Oscuro ---------- */
+[data-theme="dark"] .text-muted {
+  color: var(--edugt-muted) !important;
+}
+
+[data-theme="dark"] .btn-google {
+  background: var(--edugt-card-subtle);
+  color: var(--edugt-text);
+  border-color: var(--edugt-border);
+}
+
+[data-theme="dark"] .btn-google:hover {
+  background: #1C1832;
+  border-color: #4C3299;
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .btn-edugt-soft {
+  background: var(--edugt-primary-soft);
+  color: #C4B5FD;
+}
+
+[data-theme="dark"] .btn-edugt-soft:hover {
+  background: #392B68;
+  color: #DDD6FE;
+}
+
+[data-theme="dark"] .form-control-edugt {
+  background: var(--edugt-card-subtle);
+  border-color: var(--edugt-border);
+  color: var(--edugt-text);
+}
+
+[data-theme="dark"] .form-control-edugt:focus {
+  background: #1E1A33;
+  border-color: var(--edugt-primary);
+  color: #FFFFFF;
+}
+
+/* Filas del Ranking */
+.ranking-row {
+  background: var(--edugt-card);
+  border-color: var(--edugt-border) !important;
+  transition: all 0.2s ease;
+}
+
+.ranking-row.is-me {
+  background: var(--edugt-primary-soft) !important;
+  border-color: var(--edugt-primary) !important;
+  font-weight: 700;
+}
+
+[data-theme="dark"] .ranking-row {
+  background: var(--edugt-card-subtle);
+  border-color: var(--edugt-border) !important;
+}
+
+[data-theme="dark"] .ranking-row.is-me {
+  background: #272048 !important;
+  border-color: #6D4AEF !important;
+}
+
+/* Badge de rango en podio */
+.podium-rank-badge {
+  background: #FFFFFF;
+  color: var(--edugt-text);
+}
+
+[data-theme="dark"] .podium-rank-badge {
+  background: rgba(0, 0, 0, 0.4);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .podium-xp {
+  color: #F1EFFB !important;
+}
+
+/* Cajas de código y estados vacíos en docente */
+.code-access-box {
+  background: #FBFAFF;
+  border-color: var(--edugt-border) !important;
+}
+
+[data-theme="dark"] .code-access-box {
+  background: var(--edugt-card-subtle);
+  border-color: var(--edugt-border) !important;
+}
+
+.classroom-empty-students {
+  background: #FAF9FF;
+  color: var(--edugt-muted);
+  border-color: var(--edugt-border) !important;
+}
+
+[data-theme="dark"] .classroom-empty-students {
+  background: var(--edugt-card-subtle);
+  color: var(--edugt-muted);
+  border-color: var(--edugt-border) !important;
+}
+
+[data-theme="dark"] .bottom-nav {
+  background: #181528;
+  border-top: 1px solid #2E2948;
+}
+
+[data-theme="dark"] .modal-content {
+  background: #181528;
+  color: var(--edugt-text);
+  border: 1px solid #2E2948;
+}
+
+[data-theme="dark"] .modal-content .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+[data-theme="dark"] .table {
+  color: var(--edugt-text);
+}
+
+[data-theme="dark"] .table thead tr {
+  background: #131022 !important;
+  color: var(--edugt-muted);
 }
 
 /* ---------- Reducción de movimiento para accesibilidad ---------- */
