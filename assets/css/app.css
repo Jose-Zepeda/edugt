@@ -40,6 +40,58 @@ body {
   min-height: 100vh;
 }
 
+/* ---------- Pantalla de Login / Auth ---------- */
+body.auth-body {
+  background: url('../img/bg-login.jpg') center/cover no-repeat fixed;
+  background-color: var(--edugt-bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.auth-container {
+  max-width: 1060px;
+  width: 100%;
+}
+
+.auth-banner-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(243, 240, 255, 0.94));
+  border-radius: var(--edugt-radius);
+  border: 1px solid rgba(228, 225, 245, 0.9);
+  box-shadow: var(--edugt-shadow);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.auth-banner-img {
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(109, 74, 239, 0.10);
+  transition: transform 0.3s ease;
+}
+
+.auth-banner-img:hover {
+  transform: scale(1.01);
+}
+
+.feature-pill {
+  background: rgba(109, 74, 239, 0.08);
+  color: var(--edugt-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 /* ==========================================================================
    Animaciones & Transiciones Globales
    ========================================================================== */
