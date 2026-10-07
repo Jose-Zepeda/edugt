@@ -42,4 +42,11 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', 'http://localhost:8080/api/v1/auth/google/callback'),
     ],
 
+    // Cloudflare Turnstile CAPTCHA
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY', '1x00000000000000000000AA'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY', '1x0000000000000000000000000000000AA'),
+        'enabled' => env('TURNSTILE_ENABLED', true),
+    ],
+
 ];

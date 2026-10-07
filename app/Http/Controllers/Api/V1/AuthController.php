@@ -9,6 +9,7 @@ use App\Domain\Auth\Actions\SocialiteGoogleGateway;
 use App\Domain\Auth\Contracts\GoogleOAuthGateway;
 use App\Domain\Auth\Data\OAuthOutcome;
 use App\Domain\Auth\Data\UserRole;
+use App\Domain\Auth\Rules\TurnstileRule;
 use App\Domain\Users\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,7 +33,21 @@ final class AuthController extends Controller
     /** POST /api/v1/auth/register — RF-1, RF-3 */
     public function register(Request $request): JsonResponse
     {
-        $data = $request->validate(RegisterUser::rules());
+        if ($request->filled('website_hp')) {
+            throw ValidationException::withMessages([
+                'website_hp' => ['Detección de actividad sospechosa.'],
+            ]);
+        }
+
+        $request->merge([
+            'turnstile_token' => $request->input('turnstile_token') ?? $request->input('cf-turnstile-response'),
+        ]);
+
+        $rules = array_merge(RegisterUser::rules(), [
+            'turnstile_token' => [new TurnstileRule($request->ip())],
+        ]);
+
+        $data = $request->validate($rules);
 
         $user = ($this->registerUser)(
             name: $data['name'],
@@ -57,9 +72,20 @@ final class AuthController extends Controller
     /** POST /api/v1/auth/login — RF-1; 423 teacher pendiente */
     public function login(Request $request): JsonResponse
     {
+        if ($request->filled('website_hp')) {
+            throw ValidationException::withMessages([
+                'website_hp' => ['Detección de actividad sospechosa.'],
+            ]);
+        }
+
+        $request->merge([
+            'turnstile_token' => $request->input('turnstile_token') ?? $request->input('cf-turnstile-response'),
+        ]);
+
         $data = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+            'turnstile_token' => [new TurnstileRule($request->ip())],
         ]);
 
         $user = ($this->loginUser)(email: $data['email'], password: $data['password']);

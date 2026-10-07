@@ -204,3 +204,91 @@ describe('RF-2 — completar registro Google sin token previo', function () {
         expect($queryParams)->toHaveKey('email', 'nuevo@google.com');
     });
 });
+
+describe('Protección Anti-Bot y CAPTCHA Cloudflare Turnstile', function () {
+    it('bloquea el registro si el campo honeypot website_hp está lleno', function () {
+        $res = postJson('/api/v1/auth/register', [
+            'name' => 'Bot Spammer',
+            'email' => 'bot@spammer.test',
+            'password' => 'SuperSecret123!',
+            'role' => 'student',
+            'website_hp' => 'https://spam-bot.site',
+        ]);
+
+        $res->assertStatus(422)
+            ->assertJsonValidationErrors(['website_hp']);
+        expect(User::where('email', 'bot@spammer.test')->exists())->toBeFalse();
+    });
+
+    it('bloquea el login si el campo honeypot website_hp está lleno', function () {
+        $user = User::factory()->student()->create(['email' => 'legit@example.com']);
+
+        $res = postJson('/api/v1/auth/login', [
+            'email' => 'legit@example.com',
+            'password' => 'password',
+            'website_hp' => 'http://spam-link.site',
+        ]);
+
+        $res->assertStatus(422)
+            ->assertJsonValidationErrors(['website_hp']);
+    });
+
+    it('exige token de Turnstile válido cuando el captcha está habilitado en registro', function () {
+        config(['services.turnstile.enabled' => true]);
+
+        // Sin token
+        $resSinToken = postJson('/api/v1/auth/register', [
+            'name' => 'Usuario Real',
+            'email' => 'usuario_real@test.com',
+            'password' => 'SuperSecret123!',
+            'role' => 'student',
+        ]);
+        $resSinToken->assertStatus(422)
+            ->assertJsonValidationErrors(['turnstile_token']);
+
+        // Con token inválido
+        $resTokenInvalido = postJson('/api/v1/auth/register', [
+            'name' => 'Usuario Real',
+            'email' => 'usuario_real@test.com',
+            'password' => 'SuperSecret123!',
+            'role' => 'student',
+            'turnstile_token' => 'invalid-token-123',
+        ]);
+        $resTokenInvalido->assertStatus(422)
+            ->assertJsonValidationErrors(['turnstile_token']);
+
+        // Con token válido
+        $resTokenValido = postJson('/api/v1/auth/register', [
+            'name' => 'Usuario Real',
+            'email' => 'usuario_real@test.com',
+            'password' => 'SuperSecret123!',
+            'role' => 'student',
+            'turnstile_token' => 'test-valid-turnstile-token',
+        ]);
+        $resTokenValido->assertStatus(201);
+        expect(User::where('email', 'usuario_real@test.com')->exists())->toBeTrue();
+    });
+
+    it('exige token de Turnstile válido cuando el captcha está habilitado en login', function () {
+        config(['services.turnstile.enabled' => true]);
+        $user = User::factory()->student()->create(['email' => 'estudiante_captcha@example.com']);
+
+        // Sin token
+        $resSinToken = postJson('/api/v1/auth/login', [
+            'email' => 'estudiante_captcha@example.com',
+            'password' => 'password',
+        ]);
+        $resSinToken->assertStatus(422)
+            ->assertJsonValidationErrors(['turnstile_token']);
+
+        // Con token válido
+        $resTokenValido = postJson('/api/v1/auth/login', [
+            'email' => 'estudiante_captcha@example.com',
+            'password' => 'password',
+            'turnstile_token' => 'test-valid-turnstile-token',
+        ]);
+        $resTokenValido->assertStatus(200)
+            ->assertJsonPath('user.id', $user->id);
+    });
+});
+
