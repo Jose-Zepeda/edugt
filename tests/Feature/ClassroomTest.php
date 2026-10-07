@@ -111,3 +111,53 @@ it('estudiante NO puede ver estudiantes de un aula (RB-09)', function () {
     getJson("/api/v1/classrooms/{$classroomId}/students", ['Authorization' => "Bearer {$this->studentToken}"])
         ->assertStatus(403);
 });
+
+it('docente dueño puede editar su aula', function () {
+    $create = postJson('/api/v1/classrooms', [
+        'name' => 'Original', 'academic_year' => '2026',
+    ], ['Authorization' => "Bearer {$this->token}"]);
+    $classroomId = $create->json('data.id');
+
+    clean_guard();
+    $res = \Pest\Laravel\putJson("/api/v1/classrooms/{$classroomId}", [
+        'name' => 'Actualizado',
+        'institution' => 'INEB Central',
+        'grade_level' => 'Quinto Bachillerato',
+        'academic_year' => '2026',
+    ], ['Authorization' => "Bearer {$this->token}"]);
+
+    $res->assertStatus(200)->assertJsonPath('data.name', 'Actualizado');
+    expect(Classroom::find($classroomId)->name)->toBe('Actualizado');
+});
+
+it('docente dueño puede eliminar su aula', function () {
+    $create = postJson('/api/v1/classrooms', [
+        'name' => 'Para Eliminar', 'academic_year' => '2026',
+    ], ['Authorization' => "Bearer {$this->token}"]);
+    $classroomId = $create->json('data.id');
+
+    clean_guard();
+    $res = \Pest\Laravel\deleteJson("/api/v1/classrooms/{$classroomId}", [], ['Authorization' => "Bearer {$this->token}"]);
+    $res->assertStatus(200);
+
+    expect(Classroom::find($classroomId))->toBeNull();
+});
+
+it('estudiante puede listar las aulas en las que está inscrito', function () {
+    $create = postJson('/api/v1/classrooms', [
+        'name' => 'Quinto Computación', 'academic_year' => '2026', 'institution' => 'INEB Central',
+    ], ['Authorization' => "Bearer {$this->token}"]);
+    $code = $create->json('data.code');
+
+    clean_guard();
+    postJson('/api/v1/classrooms/join', ['code' => $code], ['Authorization' => "Bearer {$this->studentToken}"])
+        ->assertStatus(201);
+
+    clean_guard();
+    $res = getJson('/api/v1/classrooms', ['Authorization' => "Bearer {$this->studentToken}"])
+        ->assertStatus(200);
+
+    expect($res->json('data'))->toHaveCount(1);
+    expect($res->json('data.0.name'))->toBe('Quinto Computación');
+    expect($res->json('data.0.teacher_name'))->toBe($this->teacher->name);
+});

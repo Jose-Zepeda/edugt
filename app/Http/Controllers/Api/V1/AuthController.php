@@ -89,10 +89,9 @@ final class AuthController extends Controller
                 return redirect()->away($this->feUrl('/index.html?google_status=pending'));
             }
 
-            return redirect()->away($this->feUrl('/google-landing.html?token=').\Laravel\Sanctum\PersonalAccessToken::query()->create([
-                'tokenable' => $user,
-                'name' => 'google-oauth',
-            ])->plainTextToken.'&user_id='.$user->id);
+            $token = $user->createToken('google-oauth')->plainTextToken;
+
+            return redirect()->away($this->feUrl('/google-landing.html?token='.$token.'&user_id='.$user->id));
         }
 
         /** @var \App\Domain\Auth\Data\RequireRoleChoice $outcome */
@@ -110,7 +109,8 @@ final class AuthController extends Controller
     /** ORIGEN del frontend (para redirects 302 desde callbacks) */
     private function feUrl(string $path): string
     {
-        return rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:5500')), '/').$path;
+        // Solo la variable de entorno; sin cache de config (llevó a un puerto viejo una vez)
+        return rtrim(env('FRONTEND_URL', 'http://localhost:5500'), '/').$path;
     }
 
     /** POST /api/v1/auth/google/complete — RF-2 (formulario posterior nombre+rol) */
@@ -139,7 +139,7 @@ final class AuthController extends Controller
         );
 
         $payload = ['user' => $this->userResource($user), 'status' => $user->status];
-        if ($user->isStudent()) {
+        if ($user->status === 'active') {
             $payload['token'] = $user->createToken('spa')->plainTextToken;
         }
 

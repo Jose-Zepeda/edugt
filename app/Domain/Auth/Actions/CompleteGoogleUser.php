@@ -27,8 +27,12 @@ final readonly class CompleteGoogleUser
             ]);
         }
 
-        // RB-03: email ya existente (cuenta tradicional sin google_id) → vincular, no duplicar
-        $existing = User::query()->where('email', $outcome->email)->first();
+        // RB-03: email o google_id ya existente → vincular/devolver existente sin tocar rol ni progreso
+        $existing = User::query()
+            ->where('google_id', $outcome->googleId)
+            ->orWhere('email', $outcome->email)
+            ->first();
+
         if ($existing !== null) {
             $existing->forceFill([
                 'google_id' => $outcome->googleId,

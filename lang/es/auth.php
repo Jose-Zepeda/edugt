@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'failed' => 'Estas credenciales no coinciden con nuestros registros.',
+    'failed' => 'Credenciales invalidas, revisa el correo o la contraseña',
     'email_taken' => 'Este correo ya está registrado. Inicia sesión o usa otro correo.',
     'teacher_pending' => 'Tu cuenta de docente está pendiente de aprobación administrativa.',
     'suspended' => 'Tu cuenta está suspendida. Contacta al administrador.',

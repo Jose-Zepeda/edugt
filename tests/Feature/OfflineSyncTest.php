@@ -20,7 +20,7 @@ beforeEach(function () {
     ]);
     $this->lesson = Lesson::query()->create([
         'module_id' => $module->id, 'title' => 'LO',
-        'content_markdown' => '# Contenido', 'pseudocode_json' => ['code' => 'x <- 1'],
+        'content_markdown' => '# Contenido', 'pseudocode_json' => ['code' => 'x = 1'],
         'status' => 'published', 'xp_reward' => 10, 'order_index' => 0,
     ]);
 

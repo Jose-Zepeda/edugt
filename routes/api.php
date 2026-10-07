@@ -36,7 +36,7 @@ Route::prefix('v1')->group(function (): void {
         ->middleware(['web'])
         ->name('auth.google.callback');
 
-    // Registro/login/logout tradicional puro API (stateless)
+    // Registro/login tradicional y finalización de Google OAuth (stateless)
     Route::post('/auth/register', [AuthController::class, 'register'])
         ->middleware('throttle:register')  // named limiter: 1/min por IP
         ->name('auth.register');
@@ -45,13 +45,14 @@ Route::prefix('v1')->group(function (): void {
         ->middleware('throttle:login')    // named limiter: 5/min por email+IP (§10.3)
         ->name('auth.login');
 
+    Route::post('/auth/google/complete', [AuthController::class, 'googleComplete'])
+        ->middleware('throttle:register')  // 1/min por IP (anti-abuso)
+        ->name('auth.google.complete');
+
     // ---- Autenticado (Sanctum) ----
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
-        Route::post('/auth/google/complete', [AuthController::class, 'googleComplete'])
-            ->middleware('throttle:register')  // 1/min por IP (anti-abuso)
-            ->name('auth.google.complete');
 
         // ---- Curriculum (RF-8, RF-9, RF-10) ----
         Route::get('/me/missions', [CurriculumController::class, 'missions'])->name('curriculum.missions');
@@ -83,6 +84,8 @@ Route::prefix('v1')->group(function (): void {
         // ---- Aulas (RF-19) ----
         Route::post('/classrooms', [ClassroomController::class, 'store'])->name('classroom.store');
         Route::get('/classrooms', [ClassroomController::class, 'index'])->name('classroom.index');
+        Route::put('/classrooms/{id}', [ClassroomController::class, 'update'])->name('classroom.update');
+        Route::delete('/classrooms/{id}', [ClassroomController::class, 'destroy'])->name('classroom.destroy');
         Route::post('/classrooms/join', [ClassroomController::class, 'join'])->name('classroom.join');
         Route::get('/classrooms/{id}/students', [ClassroomController::class, 'students'])->name('classroom.students');
         Route::post('/classrooms/{id}/students/{studentId}/state', [ClassroomController::class, 'setStudentState'])
