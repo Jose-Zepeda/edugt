@@ -1,5 +1,5 @@
 /* ==========================================================================
-   EduGT — Quiz Card-Flow con feedback inmediato (RF-11..RF-16)
+   EduGT — Quiz Card-Flow con feedback inmediato y Markdown (RF-11..RF-16)
    RB-10: el navegador NUNCA califica — cada respuesta va al servidor y el
    servidor devuelve {is_correct, feedback}. El submit también es server-side.
    ========================================================================== */
@@ -14,55 +14,101 @@ if (!quizId) window.location.href = 'estudiante.html';
 
 let attemptId = null;
 let attemptNumber = null;
+let quizTitle = 'Evaluación';
 let questions = [];
 let cursor = 0;
-let lastResult = null; // {score, passed, ...}
+let lastResult = null;
 
 function showAlert(msg) {
   const el = $('#alert');
-  el.className = 'alert alert-danger';
-  el.textContent = msg;
+  if (el) {
+    el.className = 'alert alert-danger';
+    el.textContent = msg;
+    el.classList.remove('d-none');
+  }
 }
 
-/* ---------------- Flujo ---------------- */
+/* ---------------- Flujo Inicial ---------------- */
 async function start() {
-  // Descarga del quiz (sin is_correct — RB-10)
-  const { data: quizData } = await api(`/quizzes/${quizId}`);
-  questions = quizData.data.questions;
+  try {
+    // Descarga del quiz (sin is_correct — RB-10)
+    const { data: quizData } = await api(`/quizzes/${quizId}`);
+    questions = quizData.data.questions || [];
+    quizTitle = quizData.data.title || 'Evaluación de Módulo';
 
-  // Abre el intento (ordinal en servidor)
-  const { data: att } = await api(`/quizzes/${quizId}/attempts`, { method: 'POST' });
-  attemptId = att.attempt_id;
-  attemptNumber = att.attempt_number;
+    if ($('#quiz-badge-title')) {
+      $('#quiz-badge-title').innerHTML = `<i class="bi bi-award-fill text-warning me-1"></i> ${esc(quizTitle)}`;
+    }
 
-  renderQuestion();
+    // Abre el intento (ordinal en servidor)
+    const { data: att } = await api(`/quizzes/${quizId}/attempts`, { method: 'POST' });
+    attemptId = att.attempt_id;
+    attemptNumber = att.attempt_number;
+
+    renderQuestion();
+  } catch (err) {
+    if (err.status === 401) {
+      Auth.clear();
+      window.location.href = 'index.html';
+      return;
+    }
+    showAlert(err.message || 'Error al iniciar la evaluación');
+  }
 }
 
 function updateProgress() {
-  $('#progress-label').textContent = `Pregunta ${Math.min(cursor + 1, questions.length)} de ${questions.length}`;
-  $('#progress-bar').style.width = `${(cursor / questions.length) * 100}%`;
+  const current = Math.min(cursor + 1, questions.length);
+  $('#progress-label').textContent = `Pregunta ${current} de ${questions.length}`;
+  $('#progress-bar').style.width = `${((current - 1) / questions.length) * 100}%`;
 }
 
+/* ---------------- Render de Pregunta ---------------- */
 function renderQuestion() {
   const q = questions[cursor];
   if (!q) return renderFinish();
 
-  $('#quiz-card').innerHTML = `
-    ${attemptNumber > 1 ? `<small style="color:var(--edugt-amber)"><i class="bi bi-arrow-repeat"></i> Intento ${attemptNumber} — si apruebas, el XP se reduce un 20 % por intento adicional</small>` : ''}
-    <h2 class="h5 fw-bold mt-2 mb-4">${esc(q.statement)}</h2>
+  updateProgress();
 
-    <div class="d-grid gap-2" id="options">
-      ${q.options.map((o) => `
-        <button type="button" class="btn btn-option text-start" data-oid="${o.id}">
-          <span class="option-letter me-2">•</span>${esc(o.option_text)}
+  // Formatear enunciado con Markdown y sanitización
+  const statementHtml = DOMPurify.sanitize(marked.parse(q.statement ?? ''));
+
+  $('#quiz-card').innerHTML = `
+    ${attemptNumber > 1 ? `
+      <div class="alert alert-warning py-2 px-3 mb-3 d-flex align-items-center gap-2" style="font-size:.84rem;">
+        <i class="bi bi-arrow-repeat text-warning fs-6"></i>
+        <div><strong>Intento ${attemptNumber}:</strong> Si apruebas, la recompensa de XP se ajusta por reintento.</div>
+      </div>` : ''}
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill">
+        <i class="bi bi-question-circle me-1"></i> Pregunta ${cursor + 1}
+      </span>
+      <span class="text-muted" style="font-size:.82rem;">Selecciona una opción</span>
+    </div>
+
+    <!-- Enunciado de la Pregunta con Markdown/Código -->
+    <div class="lesson-markdown mb-4" style="font-size:1.02rem;">
+      ${statementHtml}
+    </div>
+
+    <!-- Opciones de Respuesta -->
+    <div class="d-flex flex-column gap-2 mb-3" id="options">
+      ${q.options.map((o, idx) => `
+        <button type="button" class="btn text-start p-3 rounded-3 d-flex align-items-center justify-content-between challenge-option-btn" data-oid="${o.id}" style="border:1.5px solid var(--edugt-border);background:white;transition:all .2s ease;">
+          <div class="d-flex align-items-center gap-3">
+            <span class="badge rounded-circle bg-light text-dark border d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;font-size:.85rem;font-weight:700;">
+              ${String.fromCharCode(65 + idx)}
+            </span>
+            <span class="fw-medium text-dark">${DOMPurify.sanitize(marked.parseInline(o.option_text ?? ''))}</span>
+          </div>
+          <i class="bi bi-circle option-check-icon text-muted"></i>
         </button>`).join('')}
     </div>
 
+    <!-- Feedback inmediato -->
     <div id="feedback" class="mt-4 d-none"></div>`;
 
-  updateProgress();
-
-  document.querySelectorAll('.btn-option').forEach((b) => {
+  document.querySelectorAll('.challenge-option-btn').forEach((b) => {
     b.addEventListener('click', () => answer(Number(b.dataset.oid), b));
   });
 }
@@ -70,8 +116,7 @@ function renderQuestion() {
 /* ---------------- Respuesta + feedback inmediato (RF-13) ---------------- */
 async function answer(optionId, btn) {
   const q = questions[cursor];
-  document.querySelectorAll('.btn-option').forEach((b) => (b.disabled = true));
-  btn.style.borderColor = 'var(--edugt-primary)';
+  document.querySelectorAll('.challenge-option-btn').forEach((b) => (b.disabled = true));
 
   try {
     const { data } = await api(`/quizzes/${quizId}/attempts/${attemptId}/answers`, {
@@ -79,51 +124,71 @@ async function answer(optionId, btn) {
       body: { question_id: q.id, option_id: optionId },
     });
 
+    const isCorrect = data.is_correct;
+
+    // Estilo del botón seleccionado
+    btn.style.borderColor = isCorrect ? 'var(--edugt-green)' : 'var(--edugt-red, #EF4444)';
+    btn.style.background = isCorrect ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.06)';
+    const icon = btn.querySelector('.option-check-icon');
+    if (icon) {
+      icon.className = `bi ${isCorrect ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'} option-check-icon`;
+    }
+
     // Feedback según el servidor
     const fb = $('#feedback');
-    fb.className = `mt-4 border rounded-4 p-3 ${data.is_correct ? 'border-success' : 'border-danger'}`;
-    fb.style.background = data.is_correct ? 'var(--edugt-green-soft)' : '#FEE2E2';
+    fb.className = `mt-3 p-3 rounded-3 alert ${isCorrect ? 'alert-success' : 'alert-danger'} animate-fade-in`;
     fb.innerHTML = `
-      <div class="fw-bold mb-1" style="color:${data.is_correct ? 'var(--edugt-green)' : '#B91C1C'}">
-        <i class="bi ${data.is_correct ? 'bi-check-circle' : 'bi-x-circle'}"></i>
-        ${data.is_correct ? '¡Correcto!' : 'Incorrecto'}
+      <div class="d-flex align-items-start gap-2 mb-2">
+        <i class="bi ${isCorrect ? 'bi-check-circle-fill fs-5 text-success' : 'bi-x-circle-fill fs-5 text-danger'}"></i>
+        <div>
+          <div class="fw-bold mb-1" style="color:${isCorrect ? 'var(--edugt-green)' : '#B91C1C'}">
+            ${isCorrect ? '¡Respuesta correcta!' : 'Respuesta incorrecta'}
+          </div>
+          <div style="font-size:.9rem;line-height:1.45;">${DOMPurify.sanitize(marked.parseInline(data.feedback ?? ''))}</div>
+        </div>
       </div>
-      <div style="font-size:.9rem;">${esc(data.feedback ?? '')}</div>`;
+      <button class="btn btn-edugt w-100 mt-2 shadow-sm" id="btn-next-question">
+        ${cursor + 1 < questions.length ? '<i class="bi bi-arrow-right"></i> Siguiente pregunta' : '<i class="bi bi-check2-all"></i> Finalizar y ver resultados'}
+      </button>`;
 
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'btn btn-edugt mt-3 w-100';
-    nextBtn.innerHTML = cursor + 1 < questions.length ? 'Siguiente pregunta' : 'Finalizar evaluación';
-    nextBtn.addEventListener('click', () => { cursor++; renderQuestion(); });
-    fb.appendChild(nextBtn);
+    $('#btn-next-question')?.addEventListener('click', () => {
+      cursor++;
+      renderQuestion();
+    });
+
     fb.classList.remove('d-none');
   } catch (err) {
-    showAlert(err.message);
-    document.querySelectorAll('.btn-option').forEach((b) => (b.disabled = false));
-    btn.style.borderColor = 'var(--edugt-border)';
+    showAlert(err.message || 'Error al registrar la respuesta');
+    document.querySelectorAll('.challenge-option-btn').forEach((b) => (b.disabled = false));
   }
 }
 
 /* ---------------- Final (submit server-side = score real) ---------------- */
 function renderFinish() {
   $('#progress-bar').style.width = '100%';
-  $('#progress-label').textContent = 'Listo para entregar';
-
-  const shown = questions.reduce((acc, q) => (q?.answered ? acc + 1 : acc), 0);
+  $('#progress-label').textContent = 'Todas las preguntas contestadas';
 
   $('#quiz-card').innerHTML = `
-    <div class="text-center py-4">
-      <i class="bi bi-clipboard-check" style="font-size:2.5rem;color:var(--edugt-primary)"></i>
-      <h2 class="h5 fw-bold mt-2">Entregar evaluación</h2>
-      <p style="color:var(--edugt-muted)">Tu calificación se calcula en el servidor con las respuestas guardadas.</p>
-      <button class="btn btn-edugt btn-lg mt-2" id="btn-submit">Entregar</button>
+    <div class="text-center py-5 animate-fade-in">
+      <div class="stat-icon mx-auto mb-3" style="width:72px;height:72px;border-radius:20px;background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:2rem;">
+        <i class="bi bi-clipboard-check-fill"></i>
+      </div>
+      <h2 class="h4 fw-bold mb-2">¡Has completado todas las preguntas!</h2>
+      <p class="text-muted mb-4" style="max-width:440px;margin:0 auto;font-size:.92rem;">
+        Presiona el botón de abajo para que el servidor procese tu calificación final y registre tus recompensas.
+      </p>
+      <button class="btn btn-edugt btn-lg px-5 shadow-sm" id="btn-submit">
+        <i class="bi bi-send-check me-1"></i> Entregar evaluación y ver nota
+      </button>
     </div>`;
-  $('#btn-submit').addEventListener('click', submit);
+
+  $('#btn-submit')?.addEventListener('click', submit);
 }
 
 async function submit() {
   const btn = $('#btn-submit');
   btn.disabled = true;
-  btn.innerHTML = '<i class="bi bi-hourglass"></i> Calificando...';
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Calificando en servidor...';
 
   try {
     const { data } = await api(`/quizzes/${quizId}/attempts/${attemptId}/submit`, { method: 'POST' });
@@ -131,36 +196,54 @@ async function submit() {
 
     const approved = data.passed;
     $('#quiz-card').innerHTML = `
-      <div class="text-center py-4">
-        <div class="stat-icon mx-auto mb-3" style="width:76px;height:76px;border-radius:22px;background:${approved ? 'var(--edugt-green-soft)' : '#FEE2E2'};color:${approved ? 'var(--edugt-green)' : '#B91C1C'}">
-          <i class="bi ${approved ? 'bi-trophy' : 'bi-arrow-repeat'}" style="font-size:2rem"></i>
+      <div class="text-center py-5 animate-fade-in">
+        <div class="stat-icon mx-auto mb-3" style="width:80px;height:80px;border-radius:24px;background:${approved ? 'var(--edugt-green-soft)' : '#FEE2E2'};color:${approved ? 'var(--edugt-green)' : '#B91C1C'};font-size:2.4rem;">
+          <i class="bi ${approved ? 'bi-trophy-fill' : 'bi-arrow-counterclockwise'}"></i>
         </div>
-        <h2 class="h5 fw-bold">${approved ? '¡Nivel desbloqueado!' : 'Muy cerca — inténtalo de nuevo'}</h2>
-        <div class="display-4 fw-bold my-2" style="color:${approved ? 'var(--edugt-green)' : 'var(--edugt-amber)'}">${data.score}</div>
-        <small style="color:var(--edugt-muted)">Intento ${data.attempt_number}</small>
+        <h2 class="h3 fw-bold mb-1">${approved ? '¡Evaluación Aprobada!' : 'Muy cerca — Sigue practicando'}</h2>
+        
+        <div class="my-3">
+          <span class="display-3 fw-bold" style="color:${approved ? 'var(--edugt-green)' : 'var(--edugt-amber)'}">
+            ${data.score}
+          </span>
+          <span class="fs-4 text-muted fw-bold">/ 100</span>
+        </div>
 
-        ${approved && data.xp_awarded
-          ? `<div class="mt-3 badge rounded-pill p-3" style="background:var(--edugt-amber-soft);color:var(--edugt-amber);font-size:1rem">
-               <i class="bi bi-lightning-charge-fill"></i> +${data.xp_amount} XP
-             </div>`
-          : ''}
+        <div class="d-flex justify-content-center gap-2 mb-3">
+          <span class="badge bg-light text-dark border px-3 py-1.5 rounded-pill" style="font-size:.85rem;">
+            <i class="bi bi-journal-text me-1"></i> Intento ${data.attempt_number}
+          </span>
+          <span class="badge ${approved ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'} px-3 py-1.5 rounded-pill" style="font-size:.85rem;">
+            ${approved ? '<i class="bi bi-check-circle-fill me-1"></i> Nota Aprobatoria' : '<i class="bi bi-x-circle-fill me-1"></i> No alcanzaste el 70%'}
+          </span>
+        </div>
 
-        <p class="mt-3 mb-0" style="color:var(--edugt-muted)">
+        ${approved && data.xp_awarded ? `
+          <div class="d-inline-flex align-items-center gap-2 badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill mb-3" style="font-size:1.05rem;">
+            <i class="bi bi-lightning-charge-fill text-warning"></i> +${data.xp_amount} XP otorgados
+          </div>` : ''}
+
+        <p class="text-muted mb-4" style="max-width:480px;margin:0 auto;font-size:.92rem;line-height:1.5;">
           ${approved
-            ? 'Puedes continuar con la siguiente lección de tu ruta.'
-            : 'Necesitas 70 o más para desbloquear el siguiente nivel. Revisa la teoría y vuelve a intentarlo — los reintentos son ilimitados (el XP otorgado baja 20 % por cada intento adicional).'}
+            ? '¡Excelente demostración de lógica! Has superado la evaluación de este módulo y tu avance ha sido actualizado.'
+            : 'Para avanzar al siguiente módulo requieres una nota mínima de 70 puntos. Revisa las explicaciones de las lecciones e inténtalo nuevamente.'}
         </p>
 
-        <a href="estudiante.html" class="btn btn-edugt btn-lg mt-3">Volver a mi ruta</a>
+        <div class="d-flex justify-content-center gap-2 flex-wrap">
+          <a href="estudiante.html" class="btn btn-edugt btn-lg px-4 shadow-sm">
+            <i class="bi bi-map"></i> Volver a mi ruta
+          </a>
+          ${!approved ? `
+            <button type="button" class="btn btn-google btn-lg px-4 shadow-sm" onclick="window.location.reload()">
+              <i class="bi bi-arrow-repeat"></i> Reintentar evaluación
+            </button>` : ''}
+        </div>
       </div>`;
   } catch (err) {
-    showAlert(err.message);
+    showAlert(err.message || 'Error al calificar la evaluación');
     btn.disabled = false;
-    btn.innerHTML = 'Entregar';
+    btn.innerHTML = '<i class="bi bi-send-check me-1"></i> Entregar evaluación y ver nota';
   }
 }
 
-start().catch((err) => {
-  if (err.status === 401) { Auth.clear(); window.location.href = 'index.html'; return; }
-  showAlert(err.message);
-});
+start();

@@ -91,24 +91,19 @@ async function boot() {
   // ---- CASO 2: login existente con token listo ----
   if (TOKEN) {
     try {
-      const { data } = await api('/me', { auth: false, headers: {} });
-      // apiKey injectada manualmente aún no está: usamos fetch con el Bearer
-    } catch { /* seguimos con rol */ }
-
-    // Recuperamos el user con el token
-    try {
       const res = await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${TOKEN}`, Accept: 'application/json' } });
       if (res.ok) {
         const payload = await res.json();
         Auth.save(TOKEN, payload.user);
 
-        document.getElementById('view-sesion').classList.remove('d-none');
-        document.getElementById('bienvenida').textContent = payload.user.name;
-        document.getElementById('btn-ir').href = payload.user.role === 'teacher' ? 'docente.html'
+        const target = payload.user.role === 'teacher' ? 'docente.html'
           : payload.user.role === 'admin' ? 'admin.html' : 'estudiante.html';
+        window.location.href = target;
         return;
       }
-    } catch { /* cae al caso 1 */ }
+    } catch (e) {
+      console.error('Error cargando usuario de Google:', e);
+    }
   }
 
   // ---- CASO 1: elegir rol ----

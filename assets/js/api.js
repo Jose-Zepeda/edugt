@@ -12,9 +12,10 @@ const Auth = {
   user: null,
 
   load() {
-    this.token = sessionStorage.getItem('edugt_token');
+    this.token = sessionStorage.getItem('edugt_token') || localStorage.getItem('edugt_token');
     try {
-      this.user = JSON.parse(sessionStorage.getItem('edugt_user') || 'null');
+      const rawUser = sessionStorage.getItem('edugt_user') || localStorage.getItem('edugt_user');
+      this.user = JSON.parse(rawUser || 'null');
     } catch { this.user = null; }
   },
 
@@ -23,6 +24,8 @@ const Auth = {
     this.user = user;
     sessionStorage.setItem('edugt_token', token);
     sessionStorage.setItem('edugt_user', JSON.stringify(user));
+    localStorage.setItem('edugt_token', token);
+    localStorage.setItem('edugt_user', JSON.stringify(user));
   },
 
   clear() {
@@ -30,6 +33,8 @@ const Auth = {
     this.user = null;
     sessionStorage.removeItem('edugt_token');
     sessionStorage.removeItem('edugt_user');
+    localStorage.removeItem('edugt_token');
+    localStorage.removeItem('edugt_user');
   },
 };
 

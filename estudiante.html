@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-<link href="assets/css/app.css" rel="stylesheet">
+<link href="assets/css/app.css?v=20261006_04" rel="stylesheet">
 </head>
 <body>
 
@@ -20,137 +20,321 @@
 
     <!-- ============ SIDEBAR (desktop) ============ -->
     <aside class="col-lg-2 d-none d-lg-block">
-      <nav class="sidebar-edugt p-3 h-100 d-flex flex-column" aria-label="Navegación principal">
+      <nav class="sidebar-edugt p-3 sticky-sidebar" aria-label="Navegación principal">
         <div class="d-flex align-items-center gap-2 mb-4 px-2">
           <img src="assets/img/logo-mark-48.png" alt="Logo EduGT" width="42" height="42" style="border-radius:14px;">
           <span class="fw-bold" style="font-size:1.05rem;">EduGT</span>
         </div>
-        <ul class="nav nav-pills flex-column gap-1 mb-auto" id="side-nav">
-          <li><a class="nav-link active" href="estudiante.html"><i class="bi bi-house-door"></i> Inicio</a></li>
-          <li><a class="nav-link" href="estudiante.html#ruta"><i class="bi bi-map"></i> Mi ruta</a></li>
-          <li><a class="nav-link" href="offline.html"><i class="bi bi-cloud-download"></i> Sin conexión</a></li>
-          <li><a class="nav-link" href="estudiante.html#insignias"><i class="bi bi-trophy"></i> Insignias</a></li>
-          <li><a class="nav-link" href="estudiante.html#ranking"><i class="bi bi-bar-chart"></i> Ranking</a></li>
+        <ul class="nav nav-pills flex-column gap-2 mb-auto" id="side-nav">
+          <li>
+            <button class="nav-link active" type="button" data-tab-target="ruta" onclick="window.switchStudentTab('ruta')">
+              <i class="bi bi-map"></i> Mi ruta
+            </button>
+          </li>
+          <li>
+            <button class="nav-link" type="button" data-tab-target="aula" onclick="window.switchStudentTab('aula')">
+              <i class="bi bi-people"></i> Mi aula
+            </button>
+          </li>
+          <li>
+            <button class="nav-link" type="button" data-tab-target="insignias" onclick="window.switchStudentTab('insignias')">
+              <i class="bi bi-trophy"></i> Insignias
+            </button>
+          </li>
+          <li>
+            <button class="nav-link" type="button" data-tab-target="ranking" onclick="window.switchStudentTab('ranking')">
+              <i class="bi bi-bar-chart"></i> Ranking
+            </button>
+          </li>
+          <li>
+            <a class="nav-link" href="offline.html">
+              <i class="bi bi-cloud-download"></i> Sin conexión
+            </a>
+          </li>
         </ul>
-        <button class="btn btn-edugt w-100 mt-3" id="btn-logout"><i class="bi bi-box-arrow-right"></i> Salir</button>
+        <button class="btn btn-edugt w-100 mt-auto" id="btn-logout"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</button>
       </nav>
     </aside>
 
-    <!-- ============ CONTENIDO ============ -->
+    <!-- ============ CONTENIDO PRINCIPAL ============ -->
     <main class="col-12 col-lg-10 pb-5" style="padding-bottom:5.5rem!important;">
 
-      <!-- Saludo + búsqueda -->
-      <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-        <div>
-          <small style="color:var(--edugt-muted)" id="greeting-kicker">Bienvenido</small>
-          <h1 class="h4 fw-bold mb-0" id="greeting">—</h1>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          <span class="pill-edugt pill-now" id="pill-track">—</span>
-          <img src="assets/img/logo-mark-48.png" alt="" width="40" height="40" style="border-radius:12px;" id="avatar">
-        </div>
-        <button class="btn btn-edugt d-lg-none ms-auto" id="btn-logout-m" aria-label="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
-      </div>
+      <!-- ==========================================
+           TAB 1: MI RUTA DE APRENDIZAJE (INMERSIVA)
+           ========================================== -->
+      <section id="tab-ruta" class="tab-content-panel">
+        
+        <!-- Banner de Celebración / Logro Superior (Dinámico) -->
+        <div id="celebration-banner-wrap"></div>
 
-      <!-- Fila 1: hero XP + racha -->
-      <div class="row g-3 mb-1">
-        <div class="col-md-7">
-          <section class="card-hero p-4 h-100" aria-label="Progreso de experiencia">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <div>
-                <small style="opacity:.85">Nivel de experiencia</small>
-                <h2 class="fw-bold mb-0" style="font-size:2rem;">
-                  Nivel <span id="xp-level">—</span>
-                </h2>
-              </div>
-              <span class="badge rounded-pill bg-white bg-opacity-25 text-white px-3 py-2">
-                <i class="bi bi-lightning-charge-fill"></i>
-                <span id="xp-total">—</span> XP
+        <!-- Cabecera Unificada con Saludo y Badges de Resumen -->
+        <div class="card-edugt p-4 mb-4">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+              <h1 class="h4 fw-bold mb-1" id="greeting">¡Hola! Vas por el Módulo 1</h1>
+              <p class="mb-0 text-muted" style="font-size:.9rem;" id="greeting-sub">
+                Llevas 0 lecciones. Completa una lección para avanzar en tu ruta.
+              </p>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="header-stat-pill" title="Experiencia acumulada">
+                <i class="bi bi-lightning-charge-fill" style="color:var(--edugt-primary);"></i>
+                <span id="top-xp">0 XP</span>
               </span>
+              <span class="header-stat-pill" title="Nivel actual">
+                <i class="bi bi-star-fill text-warning"></i>
+                <span id="top-level">Nivel 1</span>
+              </span>
+              <span class="header-stat-pill" style="cursor:pointer;" onclick="window.switchStudentTab('insignias')" title="Ver mis insignias">
+                <i class="bi bi-trophy-fill" style="color:#D97706;"></i>
+                <span id="top-badges-count">0 de 6 insignias</span>
+              </span>
+              <span class="pill-edugt pill-now shadow-sm" id="pill-track">—</span>
+              <button class="btn btn-edugt d-lg-none" id="btn-logout-m" aria-label="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
             </div>
-            <div class="progress-edugt bg-white bg-opacity-25 mb-1" role="progressbar" aria-label="Progreso al siguiente nivel">
-              <div class="bar bg-white" id="xp-bar" style="width:0%"></div>
-            </div>
-            <div class="d-flex justify-content-between" style="font-size:.8rem;opacity:.85">
-              <span id="xp-floor">0 XP</span>
-              <span id="xp-next">100 XP</span>
-            </div>
-          </section>
-        </div>
-        <div class="col-md-5">
-          <section class="card-accent-pink p-4 h-100 d-flex flex-column justify-content-between" aria-label="Racha de días activos">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <small style="opacity:.9">Racha de días</small>
-                <h2 class="fw-bold mb-0" style="font-size:2.2rem;"><span id="streak-current">0</span></h2>
-              </div>
-              <i class="bi bi-fire" style="font-size:2rem;opacity:.9"></i>
-            </div>
-            <div class="mt-2" style="font-size:.85rem;opacity:.9">
-              Mejor racha: <strong id="streak-longest">0 días</strong>
-            </div>
-          </section>
-        </div>
-      </div>
-
-      <!-- CTA pretest cuando no hay learning_track (una sola acción dominante) -->
-      <section id="cta-pretest" class="card-edugt p-4 mt-3 d-none border-start border-5" style="border-color:var(--edugt-primary)!important;">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-          <div>
-            <h2 class="h5 fw-bold mb-1">Empieza aquí: tu prueba inicial</h2>
-            <p class="mb-0" style="color:var(--edugt-muted)">
-              14 preguntas, 15 minutos. No da XP ni afecta tu ranking — nos dice por dónde empezar.
-            </p>
           </div>
-          <button class="btn btn-edugt btn-lg" id="btn-pretest">Hacer mi prueba inicial</button>
         </div>
+
+        <!-- CTA pretest cuando no hay learning_track -->
+        <div id="cta-pretest" class="card-edugt p-4 mb-4 d-none border-start border-5" style="border-color:var(--edugt-primary)!important;">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+              <h2 class="h5 fw-bold mb-1">Empieza aquí: tu prueba inicial</h2>
+              <p class="mb-0" style="color:var(--edugt-muted)">
+                14 preguntas, 15 minutos. No da XP ni afecta tu ranking — nos dice por dónde empezar.
+              </p>
+            </div>
+            <button class="btn btn-edugt btn-lg" id="btn-pretest"><i class="bi bi-play-circle"></i> Hacer mi prueba inicial</button>
+          </div>
+        </div>
+
+        <!-- Layout de 2 Columnas: Serpentine Roadmap (Izq) + Widgets Avance e Insignias (Der) -->
+        <div class="row g-4 align-items-start">
+          
+          <!-- Columna Izquierda: Roadmap Serpentine S-Curve -->
+          <div class="col-12 col-lg-8">
+            <div class="card-edugt p-4 p-md-5">
+              <div id="missions" class="snake-path-section"></div>
+            </div>
+          </div>
+
+          <!-- Columna Derecha: Widgets Sticky (Tu Avance + Insignias Live) -->
+          <div class="col-12 col-lg-4 sticky-widgets">
+            <div class="d-flex flex-column gap-4">
+              
+              <!-- Widget 1: TU AVANCE -->
+              <div class="card-edugt p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                  <small class="text-uppercase fw-bold" style="color:var(--edugt-muted);letter-spacing:.06em;font-size:.78rem;">
+                    <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Tu Avance
+                  </small>
+                  <span class="badge rounded-pill bg-light text-muted" id="advance-streak-badge">
+                    <i class="bi bi-fire text-danger me-1"></i><span id="advance-streak-count">0</span> días
+                  </span>
+                </div>
+
+                <div class="d-flex align-items-baseline gap-2 mb-3">
+                  <h2 class="fw-bold mb-0" style="font-size:2.2rem;color:var(--edugt-text);" id="advance-xp">0</h2>
+                  <span class="fw-semibold text-muted" style="font-size:.95rem;">
+                    XP · nivel <span id="advance-level">1</span>, <span id="advance-rank-name">Iniciado</span>
+                  </span>
+                </div>
+
+                <!-- Barra de niveles escalonada -->
+                <div class="level-stepper-bar mb-2" id="advance-level-stepper">
+                  <div class="level-segment filled"></div>
+                  <div class="level-segment"></div>
+                  <div class="level-segment"></div>
+                  <div class="level-segment"></div>
+                  <div class="level-segment"></div>
+                </div>
+
+                <div class="d-flex justify-content-between text-muted mb-3" style="font-size:.72rem;">
+                  <span>Nivel 1</span>
+                  <span>2 · Aprendiz</span>
+                  <span>3</span>
+                  <span>4</span>
+                  <span>5+</span>
+                </div>
+
+                <p class="mb-0 text-muted" style="font-size:.84rem;line-height:1.45;" id="advance-xp-desc">
+                  Llevas <strong>0</strong> de <strong>100 XP</strong>. Cada lección completada suma <strong>10 XP</strong> y cada cuestionario <strong>100 XP</strong>.
+                </p>
+              </div>
+
+              <!-- Widget 2: INSIGNIAS LIVE -->
+              <div class="card-edugt p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                  <small class="text-uppercase fw-bold" style="color:var(--edugt-muted);letter-spacing:.06em;font-size:.78rem;">
+                    <i class="bi bi-trophy-fill text-warning me-1"></i> Insignias
+                  </small>
+                  <button type="button" class="btn btn-link p-0 text-decoration-none fw-bold" style="font-size:.8rem;color:var(--edugt-primary);" onclick="window.switchStudentTab('insignias')">
+                    Ver todas <i class="bi bi-arrow-right"></i>
+                  </button>
+                </div>
+
+                <!-- Lista vertical compacta de insignias -->
+                <div id="mini-badges-list" class="d-flex flex-column gap-2.5"></div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
       </section>
 
-      <!-- Fila 2: ruta de aprendizaje -->
-      <section id="ruta" class="card-edugt p-4 mt-3">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h2 class="h5 fw-bold mb-0"><i class="bi bi-map" style="color:var(--edugt-primary)"></i> Mi ruta de aprendizaje</h2>
-          <small id="ruta-summary" style="color:var(--edugt-muted)"></small>
+      <!-- ==========================================
+           TAB 2: MIS INSIGNIAS
+           ========================================== -->
+      <section id="tab-insignias" class="tab-content-panel d-none">
+        
+        <div class="mb-4">
+          <h2 class="h5 fw-bold mb-1"><i class="bi bi-trophy" style="color:var(--edugt-amber)"></i> Mis Insignias y Logros</h2>
+          <p class="mb-0 text-muted" style="font-size:.88rem;">Desbloquea insignias especiales demostrando tu dominio en lógica de programación.</p>
         </div>
-        <div id="missions" class="d-flex flex-column gap-4"></div>
-      </section>
 
-      <!-- Fila 3: insignias + ranking -->
-      <div class="row g-3 mt-1" id="insignias">
-        <div class="col-lg-6">
-          <section class="card-edugt p-4 h-100">
-            <h2 class="h5 fw-bold mb-3"><i class="bi bi-trophy" style="color:var(--edugt-amber)"></i> Mis insignias</h2>
-            <div id="badges" class="d-flex flex-wrap gap-3"></div>
-          </section>
-        </div>
-        <div class="col-lg-6">
-          <section class="card-edugt p-4 h-100" id="ranking">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-              <h2 class="h5 fw-bold mb-0"><i class="bi bi-bar-chart" style="color:var(--edugt-primary)"></i> Ranking</h2>
-              <div class="btn-group" role="group" aria-label="Ámbito del ranking">
-                <button class="btn btn-sm btn-edugt" id="rk-global">Global</button>
-                <button class="btn btn-sm btn-google" id="rk-classroom">Mi aula</button>
+        <!-- Resumen de Insignias -->
+        <div class="card-edugt p-4 mb-4">
+          <div class="row align-items-center g-3">
+            <div class="col-md-8">
+              <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon" style="width:52px;height:52px;background:var(--edugt-amber-soft);color:var(--edugt-amber);font-size:1.6rem;">
+                  <i class="bi bi-award-fill"></i>
+                </div>
+                <div>
+                  <h3 class="h6 fw-bold mb-1" id="badges-unlocked-title">0 de 6 insignias obtenidas</h3>
+                  <small style="color:var(--edugt-muted)">Cada insignia representa un hito clave en tu formación como programador.</small>
+                </div>
               </div>
             </div>
-            <div id="rankings" class="d-flex flex-column gap-2"></div>
-          </section>
+            <div class="col-md-4">
+              <div class="progress-edugt mb-1">
+                <div class="bar" id="badges-progress-bar" style="width:0%"></div>
+              </div>
+              <div class="text-end" style="font-size:.8rem;color:var(--edugt-muted)">
+                <span id="badges-progress-percent">0%</span> completado
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+
+        <!-- Grid de Insignias -->
+        <div id="badges-grid" class="row g-3"></div>
+
+      </section>
+
+      <!-- ==========================================
+           TAB 3: TABLA DE CLASIFICACIÓN / RANKING
+           ========================================== -->
+      <section id="tab-ranking" class="tab-content-panel d-none">
+        
+        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+          <div>
+            <h2 class="h5 fw-bold mb-1"><i class="bi bi-bar-chart" style="color:var(--edugt-primary)"></i> Ranking y Clasificación</h2>
+            <p class="mb-0 text-muted" style="font-size:.88rem;">Compite amistosamente con tus compañeros acumulando experiencia (XP).</p>
+          </div>
+          <div class="btn-group shadow-sm" role="group" aria-label="Ámbito del ranking">
+            <button class="btn btn-edugt" id="rk-global"><i class="bi bi-globe"></i> Global</button>
+            <button class="btn btn-google" id="rk-classroom"><i class="bi bi-people"></i> Mi aula</button>
+          </div>
+        </div>
+
+        <!-- Podio Top 3 -->
+        <div id="podium-container" class="row g-3 mb-4 d-none"></div>
+
+        <!-- Tabla completa de Posiciones -->
+        <div class="card-edugt p-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="h6 fw-bold mb-0">Posiciones Generales</h3>
+            <span class="badge bg-light text-muted px-2.5 py-1.5" id="ranking-scope-label">Ámbito Global</span>
+          </div>
+          <div id="rankings" class="d-flex flex-column gap-2"></div>
+        </div>
+
+      </section>
+
+      <!-- ==========================================
+           TAB 4: MI AULA DE CLASES (RF-19)
+           ========================================== -->
+      <section id="tab-aula" class="tab-content-panel d-none">
+        
+        <div class="mb-4">
+          <h2 class="h5 fw-bold mb-1"><i class="bi bi-people-fill" style="color:var(--edugt-primary)"></i> Mi Aula y Grupo Escolar</h2>
+          <p class="mb-0 text-muted" style="font-size:.88rem;">Únete al aula virtual de tu profesor para compartir actividades y competir en el ranking de tu clase.</p>
+        </div>
+
+        <div class="row g-4">
+          <!-- Tarjeta para ingresar código de aula -->
+          <div class="col-12 col-md-5">
+            <div class="card-edugt p-4 h-100">
+              <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="stat-icon" style="width:48px;height:48px;background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:1.4rem;border-radius:14px;">
+                  <i class="bi bi-key-fill"></i>
+                </div>
+                <div>
+                  <h3 class="h6 fw-bold mb-0">Unirse a un Aula</h3>
+                  <small class="text-muted">Ingresa el código que te dio tu docente</small>
+                </div>
+              </div>
+
+              <div id="join-classroom-alert" class="alert d-none py-2 px-3 mb-3" style="font-size:.88rem;"></div>
+
+              <form id="form-join-classroom">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold" for="input-classroom-code" style="font-size:.88rem;">Código de inscripción (8 caracteres)</label>
+                  <input type="text" class="form-control form-control-edugt text-center fw-bold fs-5" id="input-classroom-code" placeholder="Ej: ABC12345" maxlength="12" style="letter-spacing: 3px; text-transform: uppercase;" required>
+                  <div class="form-text" style="font-size:.78rem;">El código no distingue entre mayúsculas y minúsculas.</div>
+                </div>
+                <button type="submit" class="btn btn-edugt w-100 py-2.5 fw-bold" id="btn-join-classroom">
+                  <i class="bi bi-door-open-fill me-1"></i> Unirme al aula
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Listado de aulas inscritas -->
+          <div class="col-12 col-md-7">
+            <div class="card-edugt p-4 h-100">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h3 class="h6 fw-bold mb-0"><i class="bi bi-mortarboard me-1 text-primary"></i> Aulas en las que participas</h3>
+                <span class="badge bg-light text-dark border px-2.5 py-1" id="enrolled-classrooms-count">0 aulas</span>
+              </div>
+              <div id="student-classrooms-list" class="d-flex flex-column gap-3">
+                <!-- Se llena dinámicamente con panel.js -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
     </main>
   </div>
 </div>
 
 <!-- ============ NAV INFERIOR (móvil, mobile-first) ============ -->
-<nav class="bottom-nav d-flex justify-content-around px-3 d-lg-none" aria-label="Navegación móvil">
-  <a href="estudiante.html" class="active"><i class="bi bi-house-door"></i>Inicio</a>
-  <a href="estudiante.html#ruta"><i class="bi bi-map"></i>Ruta</a>
-  <a href="estudiante.html#insignias"><i class="bi bi-trophy"></i>Insignias</a>
-  <a href="estudiante.html#ranking"><i class="bi bi-bar-chart"></i>Ranking</a>
+<nav class="bottom-nav d-flex justify-content-around px-2 d-lg-none" aria-label="Navegación móvil">
+  <button type="button" class="nav-link active" data-tab-target="ruta" onclick="window.switchStudentTab('ruta')">
+    <i class="bi bi-map"></i>Ruta
+  </button>
+  <button type="button" class="nav-link" data-tab-target="aula" onclick="window.switchStudentTab('aula')">
+    <i class="bi bi-people"></i>Aula
+  </button>
+  <button type="button" class="nav-link" data-tab-target="insignias" onclick="window.switchStudentTab('insignias')">
+    <i class="bi bi-trophy"></i>Insignias
+  </button>
+  <button type="button" class="nav-link" data-tab-target="ranking" onclick="window.switchStudentTab('ranking')">
+    <i class="bi bi-bar-chart"></i>Ranking
+  </button>
+  <a href="offline.html" class="nav-link">
+    <i class="bi bi-cloud-download"></i>Offline
+  </a>
 </nav>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="assets/js/api.js"></script>
-<script src="assets/js/offline.js"></script>
-<script src="assets/js/panel.js"></script>
+<script src="assets/js/api.js?v=20261006_04"></script>
+<script src="assets/js/offline.js?v=20261006_04"></script>
+<script src="assets/js/panel.js?v=20261006_04"></script>
 </body>
 </html>

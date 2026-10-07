@@ -14,69 +14,169 @@ if (!Auth.token || !Auth.user) {
 }
 
 const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+
+let currentClassrooms = [];
+let classroomToDeleteId = null;
 
 function showMessage(message, kind = 'danger') {
   const el = $('#alert');
+  if (!el) return;
   el.className = `alert alert-${kind}`;
   el.textContent = message;
+  el.classList.remove('d-none');
 }
 
 /* ---------------- Saludo ---------------- */
 function renderGreeting() {
-  const h = new Date().getHours();
-  $('#greeting-kicker').textContent = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
-  $('#greeting').textContent = `Docente ${Auth.user.name}`;
+  const kicker = $('#greeting-kicker');
+  const greeting = $('#greeting');
+  if (kicker) kicker.textContent = 'Buen día';
+  if (greeting) greeting.textContent = `Docente ${Auth.user.name}`;
 }
+
+/* ---------------- Pestañas dinámicas (Opción A) ---------------- */
+function switchTab(tabId) {
+  const validTabs = ['aulas', 'reportes'];
+  const target = validTabs.includes(tabId) ? tabId : 'aulas';
+
+  // Mostrar la sección correspondiente
+  validTabs.forEach((t) => {
+    const section = document.getElementById(`tab-${t}`);
+    if (section) {
+      if (t === target) {
+        section.classList.remove('d-none');
+      } else {
+        section.classList.add('d-none');
+      }
+    }
+  });
+
+  // Actualizar estado en sidebar
+  document.querySelectorAll('#docente-nav [data-tab-target]').forEach((el) => {
+    if (el.getAttribute('data-tab-target') === target) {
+      el.classList.add('active');
+    } else {
+      el.classList.remove('active');
+    }
+  });
+
+  // Actualizar estado en nav inferior móvil
+  document.querySelectorAll('#mobile-docente-nav [data-tab-target]').forEach((el) => {
+    if (el.getAttribute('data-tab-target') === target) {
+      el.classList.add('active');
+    } else {
+      el.classList.remove('active');
+    }
+  });
+
+  try {
+    history.replaceState(null, '', `#${target}`);
+  } catch {
+    // Ignorar si el navegador restringe el historial
+  }
+}
+
+// Exponer globalmente para onclick inline
+window.switchDocenteTab = switchTab;
+
+// Sincronizar pestaña inicial según hash de URL
+window.addEventListener('hashchange', () => {
+  const hash = window.location.hash.replace('#', '');
+  if (hash) switchTab(hash);
+});
 
 /* ---------------- Aulas (RF-19) ---------------- */
 async function loadClassrooms() {
   const { data } = await api('/classrooms');
+  currentClassrooms = data.data || [];
 
   const box = $('#classrooms');
-  if (data.data.length === 0) {
+  if (!box) return;
+
+  if (currentClassrooms.length === 0) {
     box.innerHTML = `
       <div class="col-12">
         <div class="card-edugt p-4 text-center" style="color:var(--edugt-muted)">
-          <i class="bi bi-people" style="font-size:2rem;color:var(--edugt-primary)"></i>
-          <p class="mt-2 mb-0">Aún no tienes aulas. Crea la primera para compartir el código con tus estudiantes.</p>
+          <i class="bi bi-people" style="font-size:2.5rem;color:var(--edugt-primary)"></i>
+          <h3 class="h6 fw-bold mt-3 mb-1">Aún no tienes aulas registradas</h3>
+          <p class="mt-1 mb-3 small">Crea tu primera aula para compartir el código de inscripción con tus estudiantes.</p>
+          <button class="btn btn-edugt btn-sm" data-bs-toggle="modal" data-bs-target="#modal-aula"><i class="bi bi-plus-lg"></i> Crear aula</button>
         </div>
       </div>`;
     fillSelect([]);
     return;
   }
 
-  box.innerHTML = data.data.map((c) => `
+  box.innerHTML = currentClassrooms.map((c) => {
+    const studentCount = c.students_count ?? 0;
+    const hasStudents = studentCount > 0;
+
+    return `
     <div class="col-md-6 col-xl-4">
-      <article class="card-edugt p-4 h-100">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <div class="stat-icon" style="background:var(--edugt-primary-soft);color:var(--edugt-primary)">
-            <i class="bi bi-people-fill"></i>
+      <article class="card-edugt p-4 h-100 d-flex flex-column justify-content-between">
+        <div>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <div class="stat-icon" style="background:var(--edugt-primary-soft);color:var(--edugt-primary);width:38px;height:38px;font-size:1.1rem;">
+                <i class="bi bi-people-fill"></i>
+              </div>
+              <span class="pill-edugt ${c.is_active !== false ? 'pill-done' : 'pill-locked'}">${c.is_active !== false ? 'Activa' : 'Archivada'}</span>
+            </div>
+            <div class="d-flex align-items-center gap-1">
+              <button class="btn btn-sm btn-google p-1 px-2" data-edit-classroom="${c.id}" title="Editar aula" aria-label="Editar aula">
+                <i class="bi bi-pencil" style="font-size:.9rem;"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger p-1 px-2" data-delete-classroom="${c.id}" title="Eliminar aula" aria-label="Eliminar aula" style="border-radius:12px;">
+                <i class="bi bi-trash3" style="font-size:.9rem;"></i>
+              </button>
+            </div>
           </div>
-          <span class="pill-edugt ${c.is_active ? 'pill-done' : 'pill-locked'}">${c.is_active ? 'Activa' : 'Archivada'}</span>
-        </div>
-        <h3 class="h6 fw-bold mb-1">${esc(c.name)}</h3>
-        <small style="color:var(--edugt-muted)">${esc(c.academic_year)}</small>
+          
+          <h3 class="h6 fw-bold mb-1">${esc(c.name)}</h3>
+          <div class="d-flex align-items-center gap-2 text-muted small">
+            <span>${esc(c.institution || 'Sin institución')}</span>
+            <span>•</span>
+            <span>${esc(c.academic_year)}</span>
+          </div>
 
-        <div class="border rounded-4 p-3 mt-3 d-flex align-items-center justify-content-between" style="border-color:var(--edugt-border)!important;background:#FBFAFF;">
-          <div>
-            <small style="color:var(--edugt-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em">Código</small>
-            <div class="fw-bold" style="font-size:1.15rem;letter-spacing:.12em" data-code="${c.id}">${esc(c.code ?? '—')}</div>
+          <div class="border rounded-4 p-3 mt-3 d-flex align-items-center justify-content-between" style="border-color:var(--edugt-border)!important;background:#FBFAFF;">
+            <div>
+              <small style="color:var(--edugt-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em">Código de acceso</small>
+              <div class="fw-bold" style="font-size:1.15rem;letter-spacing:.12em" data-code="${c.id}">${esc(c.code ?? '—')}</div>
+            </div>
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-edugt" data-copy="${c.id}" title="Copiar código" aria-label="Copiar código"><i class="bi bi-clipboard"></i></button>
+              <button class="btn btn-sm btn-google" data-regen="${c.id}" title="Regenerar código" aria-label="Regenerar código"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
           </div>
-          <div class="d-flex gap-1">
-            <button class="btn btn-sm btn-edugt" data-copy="${c.id}" title="Copiar código" aria-label="Copiar código"><i class="bi bi-clipboard"></i></button>
-            <button class="btn btn-sm btn-google" data-regen="${c.id}" title="Regenerar código" aria-label="Regenerar código"><i class="bi bi-arrow-clockwise"></i></button>
+
+          <div class="d-flex align-items-center gap-2 mt-3">
+            <i class="bi ${hasStudents ? 'bi-person-check-fill text-success' : 'bi-person text-muted'}"></i>
+            <span class="fw-bold">${studentCount}</span>
+            <span style="color:var(--edugt-muted);font-size:.9rem;">${studentCount === 1 ? 'estudiante inscrito' : 'estudiantes inscritos'}</span>
           </div>
         </div>
 
-        <div class="d-flex align-items-center gap-2 mt-3">
-          <i class="bi bi-person-check" style="color:var(--edugt-green)"></i>
-          <span class="fw-bold">${c.students_count ?? 0}</span>
-          <span style="color:var(--edugt-muted)">estudiantes inscritos</span>
+        <div class="mt-3 pt-2">
+          ${hasStudents ? `
+            <button class="btn btn-sm btn-edugt-soft w-100 d-flex align-items-center justify-content-center gap-2" 
+                    data-view-students="${c.id}" 
+                    data-classroom-name="${esc(c.name)}" 
+                    data-student-count="${studentCount}">
+              <i class="bi bi-people-fill"></i> Ver estudiantes (${studentCount})
+            </button>
+          ` : `
+            <div class="text-center py-2 border rounded-3" style="font-size:0.83rem;color:var(--edugt-muted);background:#FAF9FF;">
+              <i class="bi bi-info-circle me-1"></i> Sin estudiantes inscritos aún
+            </div>
+          `}
         </div>
       </article>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
-  fillSelect(data.data.map((c) => ({ id: c.id, name: c.name })));
+  fillSelect(currentClassrooms.map((c) => ({ id: c.id, name: c.name })));
 
   // Copiar código
   box.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', () => {
@@ -86,7 +186,7 @@ async function loadClassrooms() {
     setTimeout(() => { b.innerHTML = '<i class="bi bi-clipboard"></i>'; }, 1200);
   }));
 
-  // Regenerar código (invalida el anterior — crit. de aceptación Fase 8)
+  // Regenerar código
   box.querySelectorAll('[data-regen]').forEach((b) => b.addEventListener('click', async () => {
     b.disabled = true;
     try {
@@ -99,12 +199,223 @@ async function loadClassrooms() {
       b.disabled = false;
     }
   }));
+
+  // Ver lista de estudiantes inscritos
+  box.querySelectorAll('[data-view-students]').forEach((b) => b.addEventListener('click', () => {
+    openStudentsModal(b.dataset.viewStudents, b.dataset.classroomName, b.dataset.studentCount);
+  }));
+
+  // Editar aula
+  box.querySelectorAll('[data-edit-classroom]').forEach((b) => b.addEventListener('click', () => {
+    openEditModal(b.dataset.editClassroom);
+  }));
+
+  // Eliminar aula
+  box.querySelectorAll('[data-delete-classroom]').forEach((b) => b.addEventListener('click', () => {
+    openDeleteModal(b.dataset.deleteClassroom);
+  }));
 }
 
 function fillSelect(classrooms) {
   const sel = $('#reporte-aula');
+  if (!sel) return;
   sel.innerHTML = '<option value="">Todas mis aulas</option>' +
     classrooms.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+}
+
+/* ---------------- Modal Editar Aula ---------------- */
+const editModalEl = $('#modal-editar-aula');
+let editModalInstance = null;
+
+function getEditModal() {
+  if (!editModalInstance && editModalEl && window.bootstrap) {
+    editModalInstance = new bootstrap.Modal(editModalEl);
+  }
+  return editModalInstance;
+}
+
+function openEditModal(classroomId) {
+  const classroom = currentClassrooms.find((c) => String(c.id) === String(classroomId));
+  if (!classroom) return;
+
+  $('#edit-aula-id').value = classroom.id;
+  $('#edit-aula-nombre').value = classroom.name || '';
+  $('#edit-aula-institucion').value = classroom.institution || '';
+  $('#edit-aula-grado').value = classroom.grade_level || '';
+  $('#edit-aula-anio').value = classroom.academic_year || '2026';
+
+  const alertEl = $('#modal-edit-alert');
+  if (alertEl) alertEl.classList.add('d-none');
+
+  getEditModal()?.show();
+}
+
+$('#form-editar-aula')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const alertEl = $('#modal-edit-alert');
+  const btn = $('#btn-save-edit-aula');
+  const id = $('#edit-aula-id').value;
+
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  if (alertEl) alertEl.classList.add('d-none');
+
+  try {
+    await api(`/classrooms/${id}`, {
+      method: 'PUT',
+      body: {
+        name: $('#edit-aula-nombre').value.trim(),
+        institution: $('#edit-aula-institucion').value.trim() || null,
+        grade_level: $('#edit-aula-grado').value.trim() || null,
+        academic_year: $('#edit-aula-anio').value.trim(),
+      },
+    });
+
+    getEditModal()?.hide();
+    await loadClassrooms();
+  } catch (err) {
+    if (alertEl) {
+      alertEl.className = 'alert alert-danger';
+      alertEl.textContent = err.errors ? Object.values(err.errors)[0][0] : err.message;
+      alertEl.classList.remove('d-none');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Guardar cambios';
+  }
+});
+
+/* ---------------- Modal Eliminar Aula ---------------- */
+const deleteModalEl = $('#modal-eliminar-aula');
+let deleteModalInstance = null;
+
+function getDeleteModal() {
+  if (!deleteModalInstance && deleteModalEl && window.bootstrap) {
+    deleteModalInstance = new bootstrap.Modal(deleteModalEl);
+  }
+  return deleteModalInstance;
+}
+
+function openDeleteModal(classroomId) {
+  const classroom = currentClassrooms.find((c) => String(c.id) === String(classroomId));
+  if (!classroom) return;
+
+  classroomToDeleteId = classroom.id;
+  $('#eliminar-aula-nombre-text').textContent = `"${classroom.name}"`;
+
+  const alertEl = $('#modal-delete-alert');
+  if (alertEl) alertEl.classList.add('d-none');
+
+  getDeleteModal()?.show();
+}
+
+$('#btn-confirm-delete-aula')?.addEventListener('click', async () => {
+  if (!classroomToDeleteId) return;
+
+  const btn = $('#btn-confirm-delete-aula');
+  const alertEl = $('#modal-delete-alert');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Eliminando...';
+
+  try {
+    await api(`/classrooms/${classroomToDeleteId}`, { method: 'DELETE' });
+    classroomToDeleteId = null;
+    getDeleteModal()?.hide();
+    await loadClassrooms();
+  } catch (err) {
+    if (alertEl) {
+      alertEl.className = 'alert alert-danger';
+      alertEl.textContent = err.message || 'No se pudo eliminar el aula.';
+      alertEl.classList.remove('d-none');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-trash3 me-1"></i> Sí, eliminar';
+  }
+});
+
+/* ---------------- Modal Lista de Estudiantes ---------------- */
+const studentsModalEl = $('#modal-estudiantes');
+let studentsModalInstance = null;
+
+function getStudentsModal() {
+  if (!studentsModalInstance && studentsModalEl && window.bootstrap) {
+    studentsModalInstance = new bootstrap.Modal(studentsModalEl);
+  }
+  return studentsModalInstance;
+}
+
+async function openStudentsModal(classroomId, classroomName, studentCount) {
+  const modal = getStudentsModal();
+  if (!modal) return;
+
+  $('#modal-estudiantes-titulo').textContent = 'Estudiantes inscritos';
+  $('#modal-estudiantes-subtitulo').textContent = `Aula: ${classroomName}`;
+  $('#modal-estudiantes-badge').textContent = `${studentCount}`;
+
+  const loadingEl = $('#modal-estudiantes-loading');
+  const alertEl = $('#modal-estudiantes-alert');
+  const contentEl = $('#modal-estudiantes-content');
+  const tbody = $('#modal-estudiantes-tbody');
+
+  loadingEl.classList.remove('d-none');
+  alertEl.classList.add('d-none');
+  contentEl.classList.add('d-none');
+  tbody.innerHTML = '';
+
+  modal.show();
+
+  try {
+    const { data } = await api(`/classrooms/${classroomId}/students`);
+    const students = data.data || [];
+
+    loadingEl.classList.add('d-none');
+
+    if (students.length === 0) {
+      alertEl.className = 'alert alert-info';
+      alertEl.textContent = 'No hay estudiantes inscritos en esta aula.';
+      alertEl.classList.remove('d-none');
+      return;
+    }
+
+    tbody.innerHTML = students.map((s) => {
+      let trackBadge = '<span class="pill-edugt pill-locked">Sin pretest</span>';
+      if (s.learning_track === 'beginner') {
+        trackBadge = '<span class="pill-edugt pill-now">Inicial</span>';
+      } else if (s.learning_track === 'intermediate') {
+        trackBadge = '<span class="pill-edugt pill-done">Intermedio</span>';
+      } else if (s.learning_track === 'advanced') {
+        trackBadge = '<span class="pill-edugt" style="background:#EDE9FE;color:#5A38D6;">Avanzado</span>';
+      }
+
+      const joinDate = s.joined_at ? new Date(s.joined_at).toLocaleDateString('es-GT', {
+        year: 'numeric', month: 'short', day: 'numeric'
+      }) : '—';
+
+      return `
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="stat-icon" style="width:34px;height:34px;font-size:.95rem;background:var(--edugt-primary-soft);color:var(--edugt-primary);">
+                <i class="bi bi-person"></i>
+              </div>
+              <span class="fw-bold">${esc(s.name)}</span>
+            </div>
+          </td>
+          <td><span class="text-muted small">${esc(s.email || '—')}</span></td>
+          <td>${trackBadge}</td>
+          <td><small class="text-muted">${joinDate}</small></td>
+        </tr>`;
+    }).join('');
+
+    contentEl.classList.remove('d-none');
+  } catch (err) {
+    loadingEl.classList.add('d-none');
+    alertEl.className = 'alert alert-danger';
+    alertEl.textContent = err.message || 'No se pudo cargar la lista de estudiantes.';
+    alertEl.classList.remove('d-none');
+  }
 }
 
 /* ---------------- Crear aula (RF-19) ---------------- */
@@ -188,6 +499,10 @@ $('#btn-logout-m')?.addEventListener('click', logout);
 /* ---------------- Boot ---------------- */
 (async function boot() {
   renderGreeting();
+
+  // Sincronizar pestaña inicial
+  const hash = window.location.hash.replace('#', '');
+  switchTab(hash || 'aulas');
 
   // RB-02: docente pendiente no ve datos — aviso y fuera
   if (Auth.user.status === 'pending_approval') {

@@ -25,6 +25,11 @@ function goPanel(user) {
   window.location.href = dest;
 }
 
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('google_status') === 'pending') {
+  showAlert('Tu cuenta de docente con Google fue registrada y está pendiente de aprobación por el administrador.', 'info');
+}
+
 /* ---------------- Login tradicional ---------------- */
 $('#form-login')?.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -51,9 +56,14 @@ $('#form-login')?.addEventListener('submit', async (e) => {
     if (err.code === 'TEACHER_PENDING_APPROVAL') {
       showAlert('Tu cuenta de docente está pendiente de aprobación. Te avisaremos cuando sea activada.');
     } else if (err.errors?.email) {
-      showAlert(err.errors.email[0]);
+      const emailErr = err.errors.email[0];
+      showAlert(emailErr === 'validation.email' ? 'Credenciales invalidas, revisa el correo o la contraseña' : emailErr);
+    } else if (err.errors?.password) {
+      showAlert('Credenciales invalidas, revisa el correo o la contraseña');
+    } else if (err.message === 'validation.email' || err.status === 422) {
+      showAlert('Credenciales invalidas, revisa el correo o la contraseña');
     } else {
-      showAlert(err.message);
+      showAlert(err.message || 'Credenciales invalidas, revisa el correo o la contraseña');
     }
   } finally {
     btn.disabled = false;
