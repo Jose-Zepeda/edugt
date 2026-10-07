@@ -73,7 +73,7 @@ class ContentSeeder extends Seeder
                         'title' => '¿Qué es una variable?',
                         'markdown' => "## 📦 ¿Qué es una Variable?\n\nImagina que una **variable** es como una caja con una etiqueta donde puedes guardar un dato para usarlo más adelante en tu programa.\n\nEl nombre de la etiqueta es el **identificador** (por ejemplo: `puntos`, `edad`, `nombre_estudiante`) y lo que colocas adentro es el **valor** (por ejemplo: `100`, `16`, `\"Carlos\"`).\n\n---\n\n### 🔍 Las 3 etapas de una variable:\n1. **Declaración:** Le dices a la computadora cómo se llamará tu variable.\n2. **Asignación (`=`):** Guardas un valor inicial dentro de la variable.\n3. **Lectura / Modificación:** Usas su valor para hacer cálculos o lo cambias por uno nuevo.\n\n> 💡 **Regla de oro:** En programación usamos el signo `=` para **asignar** (guardar) un valor. Cada vez que asignas un nuevo valor a una variable, el anterior se sobreescribe y se pierde. ¡La variable solo puede almacenar un dato a la vez!",
                         'pseudocode' => [
-                            'codigo' => "// 1. Guardar valores iniciales (Asignación)\nedad = 16\npuntos = 50\n\n// 2. Modificar el valor acumulando puntos\npuntos = puntos + 25\n\n// 3. Mostrar el resultado en pantalla\nEscribir \"Edad del estudiante:\", edad\nEscribir \"Puntaje final:\", puntos",
+                            'codigo' => "// 1. Guardar valores iniciales (Asignación)\nedad = 16\npuntos = 50\n\n// 2. Modificar el valor acumulando puntos\npuntos = puntos + 25\n\n// 3. Mostrar el resultado en pantalla\nprint(\"Edad del estudiante:\", edad)\nprint(\"Puntaje final:\", puntos)",
                             'explicacion' => "Al inicio 'puntos' vale 50. Luego calculamos 50 + 25 = 75 y lo guardamos nuevamente en 'puntos'.",
                             'reto' => [
                                 'pregunta' => "Si ejecutamos el siguiente código: `puntos = 10`, luego `puntos = 20`, y después `puntos = puntos + 5`. ¿Qué valor almacenará la variable 'puntos' al final?",
@@ -90,16 +90,16 @@ class ContentSeeder extends Seeder
                     ],
                     [
                         'title' => 'Tipos de datos',
-                        'markdown' => "## 🏷️ Clasificación de Tipos de Datos\n\nLas computadoras necesitan saber **qué clase de información** están procesando para no cometer errores matemáticos o de memoria.\n\n---\n\n### 📌 Los 4 Tipos de Datos Fundamentales:\n\n1. **Entero (`Entero`):** Números sin decimales, positivos o negativos (`10`, `-3`, `2026`).\n2. **Real / Decimal (`Real`):** Números con parte decimal (`3.1416`, `85.50`, `1.75`).\n3. **Cadena de Texto (`Cadena`):** Palabras o frases entre comillas dobles (`\"EduGT\"`, `\"Jutiapa\"`).\n4. **Lógico / Booleano (`Lógico`):** Solo dos posibles estados: `Verdadero` o `Falso`.\n\n> ⚠️ **Diferencia clave:** El número `10` es un Entero matemático. Pero `\"10\"` (con comillas) es un Texto y no se puede sumar directamente.",
+                        'markdown' => "## 🏷️ Clasificación de Tipos de Datos\n\nLas computadoras necesitan saber **qué clase de información** están procesando para no cometer errores matemáticos o de memoria.\n\n---\n\n### 📌 Los 4 Tipos de Datos Fundamentales:\n\n1. **Entero (`int`):** Números sin decimales, positivos o negativos (`10`, `-3`, `2026`).\n2. **Real / Decimal (`float`):** Números con parte decimal (`3.1416`, `85.50`, `1.75`).\n3. **Cadena de Texto (`string`):** Palabras o frases entre comillas dobles (`\"EduGT\"`, `\"Jutiapa\"`).\n4. **Booleano (`bool`):** Solo dos posibles estados: `true` (Verdadero) o `false` (Falso).\n\n> ⚠️ **Diferencia clave:** El número `10` es un Entero matemático. Pero `\"10\"` (con comillas) es un Texto y no se puede sumar directamente.",
                         'pseudocode' => [
-                            'codigo' => "// Declaración y asignación de diferentes tipos de datos\nnombre_usuario = \"Elena\"\nedad_usuario = 17\npromedio_academico = 89.75\ncuenta_activa = Verdadero\n\nEscribir \"Usuario registrado:\", nombre_usuario\nEscribir \"Edad:\", edad_usuario\nEscribir \"Promedio final:\", promedio_academico\nEscribir \"¿Estado activo?:\", cuenta_activa",
-                            'explicacion' => "Cada variable almacena un tipo específico: texto, número entero, número decimal y booleano.",
+                            'codigo' => "// Declaración y asignación de diferentes tipos de datos\nnombre_usuario = \"Elena\"\nedad_usuario = 17\npromedio_academico = 89.75\ncuenta_activa = true\n\nprint(\"Usuario registrado:\", nombre_usuario)\nprint(\"Edad:\", edad_usuario)\nprint(\"Promedio final:\", promedio_academico)\nprint(\"¿Estado activo?:\", cuenta_activa)",
+                            'explicacion' => "Cada variable almacena un tipo específico: texto (string), entero (int), decimal (float) y booleano (bool con true/false).",
                             'reto' => [
-                                'pregunta' => "Tienes las siguientes variables: `precio = 45.50`, `cantidad = 3`, `activo = Falso`, `nombre = \"Juan\"`. ¿A qué tipo de dato fundamental corresponde la variable `activo`?",
+                                'pregunta' => "Tienes las siguientes variables: `precio = 45.50`, `cantidad = 3`, `activo = false`, `nombre = \"Juan\"`. ¿A qué tipo de dato fundamental corresponde la variable `activo`?",
                                 'opciones' => [
-                                    ['id' => 'a', 'texto' => 'Cadena de texto', 'es_correcta' => false, 'feedback' => 'Incorrecto: no está encerrada entre comillas dobles.'],
-                                    ['id' => 'b', 'texto' => 'Lógico / Booleano', 'es_correcta' => true, 'feedback' => '¡Correcto! Los valores lógicos solo pueden ser Verdadero o Falso.'],
-                                    ['id' => 'c', 'texto' => 'Entero', 'es_correcta' => false, 'feedback' => 'Incorrecto: no representa una cantidad numérica.']
+                                    ['id' => 'a', 'texto' => 'String (Cadena de texto)', 'es_correcta' => false, 'feedback' => 'Incorrecto: no está encerrada entre comillas dobles.'],
+                                    ['id' => 'b', 'texto' => 'Booleano (bool: true / false)', 'es_correcta' => true, 'feedback' => '¡Correcto! Los valores booleanos solo pueden ser true o false.'],
+                                    ['id' => 'c', 'texto' => 'Int (Entero)', 'es_correcta' => false, 'feedback' => 'Incorrecto: no representa una cantidad numérica.']
                                 ]
                             ]
                         ],
@@ -109,12 +109,12 @@ class ContentSeeder extends Seeder
                     ],
                     [
                         'title' => 'Asignación y operaciones',
-                        'markdown' => "## ⚡ Asignación y Operadores Aritméticos\n\nEl operador de asignación (`=`) evalúa todo lo que está a la **derecha** y guarda el resultado final en la variable de la **izquierda**.\n\n---\n\n### 🧮 Operadores Aritméticos Básicos:\n* **Suma (`+`):** `total = precio + iva`\n* **Resta (`-`):** `vidas = vidas - 1`\n* **Multiplicación (`*`):** `area = base * altura`\n* **División (`/`):** `promedio = suma / 3`\n* **Módulo (`%` o `MOD`):** Devuelve el residuo de una división. Ejemplo: `10 % 3` es `1`.\n\n---\n\n### 🎯 Jerarquía de Operaciones:\n1. Paréntesis `()`\n2. Multiplicación `*` y División `/`\n3. Suma `+` y Resta `-`\n\n> 📌 **Regla fundamental:** Un solo signo `=` sirve para **guardar datos**, mientras que el doble signo `==` sirve para **comparar**.",
+                        'markdown' => "## ⚡ Asignación y Operadores Aritméticos\n\nEl operador de asignación (`=`) evalúa todo lo que está a la **derecha** y guarda el resultado final en la variable de la **izquierda**.\n\n---\n\n### 🧮 Operadores Aritméticos Básicos:\n* **Suma (`+`):** `total = precio + iva`\n* **Resta (`-`):** `vidas = vidas - 1`\n* **Multiplicación (`*`):** `area = base * altura`\n* **División (`/`):** `promedio = suma / 3`\n* **Módulo (`%`):** Devuelve el residuo de una división. Ejemplo: `10 % 3` es `1`.\n\n---\n\n### 🎯 Jerarquía de Operaciones:\n1. Paréntesis `()`\n2. Multiplicación `*` y División `/`\n3. Suma `+` y Resta `-`\n\n> 📌 **Regla fundamental:** Un solo signo `=` sirve para **guardar datos**, mientras que el doble signo `==` sirve para **comparar**.",
                         'pseudocode' => [
-                            'codigo' => "nota1 = 85\nnota2 = 95\nnota3 = 70\n\n// Los paréntesis aseguran el cálculo correcto del promedio\npromedio = (nota1 + nota2 + nota3) / 3\n\n// Incrementar bonificación de 5 puntos\npromedio = promedio + 5\n\nEscribir \"Promedio general con bono:\", promedio",
+                            'codigo' => "nota1 = 85\nnota2 = 95\nnota3 = 70\n\n// Los paréntesis aseguran el cálculo correcto del promedio\npromedio = (nota1 + nota2 + nota3) / 3\n\n// Incrementar bonificación de 5 puntos\npromedio = promedio + 5\n\nprint(\"Promedio general con bono:\", promedio)",
                             'explicacion' => "Primero se suman las notas entre paréntesis (250), se divide entre 3 (83.33) y luego se agregan 5 puntos de bono (88.33).",
                             'reto' => [
-                                'pregunta' => "Analiza la siguiente operación en pseudocódigo: `resultado = 10 + 5 * 2`. ¿Cuál será el valor final almacenado en `resultado`?",
+                                'pregunta' => "Analiza la siguiente operación: `resultado = 10 + 5 * 2`. ¿Cuál será el valor final almacenado en `resultado`?",
                                 'opciones' => [
                                     ['id' => 'a', 'texto' => '30', 'es_correcta' => false, 'feedback' => 'Incorrecto: recuerda que la multiplicación tiene mayor prioridad que la suma.'],
                                     ['id' => 'b', 'texto' => '20', 'es_correcta' => true, 'feedback' => '¡Correcto! Por jerarquía matemática, primero se resuelve 5 * 2 = 10 y luego 10 + 10 = 20.'],
@@ -128,9 +128,9 @@ class ContentSeeder extends Seeder
                     ],
                     [
                         'title' => 'Evaluación del módulo',
-                        'markdown' => "## 🏆 Hito del Módulo: Variables y Datos\n\n¡Has completado todas las lecciones sobre variables, tipos y operadores!\n\n---\n\n### 📋 Repaso de conceptos clave:\n* Almacenar datos en memoria con nombres descriptivos usando `=`. \n* Elegir el tipo de dato adecuado (Entero, Real, Cadena o Lógico).\n* Respetar la precedencia matemática con paréntesis `()`.\n\n> 🎯 **Siguiente Reto:** Presenta la evaluación del módulo. Con un **70% o más** desbloquearás la insignia **Novato en Lógica** y el Módulo 2.",
+                        'markdown' => "## 🏆 Hito del Módulo: Variables y Datos\n\n¡Has completado todas las lecciones sobre variables, tipos y operadores!\n\n---\n\n### 📋 Repaso de conceptos clave:\n* Almacenar datos en memoria con nombres descriptivos usando `=`. \n* Elegir el tipo de dato adecuado (`int`, `float`, `string` o `bool`).\n* Respetar la precedencia matemática con paréntesis `()`.\n\n> 🎯 **Siguiente Reto:** Presenta la evaluación del módulo. Con un **70% o más** desbloquearás la insignia **Novato en Lógica** y el Módulo 2.",
                         'pseudocode' => [
-                            'codigo' => "// Desafío integrador de variables\nx = 10\ny = 20\nx = x + y\ny = x - y\nx = x - y\n\nEscribir \"Valor final de x:\", x  // Imprime 20\nEscribir \"Valor final de y:\", y  // Imprime 10",
+                            'codigo' => "// Desafío integrador de variables\nx = 10\ny = 20\nx = x + y\ny = x - y\nx = x - y\n\nprint(\"Valor final de x:\", x)  // Imprime 20\nprint(\"Valor final de y:\", y)  // Imprime 10",
                             'explicacion' => "Intercambio clásico de dos variables utilizando sumas y restas sin variables auxiliares.",
                             'reto' => [
                                 'pregunta' => "Acertijo de intercambio: Si `a = 5`, `b = 10`, `aux = a`, `a = b`, `b = aux`. ¿Qué valores tienen las variables `a` y `b` al finalizar?",
@@ -148,7 +148,7 @@ class ContentSeeder extends Seeder
                 ],
                 'quiz_questions' => [
                     [
-                        'statement' => "Analiza el siguiente algoritmo en pseudocódigo:\n\n```\na = 15\nb = 10\na = a + 5\nresultado = a - b\nEscribir resultado\n```\n\n¿Qué valor numérico se imprimirá en pantalla al ejecutar el algoritmo?",
+                        'statement' => "Analiza el siguiente código:\n\n```\na = 15\nb = 10\na = a + 5\nresultado = a - b\nprint(resultado)\n```\n\n¿Qué valor numérico se imprimirá en pantalla al ejecutar el algoritmo?",
                         'explanation' => "Primero la variable `a` se actualiza: 15 + 5 = 20. Luego se calcula `resultado = 20 - 10 = 10`.",
                         'options' => [
                             ['texto' => '10', 'correcta' => true, 'feedback' => '¡Correcto! `a` pasa de 15 a 20, luego `resultado = 20 - 10 = 10`.'],
@@ -158,11 +158,11 @@ class ContentSeeder extends Seeder
                     ],
                     [
                         'statement' => "Un sistema escolar necesita registrar si un estudiante ya pagó su matrícula escolar. ¿Cuál es el **tipo de dato más apropiado** para almacenar esta información?",
-                        'explanation' => "Los datos lógicos o booleanos (`Verdadero` / `Falso`) son los idóneos para representar estados binarios como sí/no o activo/inactivo.",
+                        'explanation' => "Los datos booleanos (`true` / `false`) son los idóneos para representar estados binarios como sí/no o activo/inactivo.",
                         'options' => [
-                            ['texto' => 'Lógico / Booleano (Verdadero o Falso)', 'correcta' => true, 'feedback' => '¡Correcto! Es perfecto para banderas binarias de sí/no o estado pagado/no pagado.'],
-                            ['texto' => 'Cadena de texto ("Sí" o "No")', 'correcta' => false, 'feedback' => 'Incorrecto: aunque es posible, una cadena no es el tipo óptimo ni estándar para estados booleanos.'],
-                            ['texto' => 'Entero (1 o 0)', 'correcta' => false, 'feedback' => 'Incorrecto: los tipos lógicos expresan formalmente valores de verdad en lógica computacional.']
+                            ['texto' => 'Booleano / bool (true o false)', 'correcta' => true, 'feedback' => '¡Correcto! Es perfecto para estados binarios de sí/no o pagado/no pagado.'],
+                            ['texto' => 'String / Cadena ("Sí" o "No")', 'correcta' => false, 'feedback' => 'Incorrecto: aunque es posible, un string no es el tipo óptimo ni estándar para estados booleanos.'],
+                            ['texto' => 'Entero / int (1 o 0)', 'correcta' => false, 'feedback' => 'Incorrecto: los tipos booleanos expresan formalmente valores de verdad en programación.']
                         ]
                     ],
                     [
@@ -185,11 +185,11 @@ class ContentSeeder extends Seeder
                     ],
                     [
                         'statement' => "¿Cuál de las siguientes asignaciones causaría un **error de incompatibilidad de tipos** en un lenguaje de programación?",
-                        'explanation' => "No es posible realizar una suma matemática entre una cadena de texto y un número entero.",
+                        'explanation' => "No es posible realizar una suma matemática entre una cadena de texto (string) y un número entero (int).",
                         'options' => [
-                            ['texto' => 'edad = "dieciséis" + 5', 'correcta' => true, 'feedback' => '¡Correcto! No se puede sumar aritméticamente un número entero a una cadena de texto.'],
-                            ['texto' => 'promedio = 85.5 + 10', 'correcta' => false, 'feedback' => 'Incorrecto: sumar un número decimal (Real) con un Entero es una operación aritmética válida.'],
-                            ['texto' => 'es_mayor = Verdadero', 'correcta' => false, 'feedback' => 'Incorrecto: asignar un valor booleano a una variable es totalmente válido.']
+                            ['texto' => 'edad = "dieciséis" + 5', 'correcta' => true, 'feedback' => '¡Correcto! No se puede sumar aritméticamente un número entero a un string de texto.'],
+                            ['texto' => 'promedio = 85.5 + 10', 'correcta' => false, 'feedback' => 'Incorrecto: sumar un número float con un int es una operación aritmética válida.'],
+                            ['texto' => 'es_mayor = true', 'correcta' => false, 'feedback' => 'Incorrecto: asignar un valor booleano true a una variable es totalmente válido.']
                         ]
                     ]
                 ]
@@ -198,17 +198,17 @@ class ContentSeeder extends Seeder
                 'module_title' => 'Estructuras Condicionales',
                 'lessons' => [
                     [
-                        'title' => 'La decisión si-entonces',
-                        'markdown' => "## 🔀 La Decisión Si-Entonces (Condicional Simple)\n\nEn la vida real tomamos decisiones constantemente: *\"Si está lloviendo, entonces llevo paraguas\"*. En programación, las computadoras hacen exactamente lo mismo.\n\nUna estructura condicional evalúa una **expresión lógica**:\n* Si la condición es **Verdadera**, ejecuta las instrucciones dentro del bloque.\n* Si es **Falsa**, simplemente se salta ese bloque y continúa.\n\n---\n\n### ⚖️ Operadores de Comparación:\n* `==` : Igual a (compara si dos valores son iguales)\n* `!=` o `<>` : Diferente de\n* `>` : Mayor que | `<` : Menor que\n* `>=` : Mayor o igual | `<=` : Menor o igual",
+                        'title' => 'La decisión if (Condicional simple)',
+                        'markdown' => "## 🔀 La Decisión `if` (Condicional Simple)\n\nEn la vida real tomamos decisiones constantemente: *\"Si está lloviendo, entonces llevo paraguas\"*. En programación, las computadoras hacen exactamente lo mismo utilizando la palabra clave **`if`**.\n\nUna estructura condicional evalúa una **expresión lógica**:\n* Si la condición es **`true`** (Verdadera), ejecuta las instrucciones dentro del bloque.\n* Si es **`false`** (Falsa), simplemente se salta ese bloque y continúa.\n\n---\n\n### ⚖️ Operadores de Comparación:\n* `==` : Igual a (compara si dos valores son iguales)\n* `!=` : Diferente de\n* `>` : Mayor que | `<` : Menor que\n* `>=` : Mayor o igual | `<=` : Menor o igual",
                         'pseudocode' => [
-                            'codigo' => "puntos = 120\n\nSi puntos >= 100 Entonces\n    Escribir \"¡Felicitaciones! Has subido de nivel.\"\n    Escribir \"Obtienes una bonificación de +20 XP.\"\nFinSi\n\nEscribir \"Continuando la aventura...\"",
-                            'explicacion' => "Como 120 >= 100 es Verdadero, el bloque interior se ejecuta y muestra las felicitaciones.",
+                            'codigo' => "puntos = 120\n\nif puntos >= 100:\n    print(\"¡Felicitaciones! Has subido de nivel.\")\n    print(\"Obtienes una bonificación de +20 XP.\")\n\nprint(\"Continuando la aventura...\")",
+                            'explicacion' => "Como 120 >= 100 es true, el bloque interior del 'if' se ejecuta y muestra las felicitaciones.",
                             'reto' => [
-                                'pregunta' => "Si tenemos `temperatura = 32` y el código `Si temperatura > 30 Entonces Escribir \"¡Hace calor!\" FinSi`. ¿Qué se mostrará en pantalla?",
+                                'pregunta' => "Si tenemos `temperatura = 32` y el código: `if temperatura > 30: print(\"¡Hace calor!\")`. ¿Qué se mostrará en pantalla?",
                                 'opciones' => [
-                                    ['id' => 'a', 'texto' => '¡Hace calor!', 'es_correcta' => true, 'feedback' => '¡Correcto! Como 32 > 30 es Verdadero, el bloque interior se ejecuta.'],
-                                    ['id' => 'b', 'texto' => 'Nada (la pantalla queda vacía)', 'es_correcta' => false, 'feedback' => 'Incorrecto: la condición sí se cumple, por lo que la instrucción sí se ejecuta.'],
-                                    ['id' => 'c', 'texto' => 'Error de sintaxis', 'es_correcta' => false, 'feedback' => 'Incorrecto: la estructura condicional simple está escrita correctamente.']
+                                    ['id' => 'a', 'texto' => '¡Hace calor!', 'es_correcta' => true, 'feedback' => '¡Correcto! Como 32 > 30 es true, el bloque interior del if se ejecuta.'],
+                                    ['id' => 'b', 'texto' => 'Nada (la pantalla queda vacía)', 'es_correcta' => false, 'feedback' => 'Incorrecto: la condición sí se cumple (true), por lo que el print sí se ejecuta.'],
+                                    ['id' => 'c', 'texto' => 'Error de sintaxis', 'es_correcta' => false, 'feedback' => 'Incorrecto: la estructura condicional if está escrita correctamente.']
                                 ]
                             ]
                         ],
@@ -217,17 +217,17 @@ class ContentSeeder extends Seeder
                         'requires_quiz' => false,
                     ],
                     [
-                        'title' => 'Si-entonces-sino',
-                        'markdown' => "## ⚖️ Si-Entonces-Sino (Alternativa Doble)\n\n¿Qué ocurre cuando quieres ejecutar una acción si la condición se cumple, pero **otra acción totalmente distinta** si no se cumple?\n\nPara esto usamos la cláusula **Sino** (`Else`).\n\n---\n\n### 📌 Estructura Fundamental:\n```\nSi condicion Entonces\n    // Se ejecuta solo si es VERDADERO\nSino\n    // Se ejecuta solo si es FALSO\nFinSi\n```\n\n> 💡 **Regla:** En una estructura `Si-Entonces-Sino`, **solo una de las dos ramas** se ejecutará en cada ejecución, nunca ambas.",
+                        'title' => 'Estructura if - else',
+                        'markdown' => "## ⚖️ Estructura `if` - `else` (Alternativa Doble)\n\n¿Qué ocurre cuando quieres ejecutar una acción si la condición se cumple, pero **otra acción totalmente distinta** si no se cumple?\n\nPara esto usamos la cláusula **`else`** (Sino).\n\n---\n\n### 📌 Estructura Fundamental:\n```\nif condicion:\n    // Se ejecuta solo si la condición es TRUE\nelse:\n    // Se ejecuta solo si la condición es FALSE\n```\n\n> 💡 **Regla de oro:** En una estructura `if` - `else`, **solo una de las dos ramas** se ejecutará en cada ejecución, nunca ambas.",
                         'pseudocode' => [
-                            'codigo' => "calificacion = 58\n\nSi calificacion >= 60 Entonces\n    Escribir \"Estado: Aprobado\"\n    Escribir \"¡Excelente trabajo!\"\nSino\n    Escribir \"Estado: Reprobado\"\n    puntos_faltantes = 60 - calificacion\n    Escribir \"Te faltaron\", puntos_faltantes, \"puntos para aprobar.\"\nFinSi",
-                            'explicacion' => "Como 58 >= 60 es Falso, el programa se salta la rama 'Entonces' y ejecuta únicamente el 'Sino'.",
+                            'codigo' => "calificacion = 58\n\nif calificacion >= 60:\n    print(\"Estado: Aprobado\")\n    print(\"¡Excelente trabajo!\")\nelse:\n    print(\"Estado: Reprobado\")\n    puntos_faltantes = 60 - calificacion\n    print(\"Te faltaron\", puntos_faltantes, \"puntos para aprobar.\")",
+                            'explicacion' => "Como 58 >= 60 es false, el programa se salta la rama 'if' y ejecuta únicamente el bloque 'else'.",
                             'reto' => [
-                                'pregunta' => "Dado el código: `edad = 15`. `Si edad >= 18 Entonces Escribir \"Mayor\" Sino Escribir \"Menor\" FinSi`. ¿Qué rama se ejecutará?",
+                                'pregunta' => "Dado el código: `edad = 15`. `if edad >= 18: print(\"Mayor\") else: print(\"Menor\")`. ¿Qué rama se ejecutará?",
                                 'opciones' => [
-                                    ['id' => 'a', 'texto' => 'Ambas ramas de forma consecutiva', 'es_correcta' => false, 'feedback' => 'Incorrecto: las ramas Entonces y Sino son mutuamente excluyentes; solo una se ejecuta.'],
-                                    ['id' => 'b', 'texto' => 'La rama Sino, mostrando \"Menor\"', 'es_correcta' => true, 'feedback' => '¡Exacto! Como 15 >= 18 es Falso, el flujo salta directamente al bloque Sino.'],
-                                    ['id' => 'c', 'texto' => 'La rama Entonces, mostrando \"Mayor\"', 'es_correcta' => false, 'feedback' => 'Incorrecto: 15 no cumple la condición de ser mayor o igual a 18.']
+                                    ['id' => 'a', 'texto' => 'Ambas ramas de forma consecutiva', 'es_correcta' => false, 'feedback' => 'Incorrecto: las ramas if y else son mutuamente excluyentes; solo una se ejecuta.'],
+                                    ['id' => 'b', 'texto' => 'La rama else, imprimiendo \"Menor\"', 'es_correcta' => true, 'feedback' => '¡Exacto! Como 15 >= 18 es false, el flujo salta directamente al bloque else.'],
+                                    ['id' => 'c', 'texto' => 'La rama if, imprimiendo \"Mayor\"', 'es_correcta' => false, 'feedback' => 'Incorrecto: 15 no cumple la condición de ser mayor o igual a 18.']
                                 ]
                             ]
                         ],
@@ -236,17 +236,17 @@ class ContentSeeder extends Seeder
                         'requires_quiz' => false,
                     ],
                     [
-                        'title' => 'Condicionales anidadas',
-                        'markdown' => "## 🧩 Condicionales Anidadas y Operadores Lógicos\n\nA menudo, una sola pregunta no es suficiente para tomar una decisión compleja. Podemos combinar múltiples condiciones usando **operadores lógicos**:\n\n---\n\n### 🧠 Operadores Lógicos:\n* **`Y` (`AND`):** Todas las condiciones deben cumplirse.\n* **`O` (`OR`):** Basta con que al menos UNA condición se cumpla.\n* **`NO` (`NOT`):** Invierte el valor lógico.\n\n---\n\n### 📂 Condicionales Anidadas (`Si-SinoSi`):\nPermiten clasificar datos en múltiples categorías en cascada (ejemplo: escalas de notas A, B, C, D).",
+                        'title' => 'Condicionales anidadas y operadores',
+                        'markdown' => "## 🧩 Condicionales Anidadas y Operadores Lógicos\n\nA menudo, una sola pregunta no es suficiente para tomar una decisión compleja. Podemos combinar múltiples condiciones usando **operadores lógicos** estándar:\n\n---\n\n### 🧠 Operadores Lógicos:\n* **`and` (Y):** Todas las condiciones deben ser `true` para que el resultado sea `true`.\n* **`or` (O):** Basta con que al menos UNA condición sea `true`.\n* **`not` (NO):** Invierte el valor booleano (`not true` es `false`).\n\n---\n\n### 📂 Condicionales en Cascada (`if` - `else if`):\nPermiten clasificar datos en múltiples categorías ordenadas (ejemplo: escalas de notas A, B, C, D).",
                         'pseudocode' => [
-                            'codigo' => "nota = 88\n\nSi nota >= 90 Entonces\n    Escribir \"Rango: Excelente (A)\"\nSino\n    Si nota >= 80 Y nota < 90 Entonces\n        Escribir \"Rango: Muy Bueno (B)\"\n    Sino\n        Si nota >= 60 Entonces\n            Escribir \"Rango: Aprobado (C)\"\n        Sino\n            Escribir \"Rango: Necesita Refuerzo (D)\"\n        FinSi\n    FinSi\nFinSi",
-                            'explicacion' => "Con nota = 88, la primera condición es falsa, pero la segunda (nota >= 80 Y nota < 90) es verdadera, mostrando 'Muy Bueno (B)'.",
+                            'codigo' => "nota = 88\n\nif nota >= 90:\n    print(\"Rango: Excelente (A)\")\nelse:\n    if nota >= 80 and nota < 90:\n        print(\"Rango: Muy Bueno (B)\")\n    else:\n        if nota >= 60:\n            print(\"Rango: Aprobado (C)\")\n        else:\n            print(\"Rango: Necesita Refuerzo (D)\")",
+                            'explicacion' => "Con nota = 88, la primera condición es false, pero la segunda (nota >= 80 and nota < 90) es true, mostrando 'Muy Bueno (B)'.",
                             'reto' => [
-                                'pregunta' => "Evalúa la siguiente expresión lógica combinada: `(5 > 3) Y (10 < 8)`. ¿Cuál es el resultado booleano final?",
+                                'pregunta' => "Evalúa la siguiente expresión lógica combinada: `(5 > 3) and (10 < 8)`. ¿Cuál es el resultado booleano final?",
                                 'opciones' => [
-                                    ['id' => 'a', 'texto' => 'Verdadero', 'es_correcta' => false, 'feedback' => 'Incorrecto: el operador Y exige que AMBAS condiciones se cumplan, pero 10 < 8 es Falso.'],
-                                    ['id' => 'b', 'texto' => 'Falso', 'es_correcta' => true, 'feedback' => '¡Muy bien! (5 > 3) es Verdadero, pero (10 < 8) es Falso. Verdadero Y Falso da Falso.'],
-                                    ['id' => 'c', 'texto' => 'Indeterminado', 'es_correcta' => false, 'feedback' => 'Incorrecto: toda expresión booleana tiene un valor definido de Verdadero o Falso.']
+                                    ['id' => 'a', 'texto' => 'true', 'es_correcta' => false, 'feedback' => 'Incorrecto: el operador and exige que AMBAS condiciones sean true, pero 10 < 8 es false.'],
+                                    ['id' => 'b', 'texto' => 'false', 'es_correcta' => true, 'feedback' => '¡Muy bien! (5 > 3) es true, pero (10 < 8) es false. true and false resulta en false.'],
+                                    ['id' => 'c', 'texto' => 'null / Indeterminado', 'es_correcta' => false, 'feedback' => 'Incorrecto: toda expresión booleana tiene un valor definido de true o false.']
                                 ]
                             ]
                         ],
@@ -256,16 +256,16 @@ class ContentSeeder extends Seeder
                     ],
                     [
                         'title' => 'Evaluación del módulo',
-                        'markdown' => "## 🏆 Hito del Módulo: Estructuras Condicionales\n\n¡Has aprendido a controlar el flujo de ejecución de tus programas!\n\n---\n\n### 📋 Repaso de conceptos clave:\n* Estructuras `Si-Entonces` para decisiones simples.\n* Alternativas dobles con `Si-Entonces-Sino`.\n* Combinación de condiciones con operadores `Y`, `O`, `NO`.\n\n> 🎯 **Siguiente Reto:** Presenta la evaluación final de condicionales (mínimo 70%) para desbloquear la insignia **Mago del Control**.",
+                        'markdown' => "## 🏆 Hito del Módulo: Estructuras Condicionales\n\n¡Has aprendido a controlar el flujo de ejecución de tus programas con `if`, `else`, `and`, `or` y `not`!\n\n---\n\n### 📋 Repaso de conceptos clave:\n* Estructuras `if` para decisiones simples.\n* Alternativas dobles con `if` - `else`.\n* Combinación de condiciones lógicas con `and`, `or`, `not`.\n\n> 🎯 **Siguiente Reto:** Presenta la evaluación final de condicionales (mínimo 70%) para desbloquear la insignia **Mago del Control**.",
                         'pseudocode' => [
-                            'codigo' => "hora = 14\nes_dia_laboral = Verdadero\n\nSi es_dia_laboral Y (hora >= 8 Y hora <= 17) Entonces\n    Escribir \"Horario de atención disponible.\"\nSino\n    Escribir \"Oficina cerrada fuera de horario.\"\nFinSi",
-                            'explicacion' => "Verificación de rangos horarios con operadores lógicos combinados.",
+                            'codigo' => "hora = 14\nes_dia_laboral = true\n\nif es_dia_laboral and (hora >= 8 and hora <= 17):\n    print(\"Horario de atención disponible.\")\nelse:\n    print(\"Oficina cerrada fuera de horario.\")",
+                            'explicacion' => "Verificación de rangos horarios con operadores lógicos combinados 'and'.",
                             'reto' => [
-                                'pregunta' => "En un sistema de acceso: `tiene_pase = Falso`, `es_admin = Verdadero`. La condición es `Si tiene_pase O es_admin Entonces Escribir \"Acceso Permitido\" FinSi`. ¿Qué ocurrirá?",
+                                'pregunta' => "En un sistema de acceso: `tiene_pase = false`, `es_admin = true`. La condición es `if tiene_pase or es_admin: print(\"Acceso Permitido\")`. ¿Qué ocurrirá?",
                                 'opciones' => [
-                                    ['id' => 'a', 'texto' => 'Mostrará \"Acceso Permitido\", porque con el operador O basta con que una condición sea Verdadera.', 'es_correcta' => true, 'feedback' => '¡Excelente! Al ser `es_admin` Verdadero, la condición completa del operador O se cumple.'],
-                                    ['id' => 'b', 'texto' => 'No mostrará nada, porque `tiene_pase` es Falso.', 'es_correcta' => false, 'feedback' => 'Incorrecto: el operador O no requiere que ambas sean verdaderas, basta con una.'],
-                                    ['id' => 'c', 'texto' => 'Dará un error por tener dos variables con estados distintos.', 'es_correcta' => false, 'feedback' => 'Incorrecto: combinar variables booleanas con operadores lógicos es una práctica estándar y válida.']
+                                    ['id' => 'a', 'texto' => 'Mostrará \"Acceso Permitido\", porque con el operador or basta con que una condición sea true.', 'es_correcta' => true, 'feedback' => '¡Excelente! Al ser `es_admin` true, la condición completa del operador or se cumple.'],
+                                    ['id' => 'b', 'texto' => 'No mostrará nada, porque `tiene_pase` es false.', 'es_correcta' => false, 'feedback' => 'Incorrecto: el operador or no requiere que ambas sean verdaderas, basta con que una lo sea.'],
+                                    ['id' => 'c', 'texto' => 'Dará un error por tener dos variables con estados booleanos distintos.', 'es_correcta' => false, 'feedback' => 'Incorrecto: combinar variables booleanas con operadores lógicos es una práctica estándar y válida.']
                                 ]
                             ]
                         ],
@@ -276,8 +276,8 @@ class ContentSeeder extends Seeder
                 ],
                 'quiz_questions' => [
                     [
-                        'statement' => "Analiza el siguiente fragmento de código condicional:\n\n```\npuntos = 85\nSi puntos >= 90 Entonces\n    mensaje = \"Nivel Oro\"\nSino\n    Si puntos >= 75 Entonces\n        mensaje = \"Nivel Plata\"\n    Sino\n        mensaje = \"Nivel Bronce\"\n    FinSi\nFinSi\nEscribir mensaje\n```\n\n¿Qué texto mostrará la pantalla?",
-                        'explanation' => "Como `85 >= 90` es Falso, pasa al bloque `Sino`. Allí `85 >= 75` es Verdadero, asignando `\"Nivel Plata\"`.",
+                        'statement' => "Analiza el siguiente fragmento de código condicional:\n\n```\npuntos = 85\nif puntos >= 90:\n    mensaje = \"Nivel Oro\"\nelse:\n    if puntos >= 75:\n        mensaje = \"Nivel Plata\"\n    else:\n        mensaje = \"Nivel Bronce\"\nprint(mensaje)\n```\n\n¿Qué texto mostrará la pantalla?",
+                        'explanation' => "Como `85 >= 90` es false, pasa al bloque `else`. Allí `85 >= 75` es true, asignando `\"Nivel Plata\"`.",
                         'options' => [
                             ['texto' => 'Nivel Plata', 'correcta' => true, 'feedback' => '¡Correcto! 85 no es >= 90, pero sí cumple la segunda condición `85 >= 75`.'],
                             ['texto' => 'Nivel Oro', 'correcta' => false, 'feedback' => 'Incorrecto: 85 no es mayor o igual a 90.'],
@@ -285,39 +285,39 @@ class ContentSeeder extends Seeder
                         ]
                     ],
                     [
-                        'statement' => "¿Cuál es el valor booleano resultante de evaluar la siguiente expresión lógica combinada?\n\n```\nresultado = (10 > 5) Y (3 == 4)\n```",
-                        'explanation' => "La primera condición `(10 > 5)` es Verdadera, pero la segunda `(3 == 4)` es Falsa. En una conjunción (`Y`), `Verdadero Y Falso` produce `Falso`.",
+                        'statement' => "¿Cuál es el valor booleano resultante de evaluar la siguiente expresión lógica combinada?\n\n```\nresultado = (10 > 5) and (3 == 4)\n```",
+                        'explanation' => "La primera condición `(10 > 5)` es true, pero la segunda `(3 == 4)` es false. En una conjunción (`and`), `true and false` produce `false`.",
                         'options' => [
-                            ['texto' => 'Falso', 'correcta' => true, 'feedback' => '¡Correcto! `10 > 5` es Verdadero, pero `3 == 4` es Falso. Con el operador `Y`, ambas deben ser verdaderas.'],
-                            ['texto' => 'Verdadero', 'correcta' => false, 'feedback' => 'Incorrecto: con el operador `Y`, si una sola condición es falsa, toda la expresión es falsa.'],
+                            ['texto' => 'false', 'correcta' => true, 'feedback' => '¡Correcto! `10 > 5` es true, pero `3 == 4` es false. Con el operador `and`, ambas deben ser verdaderas.'],
+                            ['texto' => 'true', 'correcta' => false, 'feedback' => 'Incorrecto: con el operador `and`, si una sola condición es falsa, toda la expresión es false.'],
                             ['texto' => 'Error de sintaxis', 'correcta' => false, 'feedback' => 'Incorrecto: la expresión lógica de comparación y conjunción está escrita correctamente.']
                         ]
                     ],
                     [
-                        'statement' => "Para ingresar a una atracción mecánica se requiere que el visitante tenga **al menos 12 años** O que **venga acompañado por un tutor adulto**. Si `edad = 10` y `acompanado = Verdadero`, ¿qué expresión lógica evalúa correctamente esta regla?",
-                        'explanation' => "La regla utiliza una disyunción (`O`): basta con tener 12 o más años, O bien venir acompañado por un tutor.",
+                        'statement' => "Para ingresar a una atracción mecánica se requiere que el visitante tenga **al menos 12 años** O que **venga acompañado por un tutor adulto**. Si `edad = 10` y `acompanado = true`, ¿qué expresión lógica evalúa correctamente esta regla?",
+                        'explanation' => "La regla utiliza una disyunción (`or`): basta con tener 12 o más años, o bien venir acompañado por un tutor.",
                         'options' => [
-                            ['texto' => 'edad >= 12 O acompanado == Verdadero', 'correcta' => true, 'feedback' => '¡Correcto! El operador `O` permite el ingreso si se cumple cualquiera de las dos condiciones.'],
-                            ['texto' => 'edad >= 12 Y acompanado == Verdadero', 'correcta' => false, 'feedback' => 'Incorrecto: el operador `Y` obligaría a tener 12 años y además venir acompañado.'],
-                            ['texto' => 'edad == 12 O acompanado == Falso', 'correcta' => false, 'feedback' => 'Incorrecto: no representa fielmente las condiciones de la regla.']
+                            ['texto' => 'edad >= 12 or acompanado == true', 'correcta' => true, 'feedback' => '¡Correcto! El operador `or` permite el ingreso si se cumple cualquiera de las dos condiciones.'],
+                            ['texto' => 'edad >= 12 and acompanado == true', 'correcta' => false, 'feedback' => 'Incorrecto: el operador `and` obligaría a tener 12 años y además venir acompañado obligatoriamente.'],
+                            ['texto' => 'edad == 12 or acompanado == false', 'correcta' => false, 'feedback' => 'Incorrecto: no representa fielmente las condiciones de la regla.']
                         ]
                     ],
                     [
-                        'statement' => "Observa el siguiente algoritmo de cajero automático:\n\n```\nsaldo = 50\nmonto_retiro = 80\n\nSi monto_retiro <= saldo Entonces\n    saldo = saldo - monto_retiro\n    Escribir \"Retiro exitoso\"\nSino\n    Escribir \"Fondos insuficientes\"\nFinSi\nEscribir \"Saldo actual:\", saldo\n```\n\n¿Qué dos líneas de salida se imprimirán en pantalla?",
-                        'explanation' => "`80 <= 50` es Falso, por lo que entra al bloque `Sino` imprimiendo 'Fondos insuficientes' y el `saldo` se mantiene intacto en 50.",
+                        'statement' => "Observa el siguiente algoritmo de cajero automático:\n\n```\nsaldo = 50\nmonto_retiro = 80\n\nif monto_retiro <= saldo:\n    saldo = saldo - monto_retiro\n    print(\"Retiro exitoso\")\nelse:\n    print(\"Fondos insuficientes\")\n\nprint(\"Saldo actual:\", saldo)\n```\n\n¿Qué dos líneas de salida se imprimirán en pantalla?",
+                        'explanation' => "`80 <= 50` es false, por lo que entra al bloque `else` imprimiendo 'Fondos insuficientes' y el `saldo` se mantiene intacto en 50.",
                         'options' => [
-                            ['texto' => '"Fondos insuficientes" y "Saldo actual: 50"', 'correcta' => true, 'feedback' => '¡Correcto! 80 <= 50 es Falso, se ejecuta el Sino y el saldo no se altera.'],
+                            ['texto' => '"Fondos insuficientes" y "Saldo actual: 50"', 'correcta' => true, 'feedback' => '¡Correcto! 80 <= 50 es false, se ejecuta el else y el saldo no se altera.'],
                             ['texto' => '"Retiro exitoso" y "Saldo actual: -30"', 'correcta' => false, 'feedback' => 'Incorrecto: la condición condicional previene que el saldo quede en negativo.'],
                             ['texto' => '"Fondos insuficientes" y "Saldo actual: 0"', 'correcta' => false, 'feedback' => 'Incorrecto: el saldo no se redujo a cero porque no se ejecutó el retiro.']
                         ]
                     ],
                     [
-                        'statement' => "¿Cuál es el efecto del operador lógico `NO` (`NOT`) al aplicarse sobre una variable o expresión booleana?",
-                        'explanation' => "El operador `NO` niega o invierte el valor de verdad: convierte `Verdadero` en `Falso`, y `Falso` en `Verdadero`.",
+                        'statement' => "¿Cuál es el efecto del operador lógico `not` al aplicarse sobre una variable o expresión booleana?",
+                        'explanation' => "El operador `not` niega o invierte el valor de verdad: convierte `true` en `false`, y `false` en `true`.",
                         'options' => [
-                            ['texto' => 'Invierte el valor de verdad (Verdadero pasa a Falso y viceversa)', 'correcta' => true, 'feedback' => '¡Correcto! Es la operación de negación lógica unaria.'],
+                            ['texto' => 'Invierte el valor de verdad (true pasa a false y viceversa)', 'correcta' => true, 'feedback' => '¡Correcto! Es la operación de negación lógica unaria estándar.'],
                             ['texto' => 'Compara si dos números son exactamente iguales', 'correcta' => false, 'feedback' => 'Incorrecto: esa es la función del operador de comparación `==`.'],
-                            ['texto' => 'Borra la variable de la memoria de la computadora', 'correcta' => false, 'feedback' => 'Incorrecto: `NO` es un operador lógico, no una instrucción de eliminación.']
+                            ['texto' => 'Borra la variable de la memoria de la computadora', 'correcta' => false, 'feedback' => 'Incorrecto: `not` es un operador lógico booleano, no una instrucción de eliminación.']
                         ]
                     ]
                 ]
@@ -412,22 +412,22 @@ class ContentSeeder extends Seeder
                 'explanation' => 'Un algoritmo es una secuencia ORDENADA de pasos.',
             ],
             'variables' => [
-                'statement' => 'En pseudocódigo: edad = 15, luego edad = edad + 1. ¿Cuánto vale edad al final?',
+                'statement' => 'En código: `edad = 15`, luego `edad = edad + 1`. ¿Cuánto vale `edad` al final?',
                 'options' => ['16', '15', 'No se puede saber'],
                 'correct' => 0,
                 'explanation' => 'La variable se actualiza: 15 + 1 = 16.',
             ],
             'conditionals' => [
-                'statement' => 'Si nota >= 60 entonces imprimir "Aprobado" sino imprimir "Reprobado". Con nota = 60, ¿qué imprime?',
+                'statement' => 'Dado el código: `if nota >= 60: print("Aprobado") else: print("Reprobado")`. Con `nota = 60`, ¿qué imprime?',
                 'options' => ['Aprobado', 'Reprobado', 'No imprime nada'],
                 'correct' => 0,
-                'explanation' => '60 >= 60 es verdadero → entra por la rama "entonces".',
+                'explanation' => '60 >= 60 es true → entra por el bloque "if".',
             ],
             'loops' => [
-                'statement' => 'Mientras i <= 3: imprimir i, i = i + 1 (i empieza en 1). ¿Cuántas veces se imprime?',
+                'statement' => 'Dado el código: `while i <= 3: print(i); i = i + 1` (iniciando `i = 1`). ¿Cuántas veces se ejecuta el print?',
                 'options' => ['3 veces', '4 veces', 'Infinitas veces'],
                 'correct' => 0,
-                'explanation' => 'Se imprime con i = 1, 2, 3. Cuando i = 4 la condición falla y termina.',
+                'explanation' => 'Se imprime con i = 1, 2, 3. Cuando i = 4 la condición es false y termina.',
             ],
 
         ];
@@ -459,22 +459,22 @@ class ContentSeeder extends Seeder
                 'explanation' => 'Un algoritmo exige que el orden produzca el resultado.',
             ],
             'variables' => [
-                'statement' => 'En pseudocódigo: saldo = 50, saldo = saldo - 20, saldo = saldo * 2. ¿Cuánto vale saldo?',
+                'statement' => 'En código: `saldo = 50`, `saldo = saldo - 20`, `saldo = saldo * 2`. ¿Cuánto vale `saldo`?',
                 'options' => ['60', '30', '20'],
                 'correct' => 0,
                 'explanation' => '50 - 20 = 30, luego 30 × 2 = 60.',
             ],
             'conditionals' => [
-                'statement' => 'Si edad >= 18 entonces imprimir "Adulto" sino imprimir "Menor". Con edad = 17, ¿qué imprime?',
+                'statement' => 'Dado el código: `if edad >= 18: print("Adulto") else: print("Menor")`. Con `edad = 17`, ¿qué imprime?',
                 'options' => ['Menor', 'Adulto', 'Error'],
                 'correct' => 0,
-                'explanation' => '17 >= 18 es falso → va por el "sino".',
+                'explanation' => '17 >= 18 es false → se ejecuta el bloque "else".',
             ],
             'loops' => [
-                'statement' => 'Repetir 4 veces: imprimir "EduGT". ¿Cuántas líneas se muestran?',
+                'statement' => 'Dado el bucle: `for i in range(4): print("EduGT")`. ¿Cuántas líneas se muestran en pantalla?',
                 'options' => ['4', '3', '5'],
                 'correct' => 0,
-                'explanation' => 'El bucle fijo ejecuta el cuerpo exactamente 4 veces.',
+                'explanation' => 'El bucle for ejecuta el print exactamente 4 veces.',
             ],
         ];
 
