@@ -85,7 +85,6 @@ $('#form-login')?.addEventListener('submit', async (e) => {
   btn.disabled = true;
   btn.textContent = 'Entrando...';
 
-  const hpValue = $('#login-website-hp')?.value || '';
   let token = '';
   if (typeof turnstile !== 'undefined' && loginWidgetId !== null) {
     token = turnstile.getResponse(loginWidgetId) || '';
@@ -98,7 +97,6 @@ $('#form-login')?.addEventListener('submit', async (e) => {
       body: {
         email: $('#login-email').value.trim(),
         password: $('#login-password').value,
-        website_hp: hpValue,
         turnstile_token: token,
       },
     });
@@ -115,8 +113,6 @@ $('#form-login')?.addEventListener('submit', async (e) => {
       showAlert('Tu cuenta de docente está pendiente de aprobación. Te avisaremos cuando sea activada.');
     } else if (err.errors?.turnstile_token) {
       showAlert(err.errors.turnstile_token[0]);
-    } else if (err.errors?.website_hp) {
-      showAlert('Solicitud bloqueada por seguridad.');
     } else if (err.errors?.email) {
       const emailErr = err.errors.email[0];
       showAlert(emailErr === 'validation.email' ? 'Credenciales invalidas, revisa el correo o la contraseña' : emailErr);
@@ -139,7 +135,6 @@ $('#form-register')?.addEventListener('submit', async (e) => {
   hideAlert();
 
   const role = document.querySelector('input[name="role"]:checked')?.value;
-  const hpValue = $('#reg-website-hp')?.value || '';
   let token = '';
   if (typeof turnstile !== 'undefined' && regWidgetId !== null) {
     token = turnstile.getResponse(regWidgetId) || '';
@@ -160,7 +155,6 @@ $('#form-register')?.addEventListener('submit', async (e) => {
         email: $('#reg-email').value.trim(),
         password: $('#reg-password').value,
         role: role || 'student',
-        website_hp: hpValue,
         turnstile_token: token,
       },
     });
