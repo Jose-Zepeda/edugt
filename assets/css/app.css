@@ -16,9 +16,14 @@
   --edugt-amber: #B45309;          /* advertencia/progreso */
   --edugt-amber-soft: #FEF3C7;
 
-  /* Neutrales */
+  /* Neutrales & Tema Claro */
   --edugt-bg: #F1EFFB;             /* fondo general lavanda muy claro */
+  --edugt-bg-ambient: radial-gradient(circle at 8% 12%, rgba(109, 74, 239, 0.07) 0%, transparent 40%),
+                      radial-gradient(circle at 92% 18%, rgba(244, 114, 182, 0.05) 0%, transparent 35%),
+                      radial-gradient(circle at 50% 85%, rgba(22, 163, 74, 0.03) 0%, transparent 45%),
+                      #F1EFFB;
   --edugt-card: #FFFFFF;
+  --edugt-card-subtle: #FAF9FF;
   --edugt-text: #2A2440;           /* texto principal (violeta-negro) */
   --edugt-muted: #5B5578;          /* texto secundario */
   --edugt-border: #E4E1F5;
@@ -33,8 +38,31 @@
   --edugt-shadow-hover: 0 14px 32px rgba(109, 74, 239, .16);
 }
 
+/* Base lista para Modo Oscuro futuro */
+[data-theme="dark"] {
+  --edugt-bg: #0F0D1B;
+  --edugt-bg-ambient: radial-gradient(circle at 8% 12%, rgba(109, 74, 239, 0.20) 0%, transparent 45%),
+                      radial-gradient(circle at 92% 18%, rgba(244, 114, 182, 0.12) 0%, transparent 40%),
+                      radial-gradient(circle at 50% 85%, rgba(16, 185, 129, 0.07) 0%, transparent 45%),
+                      #0F0D1B;
+  --edugt-card: #181528;
+  --edugt-card-subtle: #131022;
+  --edugt-text: #F1EFFB;
+  --edugt-muted: #9D96B8;
+  --edugt-border: #2E2948;
+  --edugt-sidebar-bg: #181528;
+  --edugt-primary-soft: #272048;
+  --edugt-pink-soft: #381A2D;
+  --edugt-green-soft: #122B22;
+  --edugt-amber-soft: #382A14;
+  --edugt-shadow: 0 10px 30px rgba(0, 0, 0, .40);
+  --edugt-shadow-soft: 0 4px 14px rgba(0, 0, 0, .30);
+  --edugt-shadow-hover: 0 14px 32px rgba(109, 74, 239, .30);
+}
+
 body {
-  background: var(--edugt-bg);
+  background: var(--edugt-bg-ambient);
+  background-attachment: fixed;
   color: var(--edugt-text);
   font-family: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
   min-height: 100vh;
