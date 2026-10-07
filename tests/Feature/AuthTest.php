@@ -206,33 +206,6 @@ describe('RF-2 — completar registro Google sin token previo', function () {
 });
 
 describe('Protección Anti-Bot y CAPTCHA Cloudflare Turnstile', function () {
-    it('bloquea el registro si el campo honeypot website_hp está lleno', function () {
-        $res = postJson('/api/v1/auth/register', [
-            'name' => 'Bot Spammer',
-            'email' => 'bot@spammer.test',
-            'password' => 'SuperSecret123!',
-            'role' => 'student',
-            'website_hp' => 'https://spam-bot.site',
-        ]);
-
-        $res->assertStatus(422)
-            ->assertJsonValidationErrors(['website_hp']);
-        expect(User::where('email', 'bot@spammer.test')->exists())->toBeFalse();
-    });
-
-    it('bloquea el login si el campo honeypot website_hp está lleno', function () {
-        $user = User::factory()->student()->create(['email' => 'legit@example.com']);
-
-        $res = postJson('/api/v1/auth/login', [
-            'email' => 'legit@example.com',
-            'password' => 'password',
-            'website_hp' => 'http://spam-link.site',
-        ]);
-
-        $res->assertStatus(422)
-            ->assertJsonValidationErrors(['website_hp']);
-    });
-
     it('exige token de Turnstile válido cuando el captcha está habilitado en registro', function () {
         config(['services.turnstile.enabled' => true]);
 

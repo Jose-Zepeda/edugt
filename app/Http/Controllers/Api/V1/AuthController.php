@@ -33,12 +33,6 @@ final class AuthController extends Controller
     /** POST /api/v1/auth/register — RF-1, RF-3 */
     public function register(Request $request): JsonResponse
     {
-        if ($request->filled('website_hp')) {
-            throw ValidationException::withMessages([
-                'website_hp' => ['Detección de actividad sospechosa.'],
-            ]);
-        }
-
         $request->merge([
             'turnstile_token' => $request->input('turnstile_token') ?? $request->input('cf-turnstile-response'),
         ]);
@@ -72,12 +66,6 @@ final class AuthController extends Controller
     /** POST /api/v1/auth/login — RF-1; 423 teacher pendiente */
     public function login(Request $request): JsonResponse
     {
-        if ($request->filled('website_hp')) {
-            throw ValidationException::withMessages([
-                'website_hp' => ['Detección de actividad sospechosa.'],
-            ]);
-        }
-
         $request->merge([
             'turnstile_token' => $request->input('turnstile_token') ?? $request->input('cf-turnstile-response'),
         ]);
