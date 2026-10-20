@@ -8,9 +8,17 @@ Auth.load();
 
 const $ = (sel) => document.querySelector(sel);
 
-const TURNSTILE_SITE_KEY = '1x00000000000000000000AA'; // Clave de prueba de Cloudflare (Pasa siempre / Estable en localhost)
+const TURNSTILE_SITE_KEY = '1x00000000000000000000AA'; // Clave de prueba de Cloudflare (solo para localhost)
+const IS_LOCALHOST = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const SHOULD_RENDER_TURNSTILE = TURNSTILE_SITE_KEY !== '1x00000000000000000000AA';
 let loginWidgetId = null;
 let regWidgetId = null;
+
+// Ajustar enlace de Google OAuth dinámicamente según el entorno
+const btnGoogle = document.getElementById('btn-google');
+if (btnGoogle && typeof API_BASE !== 'undefined') {
+  btnGoogle.href = `${API_BASE}/auth/google/redirect`;
+}
 
 /* ---------------- Tema Claro / Oscuro en Login ---------------- */
 function syncAuthThemeIcon() {
@@ -37,12 +45,13 @@ document.getElementById('auth-theme-toggle')?.addEventListener('click', () => {
 });
 
 function renderTurnstile() {
-  if (typeof turnstile === 'undefined') return;
+  if (!SHOULD_RENDER_TURNSTILE || typeof turnstile === 'undefined') return;
   const curTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
 
   const loginContainer = document.getElementById('turnstile-login');
   if (loginContainer && loginWidgetId === null && !loginContainer.hasChildNodes()) {
     try {
+      loginContainer.classList.remove('d-none');
       loginWidgetId = turnstile.render('#turnstile-login', {
         sitekey: TURNSTILE_SITE_KEY,
         theme: curTheme,
@@ -55,6 +64,7 @@ function renderTurnstile() {
   const regContainer = document.getElementById('turnstile-register');
   if (regContainer && regWidgetId === null && !regContainer.hasChildNodes()) {
     try {
+      regContainer.classList.remove('d-none');
       regWidgetId = turnstile.render('#turnstile-register', {
         sitekey: TURNSTILE_SITE_KEY,
         theme: curTheme,
