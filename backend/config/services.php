@@ -39,7 +39,8 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_REDIRECT_URI', 'http://localhost:8080/api/v1/auth/google/callback'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', rtrim((string) env('APP_URL', 'http://localhost:8080'), '/').'/api/v1/auth/google/callback'),
+        'frontend_url' => env('FRONTEND_URL', env('APP_URL', 'http://localhost:5500')),
     ],
 
     // Cloudflare Turnstile CAPTCHA

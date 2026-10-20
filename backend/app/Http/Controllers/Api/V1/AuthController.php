@@ -87,7 +87,7 @@ final class AuthController extends Controller
     /** GET /api/v1/auth/google/redirect — RF-2 */
     public function googleRedirect()
     {
-        return \Laravel\Socialite\Facades\Socialite::driver('google')->redirect();
+        return \Laravel\Socialite\Facades\Socialite::driver('google')->stateless()->redirect();
     }
 
     /** GET /api/v1/auth/google/callback — RF-2, RB-03, RB-04 */
@@ -123,8 +123,9 @@ final class AuthController extends Controller
     /** ORIGEN del frontend (para redirects 302 desde callbacks) */
     private function feUrl(string $path): string
     {
-        // Solo la variable de entorno; sin cache de config (llevó a un puerto viejo una vez)
-        return rtrim(env('FRONTEND_URL', 'http://localhost:5500'), '/').$path;
+        $base = config('services.google.frontend_url') ?: config('app.url', 'http://localhost:5500');
+
+        return rtrim((string) $base, '/').$path;
     }
 
     /** POST /api/v1/auth/google/complete — RF-2 (formulario posterior nombre+rol) */

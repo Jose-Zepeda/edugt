@@ -15,7 +15,7 @@ final class SocialiteGoogleGateway implements GoogleOAuthGateway
 {
     public function resolve(): OAuthOutcome
     {
-        $googleUser = Socialite::driver('google')->user();
+        $googleUser = Socialite::driver('google')->stateless()->user();
 
         $email = $googleUser->getEmail();
         $googleId = $googleUser->getId();
