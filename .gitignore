@@ -1,0 +1,15 @@
+# Entorno y secretos locales
+.env
+backend/.env
+acceso.txt
+preview-login.txt
+
+# Dependencias y artefactos locales
+backend/vendor/
+backend/node_modules/
+frontend/node_modules/
+frontend/cypress/videos/
+frontend/cypress/screenshots/
+
+# Herramientas de agente local
+.agents/

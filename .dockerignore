@@ -1,0 +1,13 @@
+.git
+**/.git
+backend/vendor
+backend/node_modules
+backend/.env
+backend/storage/logs/*.log
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*.php
+frontend/node_modules
+frontend/cypress/videos
+frontend/cypress/screenshots
+.agents
