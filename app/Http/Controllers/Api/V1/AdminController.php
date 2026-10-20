@@ -24,12 +24,63 @@ final class AdminController extends Controller
         return $user;
     }
 
-    /** GET /api/v1/admin/teachers?status=pending */
+    /** GET /api/v1/admin/metrics */
+    public function metrics(Request $request): JsonResponse
+    {
+        $this->requireAdmin($request);
+
+        $pendingTeachers = User::query()->where('role', 'teacher')->where('status', 'pending_approval')->count();
+        $activeTeachers = User::query()->where('role', 'teacher')->where('status', 'active')->count();
+        $activeStudents = User::query()->where('role', 'student')->where('status', 'active')->count();
+        $activeClassrooms = \App\Domain\Classrooms\Models\Classroom::query()->where('is_active', true)->count();
+
+        $openTickets = \App\Domain\Audit\Models\SupportTicket::query()->where('status', 'open')->count();
+        $inReviewTickets = \App\Domain\Audit\Models\SupportTicket::query()->where('status', 'in_review')->count();
+        $resolvedTickets = \App\Domain\Audit\Models\SupportTicket::query()->where('status', 'resolved')->count();
+
+        $recentLogs = \App\Domain\Audit\Models\AuditLog::query()
+            ->with('user:id,name,email')
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get(['id', 'user_id', 'action', 'target_type', 'target_id', 'context', 'ip', 'created_at']);
+
+        return response()->json([
+            'teachers' => [
+                'pending' => $pendingTeachers,
+                'active' => $activeTeachers,
+                'total' => $pendingTeachers + $activeTeachers,
+            ],
+            'students' => [
+                'active' => $activeStudents,
+            ],
+            'classrooms' => [
+                'active' => $activeClassrooms,
+            ],
+            'tickets' => [
+                'open' => $openTickets,
+                'in_review' => $inReviewTickets,
+                'resolved' => $resolvedTickets,
+                'total' => $openTickets + $inReviewTickets + $resolvedTickets,
+            ],
+            'recent_logs' => $recentLogs,
+        ]);
+    }
+
+    /** GET /api/v1/admin/teachers?status=pending|active|all */
     public function pendingTeachers(Request $request): JsonResponse
     {
         $this->requireAdmin($request);
 
-        $teachers = $this->approvals->pendingList()->get(['id', 'name', 'email', 'created_at']);
+        $status = $request->query('status', 'pending');
+        if ($status === 'pending') {
+            $teachers = $this->approvals->pendingList()->get(['id', 'name', 'email', 'status', 'created_at']);
+        } else {
+            $query = User::query()->where('role', 'teacher');
+            if ($status !== 'all') {
+                $query->where('status', $status);
+            }
+            $teachers = $query->orderByDesc('created_at')->get(['id', 'name', 'email', 'status', 'created_at']);
+        }
 
         return response()->json([
             'data' => $teachers,

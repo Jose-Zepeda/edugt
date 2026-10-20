@@ -68,3 +68,40 @@ it('RF-23: acción admin queda en la bitácora', function () {
     $logs = getJson('/api/v1/admin/audit-logs', ['Authorization' => "Bearer {$this->adminToken}"])->assertStatus(200);
     expect(collect($logs->json('data'))->pluck('action'))->toContain('support.status_changed');
 });
+
+it('permite a estudiantes y docentes listar exclusivamente sus propios tickets vía /api/v1/support/tickets/my', function () {
+    clean_guard();
+    postJson('/api/v1/support/tickets', [
+        'kind' => 'error',
+        'description' => 'Error reportado por el estudiante en el módulo 1.',
+        'module' => 'variables',
+    ], ['Authorization' => "Bearer {$this->studentToken}"])->assertStatus(201);
+
+    clean_guard();
+    $studentTickets = getJson('/api/v1/support/tickets/my', ['Authorization' => "Bearer {$this->studentToken}"])
+        ->assertStatus(200);
+    expect($studentTickets->json('data'))->toHaveCount(1);
+    expect($studentTickets->json('data.0.description'))->toContain('Error reportado por el estudiante');
+
+    clean_guard();
+    $teacherTickets = getJson('/api/v1/support/tickets/my', ['Authorization' => "Bearer {$this->teacherToken}"])
+        ->assertStatus(200);
+    expect($teacherTickets->json('data'))->toHaveCount(0);
+});
+
+it('permite a administradores consultar métricas globales vía /api/v1/admin/metrics y deniega a otros', function () {
+    clean_guard();
+    $res = getJson('/api/v1/admin/metrics', ['Authorization' => "Bearer {$this->adminToken}"])
+        ->assertStatus(200);
+
+    expect($res->json('teachers'))->toHaveKeys(['pending', 'active', 'total']);
+    expect($res->json('students'))->toHaveKey('active');
+    expect($res->json('classrooms'))->toHaveKey('active');
+    expect($res->json('tickets'))->toHaveKeys(['open', 'in_review', 'resolved', 'total']);
+    expect($res->json('recent_logs'))->toBeArray();
+
+    clean_guard();
+    getJson('/api/v1/admin/metrics', ['Authorization' => "Bearer {$this->studentToken}"])
+        ->assertStatus(403);
+});
+

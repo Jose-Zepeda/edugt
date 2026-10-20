@@ -155,15 +155,158 @@ final class ClassroomController extends Controller
         abort_unless($user->isAdmin() || $classroom->teacher_id === $user->id, 403, 'FORBIDDEN');
 
         $rows = $classroom->students()->with('student')->get();
+        $studentIds = $rows->pluck('student_id')->all();
 
-        return response()->json(['data' => $rows->map(fn ($m) => [
-            'student_id' => $m->student_id,
-            'name' => $m->student->name,
-            'email' => $m->student->email,
-            'learning_track' => $m->student->learning_track,
-            'joined_at' => $m->joined_at?->toIso8601String(),
-            'state' => $m->state,
-        ])]);
+        if (empty($studentIds)) {
+            return response()->json(['data' => []]);
+        }
+
+        $modules = \App\Domain\Curriculum\Models\Module::query()
+            ->where('status', 'published')
+            ->with([
+                'lessons' => fn ($q) => $q->where('status', 'published')->orderBy('order_index'),
+                'quiz',
+            ])
+            ->orderBy('order_index')
+            ->get();
+
+        $completedProgress = \App\Domain\Curriculum\Models\LessonProgress::query()
+            ->whereIn('user_id', $studentIds)
+            ->where('completed', true)
+            ->get()
+            ->groupBy('user_id')
+            ->map(fn ($items) => $items->pluck('lesson_id')->flip());
+
+        $quizAttempts = \App\Domain\Assessments\Models\QuizAttempt::query()
+            ->whereIn('user_id', $studentIds)
+            ->where('status', 'submitted')
+            ->get()
+            ->groupBy('user_id');
+
+        $diagnostics = \App\Domain\Diagnostic\Models\DiagnosticAttempt::query()
+            ->whereIn('user_id', $studentIds)
+            ->where('status', 'completed')
+            ->get()
+            ->groupBy('user_id');
+
+        $xpProfiles = \App\Domain\Gamification\Models\UserXpProfile::query()
+            ->whereIn('user_id', $studentIds)
+            ->get()
+            ->keyBy('user_id');
+
+        $badgeCounts = \App\Domain\Gamification\Models\UserBadge::query()
+            ->whereIn('user_id', $studentIds)
+            ->selectRaw('user_id, COUNT(*) as total')
+            ->groupBy('user_id')
+            ->pluck('total', 'user_id');
+
+        return response()->json(['data' => $rows->map(function ($m) use (
+            $modules,
+            $completedProgress,
+            $quizAttempts,
+            $diagnostics,
+            $xpProfiles,
+            $badgeCounts
+        ) {
+            $sid = $m->student_id;
+            $userLessons = $completedProgress->get($sid, collect());
+            $userQuizzes = $quizAttempts->get($sid, collect());
+            $userDiags = $diagnostics->get($sid, collect());
+
+            $preAttempt = $userDiags->firstWhere('kind', 'pre');
+            $postAttempt = $userDiags->firstWhere('kind', 'post');
+            $pretestCompleted = $m->student->learning_track !== null || $preAttempt !== null;
+
+            $totalSteps = 0;
+            $totalDone = 0;
+            $activeStage = null;
+            $modulesProgress = [];
+
+            foreach ($modules as $idx => $mod) {
+                $modNum = $idx + 1;
+                $cleanTitle = preg_replace('/^Módulo\s*\d+\s*[:.-]?\s*/iu', '', $mod->title);
+
+                $standardLessons = $mod->lessons->filter(
+                    fn ($l) => ! $l->requires_quiz_pass && ! str_contains(mb_strtolower($l->title), 'evaluación')
+                );
+                $quizLesson = $mod->lessons->first(
+                    fn ($l) => $l->requires_quiz_pass || str_contains(mb_strtolower($l->title), 'evaluación')
+                );
+
+                $bestQuizScore = $mod->quiz
+                    ? $userQuizzes->where('quiz_id', $mod->quiz->id)->max('score')
+                    : null;
+                $quizPassed = $bestQuizScore !== null && $bestQuizScore >= ($mod->quiz->passing_score ?? 70);
+
+                $modTotal = $standardLessons->count() + (($mod->quiz || $quizLesson) ? 1 : 0);
+                $modDone = 0;
+
+                foreach ($standardLessons as $lesson) {
+                    $isDone = $userLessons->has($lesson->id);
+                    if ($isDone) {
+                        $modDone++;
+                    } elseif ($activeStage === null) {
+                        $activeStage = [
+                            'module_number' => $modNum,
+                            'module_title' => $cleanTitle,
+                            'step_title' => $lesson->title,
+                            'is_quiz' => false,
+                        ];
+                    }
+                }
+
+                if ($mod->quiz || $quizLesson) {
+                    $isQuizStepDone = $quizPassed || ($quizLesson && $userLessons->has($quizLesson->id));
+                    if ($isQuizStepDone) {
+                        $modDone++;
+                    } elseif ($activeStage === null) {
+                        $activeStage = [
+                            'module_number' => $modNum,
+                            'module_title' => $cleanTitle,
+                            'step_title' => 'Evaluación del Módulo',
+                            'is_quiz' => true,
+                        ];
+                    }
+                }
+
+                $totalSteps += $modTotal;
+                $totalDone += $modDone;
+
+                $modulesProgress[] = [
+                    'module_number' => $modNum,
+                    'title' => $cleanTitle,
+                    'done' => $modDone,
+                    'total' => $modTotal,
+                    'percent' => $modTotal > 0 ? (int) round(($modDone * 100) / $modTotal) : 0,
+                    'quiz_passed' => $quizPassed,
+                    'best_quiz_score' => $bestQuizScore !== null ? (int) $bestQuizScore : null,
+                ];
+            }
+
+            $progressPercent = $totalSteps > 0 ? (int) round(($totalDone * 100) / $totalSteps) : 0;
+            $xpProfile = $xpProfiles->get($sid);
+
+            return [
+                'student_id' => $sid,
+                'name' => $m->student->name,
+                'email' => $m->student->email,
+                'learning_track' => $m->student->learning_track,
+                'joined_at' => $m->joined_at?->toIso8601String(),
+                'state' => $m->state,
+                'pretest_completed' => $pretestCompleted,
+                'pretest_score' => $preAttempt !== null ? (int) $preAttempt->score_total : null,
+                'posttest_completed' => $postAttempt !== null,
+                'posttest_score' => $postAttempt !== null ? (int) $postAttempt->score_total : null,
+                'xp_total' => (int) ($xpProfile?->xp_total ?? 0),
+                'xp_level' => (int) ($xpProfile?->xp_level ?? 1),
+                'badges_count' => (int) ($badgeCounts->get($sid) ?? 0),
+                'completed_lessons' => $totalDone,
+                'total_lessons' => $totalSteps,
+                'progress_percent' => $progressPercent,
+                'current_stage' => $pretestCompleted ? $activeStage : null,
+                'modules_progress' => $modulesProgress,
+            ];
+        })]);
     }
 
     /** POST /api/v1/classrooms/{id}/students/{studentId}/state {state} */

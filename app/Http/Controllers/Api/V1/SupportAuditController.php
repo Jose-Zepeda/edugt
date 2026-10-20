@@ -36,12 +36,23 @@ final class SupportAuditController extends Controller
         return response()->json(['id' => $ticket->id, 'status' => $ticket->status], 201);
     }
 
+    /** GET /api/v1/support/tickets/my — cualquier usuario autenticado consulta sus propios tickets */
+    public function myTickets(Request $request): JsonResponse
+    {
+        $tickets = SupportTicket::query()
+            ->where('reporter_id', $request->user()->id)
+            ->orderByDesc('created_at')
+            ->get(['id', 'kind', 'description', 'module', 'status', 'created_at']);
+
+        return response()->json(['data' => $tickets]);
+    }
+
     /** GET /api/v1/admin/support-tickets?status= */
     public function listTickets(Request $request): JsonResponse
     {
         abort_unless($request->user()->isAdmin(), 403, 'Solo administradores.');
 
-        $query = SupportTicket::query()->with('reporter:id,name,email');
+        $query = SupportTicket::query()->with('reporter:id,name,email,role');
         if ($status = $request->query('status')) {
             $query->where('status', $status);
         }

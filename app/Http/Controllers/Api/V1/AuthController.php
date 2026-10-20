@@ -174,6 +174,53 @@ final class AuthController extends Controller
         return response()->json(['user' => $this->userResource($request->user())]);
     }
 
+    /** PUT /api/v1/me/profile */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'min:2', 'max:120'],
+            'avatar_url' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $user->name = $data['name'];
+        if (array_key_exists('avatar_url', $data)) {
+            $user->avatar_url = $data['avatar_url'];
+        }
+        $user->save();
+
+        return response()->json([
+            'message' => 'Perfil actualizado correctamente.',
+            'user' => $this->userResource($user),
+        ]);
+    }
+
+    /** PUT /api/v1/me/password */
+    public function updatePassword(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $hasExistingPassword = ! empty($user->password);
+
+        $rules = [
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ];
+
+        if ($hasExistingPassword) {
+            $rules['current_password'] = ['required', 'string', 'current_password'];
+        }
+
+        $data = $request->validate($rules);
+
+        $user->password = \Illuminate\Support\Facades\Hash::make($data['password']);
+        $user->save();
+
+        return response()->json([
+            'message' => 'Contraseña actualizada exitosamente.',
+        ]);
+    }
+
     /** @return array<string, mixed> */
     private function userResource(User $user): array
     {

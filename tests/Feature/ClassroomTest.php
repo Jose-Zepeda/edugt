@@ -75,7 +75,7 @@ it('código regenerado invalida el anterior (criterio Fase 8)', function () {
         ->assertStatus(201);
 });
 
-it('docente ve estudiantes inscritos y puede retirarlos', function () {
+it('docente ve estudiantes inscritos con su progreso de lecciones y estado de pretest y puede retirarlos', function () {
     $create = postJson('/api/v1/classrooms', [
         'name' => 'Quinto B', 'academic_year' => '2026',
     ], ['Authorization' => "Bearer {$this->token}"]);
@@ -89,6 +89,15 @@ it('docente ve estudiantes inscritos y puede retirarlos', function () {
     $students = getJson("/api/v1/classrooms/{$classroomId}/students", ['Authorization' => "Bearer {$this->token}"])
         ->assertStatus(200);
     expect($students->json('data.0.student_id'))->toBe($this->student->id);
+    expect($students->json('data.0'))->toHaveKeys([
+        'progress_percent',
+        'completed_lessons',
+        'total_lessons',
+        'pretest_completed',
+        'modules_progress',
+        'xp_total',
+        'badges_count',
+    ]);
 
     clean_guard();
     postJson("/api/v1/classrooms/{$classroomId}/students/{$this->student->id}/state", [
