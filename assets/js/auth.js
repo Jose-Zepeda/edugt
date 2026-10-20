@@ -12,15 +12,40 @@ const TURNSTILE_SITE_KEY = '1x00000000000000000000AA'; // Clave de prueba de Clo
 let loginWidgetId = null;
 let regWidgetId = null;
 
+/* ---------------- Tema Claro / Oscuro en Login ---------------- */
+function syncAuthThemeIcon() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const icon = document.getElementById('auth-theme-icon');
+  if (icon) {
+    icon.className = isDark ? 'bi bi-sun-fill text-warning' : 'bi bi-moon-stars-fill';
+  }
+}
+
+syncAuthThemeIcon();
+
+document.getElementById('auth-theme-toggle')?.addEventListener('click', () => {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next = isDark ? 'light' : 'dark';
+  if (next === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  localStorage.setItem('edugt_theme', next);
+  localStorage.setItem('edugt-theme', next);
+  syncAuthThemeIcon();
+});
+
 function renderTurnstile() {
   if (typeof turnstile === 'undefined') return;
+  const curTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
 
   const loginContainer = document.getElementById('turnstile-login');
   if (loginContainer && loginWidgetId === null && !loginContainer.hasChildNodes()) {
     try {
       loginWidgetId = turnstile.render('#turnstile-login', {
         sitekey: TURNSTILE_SITE_KEY,
-        theme: 'light',
+        theme: curTheme,
       });
     } catch (err) {
       console.warn('Turnstile login render:', err);
@@ -32,7 +57,7 @@ function renderTurnstile() {
     try {
       regWidgetId = turnstile.render('#turnstile-register', {
         sitekey: TURNSTILE_SITE_KEY,
-        theme: 'light',
+        theme: curTheme,
       });
     } catch (err) {
       console.warn('Turnstile reg render:', err);

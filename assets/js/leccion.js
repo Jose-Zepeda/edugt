@@ -117,17 +117,17 @@ async function boot() {
             ${l.completed ? '<span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1.5 rounded-pill"><i class="bi bi-check-circle-fill me-1"></i> Reto Superado</span>' : '<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1.5 rounded-pill"><i class="bi bi-question-circle me-1"></i> Desafío Activo</span>'}
           </div>
 
-          <div class="p-3 mb-3 rounded-3 lesson-markdown" style="background:#F8FAFC;border:1px solid var(--edugt-border);font-size:.98rem;">
+          <div class="p-3 mb-3 rounded-3 lesson-markdown lesson-challenge-prompt" style="font-size:.98rem;">
             ${questionHtml}
           </div>
 
           <!-- Opciones interactivas -->
           <div class="d-flex flex-column gap-2 mb-3" id="challenge-options-list">
             ${r.opciones.map((opt, idx) => `
-              <button type="button" class="btn text-start p-3 rounded-3 d-flex align-items-center justify-content-between challenge-option-btn ${l.completed && opt.es_correcta ? 'opt-correct' : ''}" data-index="${idx}" data-correct="${opt.es_correcta}" style="border:1.5px solid ${l.completed && opt.es_correcta ? 'var(--edugt-green)' : 'var(--edugt-border)'};background:${l.completed && opt.es_correcta ? 'rgba(16, 185, 129, 0.08)' : 'white'};transition:all .2s ease;">
+              <button type="button" class="btn text-start p-3 rounded-3 d-flex align-items-center justify-content-between challenge-option-btn ${l.completed && opt.es_correcta ? 'opt-correct' : ''}" data-index="${idx}" data-correct="${opt.es_correcta}">
                 <div class="d-flex align-items-center gap-3">
-                  <span class="badge rounded-circle bg-light text-dark border d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;font-size:.85rem;font-weight:700;">${String.fromCharCode(65 + idx)}</span>
-                  <span class="fw-medium text-dark">${DOMPurify.sanitize(marked.parseInline(opt.texto ?? ''))}</span>
+                  <span class="challenge-option-letter">${String.fromCharCode(65 + idx)}</span>
+                  <span class="challenge-option-text">${DOMPurify.sanitize(marked.parseInline(opt.texto ?? ''))}</span>
                 </div>
                 <i class="bi ${l.completed && opt.es_correcta ? 'bi-check-circle-fill text-success' : 'bi-circle text-muted'} option-check-icon"></i>
               </button>
@@ -136,7 +136,7 @@ async function boot() {
 
           <!-- Feedback interactivo -->
           <div id="challenge-feedback" class="p-3 rounded-3 ${l.completed ? 'alert alert-success d-flex align-items-center gap-2 mb-0' : 'd-none'}" style="font-size:.9rem;line-height:1.45;">
-            ${l.completed ? `<i class="bi bi-check-circle-fill fs-5 text-success"></i> <div>¡Lección completada con éxito! Puedes repasar cuando desees.</div>` : ''}
+            ${l.completed ? `<i class="bi bi-check-circle-fill fs-5 text-success"></i> <div>¡Completado con éxito! Puedes repasar cuando desees.</div>` : ''}
           </div>
         </div>`;
     }
@@ -154,7 +154,7 @@ async function boot() {
           </span>
         </div>
         <span class="pill-edugt ${l.completed ? 'pill-done' : 'pill-now'}" id="pill-estado">
-          ${l.completed ? '<i class="bi bi-check2-circle"></i> Lección completada' : '<i class="bi bi-play-fill"></i> En progreso'}
+          ${l.completed ? '<i class="bi bi-check2-circle"></i> Completado' : '<i class="bi bi-play-fill"></i> En progreso'}
         </span>
       </div>
 
@@ -173,7 +173,7 @@ async function boot() {
       <div class="text-center mt-5 pt-4 border-top" style="border-color:var(--edugt-border)!important;">
         <button class="btn btn-edugt btn-lg px-5 shadow-sm" id="btn-completar">
           ${l.completed 
-            ? '<i class="bi bi-arrow-repeat"></i> Lección ya completada · Registrar repaso' 
+            ? '<i class="bi bi-arrow-repeat"></i> Ya completado · Registrar repaso' 
             : `<i class="bi bi-check-circle-fill"></i> ¡Entendido! Completar lección (+${l.xp_reward} XP)`}
         </button>
         <p class="mt-2 mb-0 text-muted" style="font-size:.85rem">
@@ -202,15 +202,13 @@ async function boot() {
 
           // Reset styles
           document.querySelectorAll('.challenge-option-btn').forEach(b => {
-            b.style.borderColor = 'var(--edugt-border)';
-            b.style.background = 'white';
+            b.classList.remove('opt-correct', 'opt-incorrect');
             const icon = b.querySelector('.option-check-icon');
             if (icon) icon.className = 'bi bi-circle option-check-icon text-muted';
           });
 
           if (opt.es_correcta) {
-            btn.style.borderColor = 'var(--edugt-green)';
-            btn.style.background = 'rgba(16, 185, 129, 0.08)';
+            btn.classList.add('opt-correct');
             const icon = btn.querySelector('.option-check-icon');
             if (icon) icon.className = 'bi bi-check-circle-fill option-check-icon text-success';
 
@@ -223,8 +221,7 @@ async function boot() {
             btnCompletar.classList.add('btn-pulse');
             btnCompletar.innerHTML = `<i class="bi bi-check-circle-fill"></i> ¡Entendido! Completar lección (+${l.xp_reward} XP) 🎉`;
           } else {
-            btn.style.borderColor = 'var(--edugt-red, #EF4444)';
-            btn.style.background = 'rgba(239, 68, 68, 0.06)';
+            btn.classList.add('opt-incorrect');
             const icon = btn.querySelector('.option-check-icon');
             if (icon) icon.className = 'bi bi-x-circle-fill option-check-icon text-danger';
 
@@ -267,14 +264,19 @@ async function boot() {
     $('#btn-completar').addEventListener('click', completar);
   } catch (err) {
     if (err.status === 403) {
+      const needsPretest = !Auth.user?.learning_track;
       $('#leccion-card').innerHTML = `
         <div class="text-center py-5">
           <div class="stat-icon mx-auto mb-3" style="width:64px;height:64px;background:#F1EFFB;color:var(--edugt-muted);font-size:2rem;">
             <i class="bi bi-lock-fill"></i>
           </div>
-          <h2 class="h5 fw-bold mt-2">Lección bloqueada</h2>
-          <p class="text-muted mb-4">Completa la lección anterior y su evaluación para desbloquear este contenido.</p>
-          <a href="estudiante.html" class="btn btn-edugt">Volver a mi ruta</a>
+          <h2 class="h5 fw-bold mt-2">${needsPretest ? 'Completa primero tu Diagnóstico Inicial' : 'Lección bloqueada'}</h2>
+          <p class="text-muted mb-4">${needsPretest
+            ? 'Para desbloquear el Módulo 1 debes realizar primero la Prueba Diagnóstica Inicial (Pre-test).'
+            : 'Completa la lección anterior y su evaluación para desbloquear este contenido.'}</p>
+          <a href="${needsPretest ? 'diagnostico.html?kind=pre' : 'estudiante.html'}" class="btn btn-edugt">
+            ${needsPretest ? '<i class="bi bi-compass-fill me-1"></i> Realizar Pre-test Diagnóstico' : 'Volver a mi ruta'}
+          </a>
         </div>`;
       return;
     }
@@ -304,6 +306,12 @@ async function completar() {
         <h2 class="h4 fw-bold mb-2">
           ${data.xp_awarded ? `¡Excelente trabajo! +${data.xp_amount} XP` : '¡Repaso registrado con éxito!'}
         </h2>
+        ${data.new_badges && data.new_badges.length > 0 ? `
+          <div class="mb-3">
+            <span class="badge px-3 py-2 rounded-pill shadow-xs" style="font-size:.95rem;background:var(--edugt-primary-soft);color:var(--edugt-primary);border:1px solid var(--edugt-primary);">
+              <i class="bi bi-award-fill me-1"></i> ¡Nueva insignia conseguida: ${esc(data.new_badges[0].title)}!
+            </span>
+          </div>` : ''}
         <p class="text-muted mb-4" style="max-width:480px;margin:0 auto;font-size:.95rem;">
           ${data.xp_awarded 
             ? 'Has completado esta lección. Tu experiencia ha sido sumada y la siguiente lección en tu ruta de aprendizaje ya está disponible.' 

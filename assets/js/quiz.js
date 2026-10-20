@@ -94,12 +94,12 @@ function renderQuestion() {
     <!-- Opciones de Respuesta -->
     <div class="d-flex flex-column gap-2 mb-3" id="options">
       ${q.options.map((o, idx) => `
-        <button type="button" class="btn text-start p-3 rounded-3 d-flex align-items-center justify-content-between challenge-option-btn" data-oid="${o.id}" style="border:1.5px solid var(--edugt-border);background:white;transition:all .2s ease;">
+        <button type="button" class="btn text-start p-3 rounded-3 d-flex align-items-center justify-content-between challenge-option-btn" data-oid="${o.id}">
           <div class="d-flex align-items-center gap-3">
-            <span class="badge rounded-circle bg-light text-dark border d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;font-size:.85rem;font-weight:700;">
+            <span class="challenge-option-letter">
               ${String.fromCharCode(65 + idx)}
             </span>
-            <span class="fw-medium text-dark">${DOMPurify.sanitize(marked.parseInline(o.option_text ?? ''))}</span>
+            <span class="challenge-option-text">${DOMPurify.sanitize(marked.parseInline(o.option_text ?? ''))}</span>
           </div>
           <i class="bi bi-circle option-check-icon text-muted"></i>
         </button>`).join('')}
@@ -126,9 +126,8 @@ async function answer(optionId, btn) {
 
     const isCorrect = data.is_correct;
 
-    // Estilo del botón seleccionado
-    btn.style.borderColor = isCorrect ? 'var(--edugt-green)' : 'var(--edugt-red, #EF4444)';
-    btn.style.background = isCorrect ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.06)';
+    // Estilo del botón seleccionado mediante clases adaptables
+    btn.classList.add(isCorrect ? 'opt-correct' : 'opt-incorrect');
     const icon = btn.querySelector('.option-check-icon');
     if (icon) {
       icon.className = `bi ${isCorrect ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'} option-check-icon`;
@@ -141,7 +140,7 @@ async function answer(optionId, btn) {
       <div class="d-flex align-items-start gap-2 mb-2">
         <i class="bi ${isCorrect ? 'bi-check-circle-fill fs-5 text-success' : 'bi-x-circle-fill fs-5 text-danger'}"></i>
         <div>
-          <div class="fw-bold mb-1" style="color:${isCorrect ? 'var(--edugt-green)' : '#B91C1C'}">
+          <div class="fw-bold mb-1" style="color:${isCorrect ? 'var(--edugt-green)' : '#EF4444'}">
             ${isCorrect ? '¡Respuesta correcta!' : 'Respuesta incorrecta'}
           </div>
           <div style="font-size:.9rem;line-height:1.45;">${DOMPurify.sanitize(marked.parseInline(data.feedback ?? ''))}</div>
@@ -200,7 +199,7 @@ async function submit() {
         <div class="stat-icon mx-auto mb-3" style="width:80px;height:80px;border-radius:24px;background:${approved ? 'var(--edugt-green-soft)' : '#FEE2E2'};color:${approved ? 'var(--edugt-green)' : '#B91C1C'};font-size:2.4rem;">
           <i class="bi ${approved ? 'bi-trophy-fill' : 'bi-arrow-counterclockwise'}"></i>
         </div>
-        <h2 class="h3 fw-bold mb-1">${approved ? '¡Evaluación Aprobada!' : 'Muy cerca — Sigue practicando'}</h2>
+        <h2 class="h3 fw-bold mb-1">${approved ? '¡Cuestionario Aprobado!' : 'Muy cerca — Sigue practicando'}</h2>
         
         <div class="my-3">
           <span class="display-3 fw-bold" style="color:${approved ? 'var(--edugt-green)' : 'var(--edugt-amber)'}">
@@ -210,11 +209,11 @@ async function submit() {
         </div>
 
         <div class="d-flex justify-content-center gap-2 mb-3">
-          <span class="badge bg-light text-dark border px-3 py-1.5 rounded-pill" style="font-size:.85rem;">
+          <span class="badge header-stat-pill px-3 py-1.5 rounded-pill" style="font-size:.85rem;">
             <i class="bi bi-journal-text me-1"></i> Intento ${data.attempt_number}
           </span>
           <span class="badge ${approved ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'} px-3 py-1.5 rounded-pill" style="font-size:.85rem;">
-            ${approved ? '<i class="bi bi-check-circle-fill me-1"></i> Nota Aprobatoria' : '<i class="bi bi-x-circle-fill me-1"></i> No alcanzaste el 70%'}
+            ${approved ? '<i class="bi bi-check-circle-fill me-1"></i> Aprobado' : '<i class="bi bi-x-circle-fill me-1"></i> No alcanzaste el 70%'}
           </span>
         </div>
 
@@ -223,9 +222,16 @@ async function submit() {
             <i class="bi bi-lightning-charge-fill text-warning"></i> +${data.xp_amount} XP otorgados
           </div>` : ''}
 
+        ${data.new_badges && data.new_badges.length > 0 ? `
+          <div class="d-block mb-3">
+            <div class="d-inline-flex align-items-center gap-2 badge bg-purple-subtle text-purple border px-3 py-2 rounded-pill shadow-xs" style="font-size:.95rem;background:var(--edugt-primary-soft);color:var(--edugt-primary);border-color:var(--edugt-primary)!important;">
+              <i class="bi bi-award-fill"></i> ¡Nueva insignia: ${esc(data.new_badges[0].title)}!
+            </div>
+          </div>` : ''}
+
         <p class="text-muted mb-4" style="max-width:480px;margin:0 auto;font-size:.92rem;line-height:1.5;">
           ${approved
-            ? '¡Excelente demostración de lógica! Has superado la evaluación de este módulo y tu avance ha sido actualizado.'
+            ? '¡Excelente demostración de lógica! Has superado y aprobado este módulo y tu avance ha sido actualizado.'
             : 'Para avanzar al siguiente módulo requieres una nota mínima de 70 puntos. Revisa las explicaciones de las lecciones e inténtalo nuevamente.'}
         </p>
 

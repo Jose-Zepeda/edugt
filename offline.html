@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-<link href="assets/css/app.css" rel="stylesheet">
+<link href="assets/css/app.css?v=20261015_04" rel="stylesheet">
 </head>
 <body>
 
@@ -18,9 +18,14 @@
   <div class="row g-3">
     <aside class="col-lg-2 d-none d-lg-block">
       <nav class="sidebar-edugt p-3 h-100 d-flex flex-column" aria-label="Navegación principal">
-        <div class="d-flex align-items-center gap-2 mb-4 px-2">
-          <img src="assets/img/logo-mark-48.png" alt="Logo EduGT" width="42" height="42" style="border-radius:14px;">
-          <span class="fw-bold" style="font-size:1.05rem;">EduGT</span>
+        <div class="d-flex align-items-center justify-content-between mb-4 px-2">
+          <div class="d-flex align-items-center gap-2">
+            <img src="assets/img/logo-mark-48.png" alt="Logo EduGT" width="38" height="38" style="border-radius:12px;">
+            <span class="fw-bold" style="font-size:1.05rem;">EduGT</span>
+          </div>
+          <button type="button" class="btn btn-settings-icon" data-action="open-settings" title="Ajustes y preferencias" aria-label="Ajustes">
+            <i class="bi bi-gear-fill"></i>
+          </button>
         </div>
         <ul class="nav nav-pills flex-column gap-1 mb-auto">
           <li><a class="nav-link" href="estudiante.html"><i class="bi bi-house-door"></i> Inicio</a></li>
@@ -31,11 +36,20 @@
     </aside>
 
     <main class="col-12 col-lg-10 pb-5" style="padding-bottom:5.5rem!important;">
-      <h1 class="h4 fw-bold mb-1"><i class="bi bi-cloud-download" style="color:var(--edugt-primary)"></i> Lecturas sin conexión</h1>
-      <p class="mb-3" style="color:var(--edugt-muted);max-width:640px;">
-        Descarga las lecciones para leerlas sin internet. La lectura offline <strong>no otorga XP ni
-        registra cuestionarios</strong> — cuando vuelvas la conexión sincronizamos tu tiempo de lectura.
-      </p>
+      <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div>
+          <h1 class="h4 fw-bold mb-1"><i class="bi bi-cloud-download" style="color:var(--edugt-primary)"></i> Lecturas sin conexión</h1>
+          <p class="mb-0" style="color:var(--edugt-muted);max-width:640px;font-size:.9rem;">
+            Descarga las lecciones para leerlas sin internet. La lectura offline <strong>no otorga XP ni
+            registra cuestionarios</strong> — al reconectarte sincronizamos tu tiempo de lectura.
+          </p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-settings-icon d-lg-none" data-action="open-settings" title="Ajustes" aria-label="Ajustes">
+            <i class="bi bi-gear-fill"></i>
+          </button>
+        </div>
+      </div>
 
       <div id="alert" class="alert d-none"></div>
 
@@ -150,17 +164,17 @@ async function renderList() {
   }
 
   list.innerHTML = lessons.map((l) => `
-    <div class="d-flex align-items-center justify-content-between border rounded-4 px-3 py-2" style="border-color:var(--edugt-border)!important;">
+    <div class="d-flex align-items-center justify-content-between border rounded-4 px-3 py-2.5 offline-lesson-row">
       <div class="d-flex align-items-center gap-3">
-        <div class="stat-icon" style="background:var(--edugt-primary-soft);color:var(--edugt-primary)">
-          <i class="bi bi-book"></i>
+        <div class="stat-icon" style="width:40px;height:40px;background:var(--edugt-primary-soft);color:var(--edugt-primary);border-radius:12px;display:grid;place-items:center;font-size:1.1rem;">
+          <i class="bi bi-book-half"></i>
         </div>
         <div>
-          <div class="fw-bold" style="font-size:.95rem;">${esc(l.title)}</div>
-          <small style="color:var(--edugt-muted)">${l.estimated_minutes} min de lectura</small>
+          <div class="fw-bold" style="font-size:.95rem;color:var(--edugt-text);">${esc(l.title)}</div>
+          <small class="text-muted"><i class="bi bi-clock me-1"></i>${l.estimated_minutes} min de lectura</small>
         </div>
       </div>
-      <a class="btn btn-sm btn-edugt" href="leer-offline.html?id=${l.id}">Leer</a>
+      <a class="btn btn-sm btn-edugt px-3 shadow-xs" href="leer-offline.html?id=${l.id}">Leer</a>
     </div>`).join('');
 }
 
@@ -209,5 +223,92 @@ $o('#btn-logout')?.addEventListener('click', async () => {
   }
 })();
 </script>
+
+<!-- Modal de Ajustes -->
+<div class="modal fade" id="modal-settings" tabindex="-1" aria-labelledby="modalSettingsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content card-edugt border-0 shadow-lg" style="border-radius:24px;overflow:hidden;">
+      <div class="modal-header border-bottom px-4 py-3" style="border-color:var(--edugt-border)!important;background:var(--edugt-card-subtle);">
+        <div class="d-flex align-items-center gap-3">
+          <div class="stat-icon" style="width:42px;height:42px;background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:1.3rem;border-radius:12px;">
+            <i class="bi bi-gear-fill"></i>
+          </div>
+          <div>
+            <h2 class="modal-title h5 fw-bold mb-0" id="modalSettingsLabel" style="color:var(--edugt-text);">Ajustes de Cuenta</h2>
+            <small class="text-muted" style="font-size:.82rem;">Personaliza tu perfil, apariencia y preferencias</small>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body p-4">
+        <ul class="nav nav-pills nav-fill settings-nav-pills gap-2 mb-4 p-1 rounded-4" style="background:var(--edugt-card-subtle);border:1px solid var(--edugt-border);" role="tablist">
+          <li class="nav-item"><button class="nav-link active fw-bold py-2 rounded-3" id="tab-pill-profile" data-bs-toggle="pill" data-bs-target="#settings-tab-profile" type="button" role="tab"><i class="bi bi-person-circle me-1"></i> Mi Perfil</button></li>
+          <li class="nav-item"><button class="nav-link fw-bold py-2 rounded-3" id="tab-pill-appearance" data-bs-toggle="pill" data-bs-target="#settings-tab-appearance" type="button" role="tab"><i class="bi bi-palette-fill me-1"></i> Apariencia & Tema</button></li>
+          <li class="nav-item"><button class="nav-link fw-bold py-2 rounded-3" id="tab-pill-security" data-bs-toggle="pill" data-bs-target="#settings-tab-security" type="button" role="tab"><i class="bi bi-shield-lock-fill me-1"></i> Seguridad</button></li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="settings-tab-profile" role="tabpanel">
+            <div id="settings-profile-alert" class="alert d-none"></div>
+            <div class="d-flex align-items-center gap-3 p-3 rounded-4 mb-4" style="background:var(--edugt-card-subtle);border:1px solid var(--edugt-border);">
+              <div class="podium-avatar shadow-sm m-0" style="width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,#6D4AEF,#8B5CF6);color:#fff;font-size:1.5rem;">
+                <span class="fw-bold" id="settings-avatar-char">U</span>
+              </div>
+              <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <span id="settings-role-badge" class="badge bg-primary text-white border-0 px-2.5 py-1">Estudiante</span>
+                  <span id="settings-track-badge" class="badge rounded-pill px-2.5 py-1" style="font-size:.75rem;background:var(--edugt-card-subtle);color:var(--edugt-muted);border:1px solid var(--edugt-border);">Ruta Fundamental</span>
+                </div>
+                <small class="text-muted" style="font-size:.82rem;"><i class="bi bi-check-circle-fill text-success me-1"></i>Cuenta activa en EduGT</small>
+              </div>
+            </div>
+            <form id="form-settings-profile">
+              <div class="mb-3">
+                <label for="settings-name" class="form-label fw-bold" style="font-size:.9rem;color:var(--edugt-text);">Nombre Completo</label>
+                <div class="input-group"><span class="input-group-text bg-light border-end-0" style="border-color:var(--edugt-border);"><i class="bi bi-person text-muted"></i></span><input type="text" class="form-control form-control-edugt border-start-0" id="settings-name" required minlength="2" maxlength="120"></div>
+              </div>
+              <div class="mb-4">
+                <label for="settings-email" class="form-label fw-bold" style="font-size:.9rem;color:var(--edugt-text);">Correo Electrónico</label>
+                <div class="input-group"><span class="input-group-text bg-light border-end-0" style="border-color:var(--edugt-border);"><i class="bi bi-envelope text-muted"></i></span><input type="email" class="form-control form-control-edugt border-start-0 opacity-75" id="settings-email" readonly disabled></div>
+              </div>
+              <div class="d-flex justify-content-end"><button type="submit" class="btn btn-edugt px-4 shadow-sm" id="btn-save-profile"><i class="bi bi-check2 me-1"></i> Guardar cambios</button></div>
+            </form>
+          </div>
+          <div class="tab-pane fade" id="settings-tab-appearance" role="tabpanel">
+            <h3 class="h6 fw-bold mb-3" style="color:var(--edugt-text);">Tema de la Plataforma</h3>
+            <div class="row g-3 mb-4">
+              <div class="col-12 col-sm-6">
+                <div class="theme-choice-card p-3 rounded-4" id="theme-card-light" role="button">
+                  <div class="d-flex align-items-center justify-content-between mb-2"><div class="d-flex align-items-center gap-2"><i class="bi bi-sun-fill text-warning fs-5"></i><span class="fw-bold" style="font-size:.95rem;">Tema Claro</span></div><i class="bi bi-check-circle-fill theme-check-icon"></i></div>
+                  <div class="theme-preview-box light-preview rounded-3 p-2 mb-2"><div class="d-flex gap-1 mb-1"><div class="theme-mock-pill w-50"></div><div class="theme-mock-pill w-25"></div></div><div class="theme-mock-card"></div></div>
+                </div>
+              </div>
+              <div class="col-12 col-sm-6">
+                <div class="theme-choice-card p-3 rounded-4" id="theme-card-dark" role="button">
+                  <div class="d-flex align-items-center justify-content-between mb-2"><div class="d-flex align-items-center gap-2"><i class="bi bi-moon-stars-fill fs-5" style="color:#A78BFA;"></i><span class="fw-bold" style="font-size:.95rem;">Tema Oscuro</span></div><i class="bi bi-check-circle-fill theme-check-icon"></i></div>
+                  <div class="theme-preview-box dark-preview rounded-3 p-2 mb-2"><div class="d-flex gap-1 mb-1"><div class="theme-mock-pill w-50"></div><div class="theme-mock-pill w-25"></div></div><div class="theme-mock-card"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="settings-tab-security" role="tabpanel">
+            <div id="settings-pass-alert" class="alert d-none"></div>
+            <form id="form-settings-password">
+              <div class="mb-3"><label for="settings-current-pass" class="form-label fw-bold" style="font-size:.9rem;color:var(--edugt-text);">Contraseña Actual</label><input type="password" class="form-control form-control-edugt" id="settings-current-pass" placeholder="Ingresa tu clave actual (si aplica)"></div>
+              <div class="mb-3"><label for="settings-new-pass" class="form-label fw-bold" style="font-size:.9rem;color:var(--edugt-text);">Nueva Contraseña</label><input type="password" class="form-control form-control-edugt" id="settings-new-pass" required minlength="8" placeholder="Mínimo 8 caracteres"></div>
+              <div class="mb-4"><label for="settings-confirm-pass" class="form-label fw-bold" style="font-size:.9rem;color:var(--edugt-text);">Confirmar Nueva Contraseña</label><input type="password" class="form-control form-control-edugt" id="settings-confirm-pass" required minlength="8" placeholder="Repite la nueva clave"></div>
+              <div class="d-flex justify-content-end"><button type="submit" class="btn btn-edugt px-4 shadow-sm" id="btn-save-password"><i class="bi bi-shield-lock me-1"></i> Actualizar contraseña</button></div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-top px-4 py-2.5 d-flex justify-content-between align-items-center" style="border-color:var(--edugt-border)!important;background:var(--edugt-card-subtle);">
+        <small class="text-muted" style="font-size:.78rem;"><i class="bi bi-shield-shaded text-primary me-1"></i> EduGT v2.4 · 2026</small>
+        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/settings.js"></script>
 </body>
 </html>
