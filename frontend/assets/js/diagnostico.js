@@ -174,10 +174,10 @@ async function submit() {
         </div>
       </div>`;
 
-    // Refresca el usuario en sesión con el learning_track nuevo
+    // Refresca el usuario en sesión (localStorage + sessionStorage) con el learning_track nuevo
     if (data.learning_track) {
       Auth.user.learning_track = data.learning_track;
-      sessionStorage.setItem('edugt_user', JSON.stringify(Auth.user));
+      Auth.save(Auth.token, Auth.user);
     }
   } catch (err) {
     showAlert(err.message || 'Error al procesar la entrega');

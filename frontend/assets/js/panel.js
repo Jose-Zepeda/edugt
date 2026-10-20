@@ -196,6 +196,12 @@ async function loadMissions() {
   const moduleIcons = ['bi-lightbulb-fill', 'bi-code-square', 'bi-box-seam-fill', 'bi-signpost-split-fill', 'bi-arrow-repeat'];
   let modColorIndex = 0;
 
+  const diag = data.diagnostic_status || {};
+  const hasPretest = Boolean(Auth.user?.learning_track || diag.pre_completed);
+  if (hasPretest) {
+    $('#cta-pretest')?.classList.add('d-none');
+  }
+
   for (const mission of data.data) {
     for (const mod of mission.modules) {
       moduleOrdinal++;
@@ -234,7 +240,6 @@ async function loadMissions() {
           modDone++;
         }
 
-        const hasPretest = Boolean(Auth.user.learning_track);
         const isCompleted = Boolean(step.completed);
         const isLocked = Boolean(step.locked) || !hasPretest;
         const isActive = !isCompleted && !isLocked;
@@ -338,8 +343,7 @@ async function loadMissions() {
   }
 
   // Hito Final del Roadmap + Tarjeta de Post-test / Graduación y Certificado
-  const diag = data.diagnostic_status || {};
-  const postUnlocked = Boolean(diag.post_unlocked || (doneLessons === totalLessons && totalLessons > 0 && Auth.user.learning_track));
+  const postUnlocked = Boolean(diag.post_unlocked || (doneLessons === totalLessons && totalLessons > 0 && hasPretest));
   const postCompleted = Boolean(diag.post_completed);
 
   container.innerHTML += `
@@ -1216,6 +1220,20 @@ function renderPretestCta() {
   });
 }
 
+/* ---------------- Sincronizar usuario desde el servidor (/me) ---------------- */
+async function syncCurrentUser() {
+  try {
+    const { data } = await api('/me');
+    if (data?.user) {
+      Auth.save(Auth.token, data.user);
+      renderGreeting();
+      renderPretestCta();
+    }
+  } catch (err) {
+    if (err.status === 401) throw err;
+  }
+}
+
 /* ---------------- Boot ---------------- */
 (async function boot() {
   renderGreeting();
@@ -1225,7 +1243,7 @@ function renderPretestCta() {
   window.switchStudentTab(initialTab);
 
   try {
-    await Promise.all([loadXp(), loadStreak()]);
+    await Promise.all([syncCurrentUser(), loadXp(), loadStreak()]);
     await Promise.all([loadMissions(), loadBadges(), loadRankings(), loadStudentClassrooms()]);
   } catch (err) {
     if (err.status === 401) {
