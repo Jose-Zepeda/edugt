@@ -15,35 +15,44 @@ class DevUsersSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::query()->create([
-            'name' => 'Admin EduGT',
-            'email' => 'admin@edugt.test',
-            'password' => \Illuminate\Support\Facades\Hash::make('admin1234'),
-        ])->forceFill(['role' => 'admin', 'status' => 'active'])->save();
+        $admin = User::query()->firstOrCreate(
+            ['email' => 'admin@edugt.test'],
+            [
+                'name' => 'Admin EduGT',
+                'password' => \Illuminate\Support\Facades\Hash::make('admin1234'),
+            ]
+        );
+        $admin->forceFill(['role' => 'admin', 'status' => 'active'])->save();
 
         foreach (['marta@edugt.test', 'carlos@edugt.test', 'lucia@edugt.test'] as $email) {
-            $t = User::query()->create([
-                'name' => 'Docente '.Str::before($email, '@'),
-                'email' => $email,
-                'password' => \Illuminate\Support\Facades\Hash::make('docente1234'),
-            ]);
+            $t = User::query()->firstOrCreate(
+                ['email' => $email],
+                [
+                    'name' => 'Docente '.Str::before($email, '@'),
+                    'password' => \Illuminate\Support\Facades\Hash::make('docente1234'),
+                ]
+            );
             $t->forceFill(['role' => 'teacher', 'status' => 'active'])->save();
         }
 
-        $pending = User::query()->create([
-            'name' => 'Docente Pendiente',
-            'email' => 'pendiente@edugt.test',
-            'password' => \Illuminate\Support\Facades\Hash::make('docente1234'),
-        ]);
+        $pending = User::query()->firstOrCreate(
+            ['email' => 'pendiente@edugt.test'],
+            [
+                'name' => 'Docente Pendiente',
+                'password' => \Illuminate\Support\Facades\Hash::make('docente1234'),
+            ]
+        );
         $pending->forceFill(['role' => 'teacher', 'status' => 'pending_approval'])->save();
 
         $students = [];
         foreach (range(1, 8) as $n) {
-            $s = User::query()->create([
-                'name' => "Estudiante {$n}",
-                'email' => "estudiante{$n}@edugt.test",
-                'password' => \Illuminate\Support\Facades\Hash::make('estudiante1234'),
-            ]);
+            $s = User::query()->firstOrCreate(
+                ['email' => "estudiante{$n}@edugt.test"],
+                [
+                    'name' => "Estudiante {$n}",
+                    'password' => \Illuminate\Support\Facades\Hash::make('estudiante1234'),
+                ]
+            );
             $s->forceFill(['role' => 'student', 'status' => 'active'])->save();
             $students[] = $s;
         }
@@ -55,27 +64,34 @@ class DevUsersSeeder extends Seeder
             [$marta, 'Cuarto Bachillerato A', '2026', 'AULA2026A'],
             [$carlos, 'Perito Contador B', '2026', 'AULA2026B'],
         ] as [$teacher, $name, $year, $code]) {
-            $classroom = \App\Domain\Classrooms\Models\Classroom::query()->create([
-                'teacher_id' => $teacher->id,
-                'name' => $name,
-                'institution' => 'Instituto de Jutiapa',
-                'grade_level' => $name,
-                'academic_year' => $year,
-                'is_active' => true,
-            ]);
-            \App\Domain\Classrooms\Models\ClassroomCode::query()->create([
-                'classroom_id' => $classroom->id,
-                'code' => $code,
-                'is_active' => true,
-            ]);
+            $classroom = \App\Domain\Classrooms\Models\Classroom::query()->firstOrCreate(
+                ['teacher_id' => $teacher->id, 'name' => $name],
+                [
+                    'institution' => 'Instituto de Jutiapa',
+                    'grade_level' => $name,
+                    'academic_year' => $year,
+                    'is_active' => true,
+                ]
+            );
+            \App\Domain\Classrooms\Models\ClassroomCode::query()->firstOrCreate(
+                ['code' => $code],
+                [
+                    'classroom_id' => $classroom->id,
+                    'is_active' => true,
+                ]
+            );
 
             foreach (array_slice($students, 0, 4) as $s) {
-                \App\Domain\Classrooms\Models\ClassroomStudent::query()->create([
-                    'classroom_id' => $classroom->id,
-                    'student_id' => $s->id,
-                    'joined_at' => now(),
-                    'state' => 'active',
-                ]);
+                \App\Domain\Classrooms\Models\ClassroomStudent::query()->firstOrCreate(
+                    [
+                        'classroom_id' => $classroom->id,
+                        'student_id' => $s->id,
+                    ],
+                    [
+                        'joined_at' => now(),
+                        'state' => 'active',
+                    ]
+                );
             }
         }
     }
