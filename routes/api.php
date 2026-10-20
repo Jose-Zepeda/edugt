@@ -98,6 +98,8 @@ Route::prefix('v1')->group(function (): void {
             ->name('classroom.codes.regenerate');
 
         // ---- Analítica y reportes (RF-20, RF-21, RF-22) ----
+        Route::get('/analytics/overview', [ReportController::class, 'overview'])
+            ->name('reports.overview');
         Route::get('/classrooms/{id}/analytics', [ReportController::class, 'classroomAnalytics'])
             ->name('reports.analytics');
         Route::post('/reports', [ReportController::class, 'generate'])->name('reports.generate');

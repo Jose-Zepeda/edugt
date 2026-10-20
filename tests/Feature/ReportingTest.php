@@ -164,3 +164,18 @@ it('RF-22/RF-28: estudiante graduado puede descargar su Certificado Oficial en P
 
     expect(str_starts_with($res->getContent(), '%PDF-'))->toBeTrue();
 });
+
+it('RF-20/RF-21: overview devuelve analíticas en vivo consolidadas o por aula con dimensiones y Hake', function () {
+    $res = getJson('/api/v1/analytics/overview', ['Authorization' => "Bearer {$this->teacherToken}"])
+        ->assertStatus(200);
+
+    expect($res->json('data.meta.students_count'))->toBe(3);
+    expect($res->json('data.dimensions'))->toHaveCount(7);
+    expect($res->json('data.modules_summary'))->toHaveCount(1);
+
+    $resFiltered = getJson("/api/v1/analytics/overview?classroom_id={$this->classroom->id}", ['Authorization' => "Bearer {$this->teacherToken}"])
+        ->assertStatus(200);
+
+    expect($resFiltered->json('data.meta.title'))->toBe('Aula X');
+    expect($resFiltered->json('data.metrics.pass_rate'))->toBe(66.7);
+});

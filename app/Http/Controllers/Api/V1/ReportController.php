@@ -25,19 +25,22 @@ final class ReportController extends Controller
     public function classroomAnalytics(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        $classroom = Classroom::query()->findOrFail($id);
-
-        abort_unless($user->isAdmin() || $classroom->teacher_id === $user->id, 403, 'FORBIDDEN');
-
-        $metrics = ($this->analytics)->metricsForClassroom($id);
+        $payload = $this->buildAnalyticsPayload($id, $user);
 
         return response()->json([
-            'data' => [
-                'metrics' => $metrics,
-                'at_risk' => ($this->analytics)->atRiskStudents($id),
-                'top_failed_questions' => ($this->analytics)->topFailedQuestions($id),
-                'pre_post' => ($this->analytics)->prePostComparison($id),
-            ],
+            'data' => $payload,
+        ]);
+    }
+
+    /** GET /api/v1/analytics/overview?classroom_id= */
+    public function overview(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $classroomId = $request->filled('classroom_id') ? (int) $request->query('classroom_id') : null;
+        $payload = $this->buildAnalyticsPayload($classroomId, $user);
+
+        return response()->json([
+            'data' => $payload,
         ]);
     }
 
@@ -55,6 +58,19 @@ final class ReportController extends Controller
             ? (int) $data['classroom_id']
             : null;
 
+        $payload = $this->buildAnalyticsPayload($classroomId, $user);
+
+        $pdf = ($this->exporter)->pdf($data['kind'], $payload);
+
+        // RB-12: SOLO PDF — sin Excel ni ningún otro formato
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="edugt-reporte-'.now()->format('Ymd-His').'.pdf"',
+        ]);
+    }
+
+    private function buildAnalyticsPayload(?int $classroomId, \App\Domain\Users\Models\User $user): array
+    {
         $classroom = null;
         if ($classroomId !== null) {
             $classroom = Classroom::query()->with('teacher:id,name,email')->findOrFail($classroomId);
@@ -338,7 +354,18 @@ final class ReportController extends Controller
         }
 
         // 4. Estudiantes en riesgo con nombres reales y preguntas con mayor tasa de error
-        $rawAtRisk = $classroomId !== null ? ($this->analytics)->atRiskStudents($classroomId) : [];
+        $rawAtRisk = [];
+        if ($classroomId !== null) {
+            $rawAtRisk = ($this->analytics)->atRiskStudents($classroomId);
+        } else {
+            foreach ($classroomIds as $cid) {
+                foreach (($this->analytics)->atRiskStudents((int) $cid) as $rItem) {
+                    $rawAtRisk[$rItem['user_id']] = $rItem;
+                }
+            }
+            $rawAtRisk = array_values($rawAtRisk);
+        }
+
         $usersMap = \App\Domain\Users\Models\User::query()
             ->whereIn('id', collect($rawAtRisk)->pluck('user_id')->all())
             ->get()
@@ -355,7 +382,13 @@ final class ReportController extends Controller
             ];
         })->all();
 
-        $rawFailed = $classroomId !== null ? ($this->analytics)->topFailedQuestions($classroomId, 5) : [];
+        $rawFailed = [];
+        if ($classroomId !== null) {
+            $rawFailed = ($this->analytics)->topFailedQuestions($classroomId, 5);
+        } elseif (! empty($classroomIds)) {
+            $rawFailed = ($this->analytics)->topFailedQuestions((int) $classroomIds[0], 5);
+        }
+
         $questionsMap = \App\Domain\Assessments\Models\Question::query()
             ->with('quiz.module')
             ->whereIn('id', collect($rawFailed)->pluck('question_id')->all())
@@ -379,7 +412,7 @@ final class ReportController extends Controller
             ? round(collect($studentsRoster)->avg('progress_percent'), 1)
             : 0.0;
 
-        $payload = [
+        return [
             'meta' => [
                 'title' => $classroom ? $classroom->name : ($user->isAdmin() ? 'Consolidado Institucional Global' : 'Consolidado de Mis Aulas'),
                 'institution' => $classroom?->institution ?: 'Instituto de Educación Básica / Diversificado',
@@ -400,14 +433,6 @@ final class ReportController extends Controller
             'at_risk' => $atRiskEnriched,
             'top_failed_questions' => $topFailedEnriched,
         ];
-
-        $pdf = ($this->exporter)->pdf($data['kind'], $payload);
-
-        // RB-12: SOLO PDF — sin Excel ni ningún otro formato
-        return response($pdf, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="edugt-reporte-'.now()->format('Ymd-His').'.pdf"',
-        ]);
     }
 
     /** POST /api/v1/me/certificate — Genera el Diploma Oficial de Finalización en PDF para el estudiante */
