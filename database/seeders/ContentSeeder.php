@@ -42,28 +42,29 @@ class ContentSeeder extends Seeder
         ];
 
         foreach ($badges as $b) {
-            $badge = Badge::query()->create([
-                'slug' => $b['slug'], 'title' => $b['title'], 'description' => $b['description'],
-            ]);
-            BadgeRule::query()->create([
-                'badge_id' => $badge->id,
-                'event' => $b['event'],
-                'conditions' => $b['conditions'],
-                'is_active' => true,
-            ]);
+            $badge = Badge::query()->updateOrCreate(
+                ['slug' => $b['slug']],
+                ['title' => $b['title'], 'description' => $b['description']]
+            );
+            BadgeRule::query()->updateOrCreate(
+                ['badge_id' => $badge->id, 'event' => $b['event']],
+                ['conditions' => $b['conditions'], 'is_active' => true]
+            );
         }
     }
 
     private function seedCurriculum(): void
     {
-        $mission = Mission::query()->create([
-            'slug' => 'mision-1-fundamentos',
-            'title' => 'Misión 1: Fundamentos de Lógica',
-            'description' => 'Aprende a pensar como una computadora y domina las bases de la programación.',
-            'xp_reward' => 100,
-            'order_index' => 0,
-            'status' => 'published',
-        ]);
+        $mission = Mission::query()->firstOrCreate(
+            ['slug' => 'mision-1-fundamentos'],
+            [
+                'title' => 'Misión 1: Fundamentos de Lógica',
+                'description' => 'Aprende a pensar como una computadora y domina las bases de la programación.',
+                'xp_reward' => 100,
+                'order_index' => 0,
+                'status' => 'published',
+            ]
+        );
 
         $curriculumData = [
             [
@@ -199,16 +200,16 @@ class ContentSeeder extends Seeder
                 'lessons' => [
                     [
                         'title' => 'La decisión if (Condicional simple)',
-                        'markdown' => "## 🔀 La Decisión `if` (Condicional Simple)\n\nEn la vida real tomamos decisiones constantemente: *\"Si está lloviendo, entonces llevo paraguas\"*. En programación, las computadoras hacen exactamente lo mismo utilizando la palabra clave **`if`**.\n\nUna estructura condicional evalúa una **expresión lógica**:\n* Si la condición es **`true`** (Verdadera), ejecuta las instrucciones dentro del bloque.\n* Si es **`false`** (Falsa), simplemente se salta ese bloque y continúa.\n\n---\n\n### ⚖️ Operadores de Comparación:\n* `==` : Igual a (compara si dos valores son iguales)\n* `!=` : Diferente de\n* `>` : Mayor que | `<` : Menor que\n* `>=` : Mayor o igual | `<=` : Menor o igual",
+                        'markdown' => "## 🔀 La Decisión `if` (Condicional Simple)\n\nEn el desarrollo de software profesional tomamos decisiones basadas en condiciones: si un valor cumple una regla, ejecutamos una acción. En lenguajes de programación reales como Python, JavaScript, Java, C++ y PHP, las computadoras evalúan estas decisiones utilizando la instrucción **`if`**.\n\nUna estructura condicional evalúa una **expresión lógica** o booleana:\n* Si la condición evalúa a **`true`**, el programa ejecuta las instrucciones dentro del bloque del `if`.\n* Si evalúa a **`false`**, la computadora simplemente se salta ese bloque y continúa con el flujo del programa.\n\n---\n\n### ⚖️ Operadores de Comparación Estándar:\n* `==` : Igual a (compara si dos valores son idénticos)\n* `!=` : Diferente de (distinto de)\n* `>` : Mayor que | `<` : Menor que\n* `>=` : Mayor o igual que | `<=` : Menor o igual que",
                         'pseudocode' => [
                             'codigo' => "puntos = 120\n\nif puntos >= 100:\n    print(\"¡Felicitaciones! Has subido de nivel.\")\n    print(\"Obtienes una bonificación de +20 XP.\")\n\nprint(\"Continuando la aventura...\")",
-                            'explicacion' => "Como 120 >= 100 es true, el bloque interior del 'if' se ejecuta y muestra las felicitaciones.",
+                            'explicacion' => "Como la condición (120 >= 100) evalúa a true, se ejecuta el bloque interior del 'if' y muestra los mensajes con print.",
                             'reto' => [
-                                'pregunta' => "Si tenemos `temperatura = 32` y el código: `if temperatura > 30: print(\"¡Hace calor!\")`. ¿Qué se mostrará en pantalla?",
+                                'pregunta' => "Si tenemos la variable `temperatura = 32` y ejecutamos: `if temperatura > 30: print(\"¡Hace calor!\")`. ¿Qué resultado se mostrará en pantalla?",
                                 'opciones' => [
-                                    ['id' => 'a', 'texto' => '¡Hace calor!', 'es_correcta' => true, 'feedback' => '¡Correcto! Como 32 > 30 es true, el bloque interior del if se ejecuta.'],
-                                    ['id' => 'b', 'texto' => 'Nada (la pantalla queda vacía)', 'es_correcta' => false, 'feedback' => 'Incorrecto: la condición sí se cumple (true), por lo que el print sí se ejecuta.'],
-                                    ['id' => 'c', 'texto' => 'Error de sintaxis', 'es_correcta' => false, 'feedback' => 'Incorrecto: la estructura condicional if está escrita correctamente.']
+                                    ['id' => 'a', 'texto' => '¡Hace calor!', 'es_correcta' => true, 'feedback' => '¡Correcto! Como 32 > 30 evalúa a true, el bloque interior del if se ejecuta.'],
+                                    ['id' => 'b', 'texto' => 'Nada (la pantalla queda vacía)', 'es_correcta' => false, 'feedback' => 'Incorrecto: la condición 32 > 30 es true, por lo que la función print sí se ejecuta.'],
+                                    ['id' => 'c', 'texto' => 'Error de sintaxis', 'es_correcta' => false, 'feedback' => 'Incorrecto: la estructura condicional if está escrita con la sintaxis correcta.']
                                 ]
                             ]
                         ],
@@ -218,16 +219,16 @@ class ContentSeeder extends Seeder
                     ],
                     [
                         'title' => 'Estructura if - else',
-                        'markdown' => "## ⚖️ Estructura `if` - `else` (Alternativa Doble)\n\n¿Qué ocurre cuando quieres ejecutar una acción si la condición se cumple, pero **otra acción totalmente distinta** si no se cumple?\n\nPara esto usamos la cláusula **`else`** (Sino).\n\n---\n\n### 📌 Estructura Fundamental:\n```\nif condicion:\n    // Se ejecuta solo si la condición es TRUE\nelse:\n    // Se ejecuta solo si la condición es FALSE\n```\n\n> 💡 **Regla de oro:** En una estructura `if` - `else`, **solo una de las dos ramas** se ejecutará en cada ejecución, nunca ambas.",
+                        'markdown' => "## ⚖️ Estructura `if` - `else` (Alternativa Doble)\n\n¿Qué ocurre cuando necesitas que el programa ejecute una acción si la condición se cumple, pero **otra acción totalmente distinta** si no se cumple?\n\nEn la programación profesional nunca traducimos al español; empleamos la palabra clave en inglés **`else`**.\n\n---\n\n### 📌 Estructura Fundamental:\n```python\nif condicion:\n    # Se ejecuta exclusivamente si la condición es true\nelse:\n    # Se ejecuta exclusivamente si la condición es false\n```\n\n> 💡 **Regla de oro:** En una estructura `if` - `else`, las dos ramas son mutuamente excluyentes: **solo una de las dos ramas** se ejecutará en cada ejecución, nunca ambas.",
                         'pseudocode' => [
                             'codigo' => "calificacion = 58\n\nif calificacion >= 60:\n    print(\"Estado: Aprobado\")\n    print(\"¡Excelente trabajo!\")\nelse:\n    print(\"Estado: Reprobado\")\n    puntos_faltantes = 60 - calificacion\n    print(\"Te faltaron\", puntos_faltantes, \"puntos para aprobar.\")",
-                            'explicacion' => "Como 58 >= 60 es false, el programa se salta la rama 'if' y ejecuta únicamente el bloque 'else'.",
+                            'explicacion' => "Como 58 >= 60 evalúa a false, el flujo salta la rama del if y ejecuta únicamente el bloque else.",
                             'reto' => [
                                 'pregunta' => "Dado el código: `edad = 15`. `if edad >= 18: print(\"Mayor\") else: print(\"Menor\")`. ¿Qué rama se ejecutará?",
                                 'opciones' => [
                                     ['id' => 'a', 'texto' => 'Ambas ramas de forma consecutiva', 'es_correcta' => false, 'feedback' => 'Incorrecto: las ramas if y else son mutuamente excluyentes; solo una se ejecuta.'],
-                                    ['id' => 'b', 'texto' => 'La rama else, imprimiendo \"Menor\"', 'es_correcta' => true, 'feedback' => '¡Exacto! Como 15 >= 18 es false, el flujo salta directamente al bloque else.'],
-                                    ['id' => 'c', 'texto' => 'La rama if, imprimiendo \"Mayor\"', 'es_correcta' => false, 'feedback' => 'Incorrecto: 15 no cumple la condición de ser mayor o igual a 18.']
+                                    ['id' => 'b', 'texto' => 'La rama else, imprimiendo \"Menor\"', 'es_correcta' => true, 'feedback' => '¡Exacto! Como 15 >= 18 evalúa a false, el flujo salta directamente al bloque else.'],
+                                    ['id' => 'c', 'texto' => 'La rama if, imprimiendo \"Mayor\"', 'es_correcta' => false, 'feedback' => 'Incorrecto: la condición edad >= 18 evalúa a false con edad = 15.']
                                 ]
                             ]
                         ],
@@ -236,16 +237,16 @@ class ContentSeeder extends Seeder
                         'requires_quiz' => false,
                     ],
                     [
-                        'title' => 'Condicionales anidadas y operadores',
-                        'markdown' => "## 🧩 Condicionales Anidadas y Operadores Lógicos\n\nA menudo, una sola pregunta no es suficiente para tomar una decisión compleja. Podemos combinar múltiples condiciones usando **operadores lógicos** estándar:\n\n---\n\n### 🧠 Operadores Lógicos:\n* **`and` (Y):** Todas las condiciones deben ser `true` para que el resultado sea `true`.\n* **`or` (O):** Basta con que al menos UNA condición sea `true`.\n* **`not` (NO):** Invierte el valor booleano (`not true` es `false`).\n\n---\n\n### 📂 Condicionales en Cascada (`if` - `else if`):\nPermiten clasificar datos en múltiples categorías ordenadas (ejemplo: escalas de notas A, B, C, D).",
+                        'title' => 'Condicionales anidadas y operadores (if - else if)',
+                        'markdown' => "## 🧩 Condicionales Anidadas y Operadores Lógicos\n\nA menudo, una sola comparación no basta para clasificar datos complejos. Para crear decisiones avanzadas combinamos múltiples condiciones mediante **operadores lógicos** y estructuras encadenadas:\n\n---\n\n### 🧠 Operadores Lógicos Estándar:\n* **`and` (Y lógico):** Todas las condiciones deben evaluar a `true` para que la expresión completa sea `true`.\n* **`or` (O lógico):** Basta con que al menos UNA de las condiciones sea `true` para que la expresión sea `true`.\n* **`not` (Negación):** Invierte el valor booleano (`not true` es `false`, y `not false` es `true`).\n\n---\n\n### 📂 Decisiones en Cascada (`if` - `else if` / `elif`):\nPermiten clasificar datos en múltiples categorías ordenadas (por ejemplo: escalas de notas A, B, C, D).",
                         'pseudocode' => [
                             'codigo' => "nota = 88\n\nif nota >= 90:\n    print(\"Rango: Excelente (A)\")\nelse:\n    if nota >= 80 and nota < 90:\n        print(\"Rango: Muy Bueno (B)\")\n    else:\n        if nota >= 60:\n            print(\"Rango: Aprobado (C)\")\n        else:\n            print(\"Rango: Necesita Refuerzo (D)\")",
-                            'explicacion' => "Con nota = 88, la primera condición es false, pero la segunda (nota >= 80 and nota < 90) es true, mostrando 'Muy Bueno (B)'.",
+                            'explicacion' => "Con nota = 88, la primera condición nota >= 90 es false, pero la rama else evalúa (nota >= 80 and nota < 90), la cual resulta true imprimiendo 'Muy Bueno (B)'.",
                             'reto' => [
                                 'pregunta' => "Evalúa la siguiente expresión lógica combinada: `(5 > 3) and (10 < 8)`. ¿Cuál es el resultado booleano final?",
                                 'opciones' => [
                                     ['id' => 'a', 'texto' => 'true', 'es_correcta' => false, 'feedback' => 'Incorrecto: el operador and exige que AMBAS condiciones sean true, pero 10 < 8 es false.'],
-                                    ['id' => 'b', 'texto' => 'false', 'es_correcta' => true, 'feedback' => '¡Muy bien! (5 > 3) es true, pero (10 < 8) es false. true and false resulta en false.'],
+                                    ['id' => 'b', 'texto' => 'false', 'es_correcta' => true, 'feedback' => '¡Muy bien! (5 > 3) es true, pero (10 < 8) es false. true and false produce false.'],
                                     ['id' => 'c', 'texto' => 'null / Indeterminado', 'es_correcta' => false, 'feedback' => 'Incorrecto: toda expresión booleana tiene un valor definido de true o false.']
                                 ]
                             ]
@@ -256,10 +257,10 @@ class ContentSeeder extends Seeder
                     ],
                     [
                         'title' => 'Evaluación del módulo',
-                        'markdown' => "## 🏆 Hito del Módulo: Estructuras Condicionales\n\n¡Has aprendido a controlar el flujo de ejecución de tus programas con `if`, `else`, `and`, `or` y `not`!\n\n---\n\n### 📋 Repaso de conceptos clave:\n* Estructuras `if` para decisiones simples.\n* Alternativas dobles con `if` - `else`.\n* Combinación de condiciones lógicas con `and`, `or`, `not`.\n\n> 🎯 **Siguiente Reto:** Presenta la evaluación final de condicionales (mínimo 70%) para desbloquear la insignia **Mago del Control**.",
+                        'markdown' => "## 🏆 Hito del Módulo: Estructuras Condicionales\n\n¡Has dominado el control de flujo con la sintaxis y terminología real de la industria: `if`, `else`, `and`, `or` y `not`!\n\n---\n\n### 📋 Repaso de conceptos clave:\n* Sentencia `if` para decisiones simples cuando una condición evalúa a `true`.\n* Bifurcación doble con `if` - `else` para caminos alternativos.\n* Combinación de condiciones lógicas con `and`, `or` y negación con `not`.\n\n> 🎯 **Siguiente Reto:** Presenta la evaluación del módulo (mínimo 70%) para desbloquear la insignia **Mago del Control** y el Módulo 3.",
                         'pseudocode' => [
                             'codigo' => "hora = 14\nes_dia_laboral = true\n\nif es_dia_laboral and (hora >= 8 and hora <= 17):\n    print(\"Horario de atención disponible.\")\nelse:\n    print(\"Oficina cerrada fuera de horario.\")",
-                            'explicacion' => "Verificación de rangos horarios con operadores lógicos combinados 'and'.",
+                            'explicacion' => "Verificación de rangos horarios con operadores lógicos combinados 'and'. Ambas condiciones son true, ejecutando el bloque if.",
                             'reto' => [
                                 'pregunta' => "En un sistema de acceso: `tiene_pase = false`, `es_admin = true`. La condición es `if tiene_pase or es_admin: print(\"Acceso Permitido\")`. ¿Qué ocurrirá?",
                                 'opciones' => [
@@ -321,54 +322,188 @@ class ContentSeeder extends Seeder
                         ]
                     ]
                 ]
+            ],
+            [
+                'module_title' => 'Estructuras Cíclicas (Bucles)',
+                'lessons' => [
+                    [
+                        'title' => 'El bucle while (Repetición condicional)',
+                        'markdown' => "## 🔄 El Bucle `while` (Repetición Condicional)\n\nEn programación, muchas veces necesitamos repetir un bloque de instrucciones varias veces sin escribir el mismo código una y otra vez. Para ello existen las **estructuras cíclicas** o **bucles**.\n\nEl bucle **`while`** repite su bloque de código **mientras** una condición lógica evalúe a **`true`**.\n\n---\n\n### 🔑 Los 3 Elementos Esenciales de un `while`:\n1. **Inicialización:** Definir la variable de control antes de iniciar el bucle (ej. `contador = 1`).\n2. **Condición de permanencia:** Expresión booleana que se evalúa antes de cada vuelta (ej. `while contador <= 3:`).\n3. **Actualización (Incremento/Decremento):** Modificar la variable dentro del bucle (`contador = contador + 1`) para que en algún momento la condición sea `false` y el bucle termine.\n\n> ⚠️ **Cuidado con el Bucle Infinito:** Si olvidas actualizar la variable de control dentro del `while`, la condición siempre será `true` y el programa nunca terminará.",
+                        'pseudocode' => [
+                            'codigo' => "contador = 1\n\nwhile contador <= 3:\n    print(\"Vuelta número:\", contador)\n    contador = contador + 1\n\nprint(\"¡Bucle finalizado con éxito!\")",
+                            'explicacion' => "El bucle inicia con contador = 1. Imprime 1, 2 y 3 en cada iteración. Cuando contador llega a 4, la condición (4 <= 3) evalúa a false y el bucle termina.",
+                            'reto' => [
+                                'pregunta' => "Analiza el código: `energia = 3`. `while energia > 0: print(energia); energia = energia - 1`. ¿Cuántas veces se ejecutará la instrucción `print(energia)`?",
+                                'opciones' => [
+                                    ['id' => 'a', 'texto' => '3 veces (imprimiendo 3, 2 y 1)', 'es_correcta' => true, 'feedback' => '¡Excelente! Se ejecuta para energia = 3, 2 y 1. Cuando llega a 0, la condición `0 > 0` es false y se detiene.'],
+                                    ['id' => 'b', 'texto' => '4 veces (imprimiendo 3, 2, 1 y 0)', 'es_correcta' => false, 'feedback' => 'Incorrecto: la condición es estrictamente mayor que cero (`energia > 0`), por lo que con 0 ya no entra al bucle.'],
+                                    ['id' => 'c', 'texto' => 'Infinitas veces', 'es_correcta' => false, 'feedback' => 'Incorrecto: como `energia` disminuye en 1 en cada vuelta, el bucle se detiene al llegar a 0.']
+                                ]
+                            ]
+                        ],
+                        'minutes' => 8,
+                        'xp' => 10,
+                        'requires_quiz' => false,
+                    ],
+                    [
+                        'title' => 'El bucle for y rangos (Iteración definida)',
+                        'markdown' => "## 🔁 El Bucle `for` (Iteración Definida)\n\nCuando sabemos de antemano **exactamente cuántas veces** queremos repetir una acción, los programadores profesionales utilizan el bucle **`for`**.\n\nA diferencia de `while`, el bucle `for` gestiona automáticamente el inicio, el avance y el final del recorrido utilizando una secuencia o rango (`range`).\n\n---\n\n### 📌 Cómo funciona `range()`:\n* **`for i in range(4):`** Repite el bloque **4 veces**, tomando `i` los valores `0, 1, 2, 3`.\n* **`for i in range(1, 5):`** Inicia en `1` y se detiene antes del `5`, tomando `i` los valores `1, 2, 3, 4`.\n\n> 💡 **Regla de oro:** Usa **`for`** cuando conozcas el número exacto de repeticiones, y usa **`while`** cuando la repetición dependa de una condición que puede cambiar dinámicamente.",
+                        'pseudocode' => [
+                            'codigo' => "// Tabla de multiplicar del 5 (del 1 al 4)\nfor numero in range(1, 5):\n    resultado = 5 * numero\n    print(\"5 x\", numero, \"=\", resultado)\n\nprint(\"Tabla completada.\")",
+                            'explicacion' => "La función range(1, 5) genera la secuencia 1, 2, 3 y 4. En cada vuelta, la variable 'numero' toma el siguiente valor automáticamente.",
+                            'reto' => [
+                                'pregunta' => "Si ejecutamos el bucle: `for i in range(5): print(\"Hola EduGT\")`. ¿Cuántas veces se mostrará el mensaje en pantalla?",
+                                'opciones' => [
+                                    ['id' => 'a', 'texto' => '4 veces', 'es_correcta' => false, 'feedback' => 'Incorrecto: aunque `i` llega hasta el índice 4, empieza a contar desde el 0 (0, 1, 2, 3, 4).'],
+                                    ['id' => 'b', 'texto' => '5 veces', 'es_correcta' => true, 'feedback' => '¡Correcto! `range(5)` genera 5 iteraciones correspondientes a los valores 0, 1, 2, 3 y 4.'],
+                                    ['id' => 'c', 'texto' => '6 veces', 'es_correcta' => false, 'feedback' => 'Incorrecto: el número límite de `range(5)` no se incluye, por lo que ejecuta exactamente 5 vueltas.']
+                                ]
+                            ]
+                        ],
+                        'minutes' => 10,
+                        'xp' => 10,
+                        'requires_quiz' => false,
+                    ],
+                    [
+                        'title' => 'Contadores, acumuladores y control de bucles',
+                        'markdown' => "## 🧮 Contadores, Acumuladores y `break`\n\nPara resolver problemas reales con bucles (como calcular el promedio de notas de un aula o sumar el total de una compra), combinamos los ciclos con dos patrones clásicos de variables:\n\n---\n\n### 📊 Contador vs. Acumulador:\n* **Contador (`cuenta = cuenta + 1`):** Aumenta de **1 en 1** (o un valor fijo) para contar cuántos elementos cumplen una condición.\n* **Acumulador (`suma = suma + valor`):** Suma valores **variables** en cada vuelta para obtener un total acumulado.\n\n---\n\n### 🛑 La instrucción `break`:\nPermite **detener y salir inmediatamente** de un bucle antes de que termine sus vueltas normales (por ejemplo, cuando ya encontramos el dato que buscábamos).",
+                        'pseudocode' => [
+                            'codigo' => "suma_total = 0\n\nfor i in range(1, 4):\n    suma_total = suma_total + (i * 10)\n    print(\"Iteración\", i, \"-> Acumulado:\", suma_total)\n\nprint(\"Suma final:\", suma_total)",
+                            'explicacion' => "En la vuelta 1 suma 10 (total 10). En la vuelta 2 suma 20 (total 30). En la vuelta 3 suma 30 (total 60).",
+                            'reto' => [
+                                'pregunta' => "Tenemos `total = 0` y ejecutamos `for n in range(1, 4): total = total + n`. ¿Qué valor tendrá la variable acumuladora `total` al finalizar el bucle?",
+                                'opciones' => [
+                                    ['id' => 'a', 'texto' => '3', 'es_correcta' => false, 'feedback' => 'Incorrecto: 3 es el último valor de `n`, pero `total` fue acumulando la suma de cada vuelta.'],
+                                    ['id' => 'b', 'texto' => '6', 'es_correcta' => true, 'feedback' => '¡Brillante! `range(1, 4)` recorre 1, 2 y 3. La suma acumulada es 1 + 2 + 3 = 6.'],
+                                    ['id' => 'c', 'texto' => '10', 'es_correcta' => false, 'feedback' => 'Incorrecto: recuerda que `range(1, 4)` se detiene antes del 4, por lo que solo suma 1 + 2 + 3.']
+                                ]
+                            ]
+                        ],
+                        'minutes' => 12,
+                        'xp' => 10,
+                        'requires_quiz' => false,
+                    ],
+                    [
+                        'title' => 'Evaluación del módulo',
+                        'markdown' => "## 🏆 Hito del Módulo: Estructuras Cíclicas (Bucles)\n\n¡Felicidades! Has completado el recorrido por las estructuras repetitivas: `while`, `for`, `range()`, contadores, acumuladores y control de iteraciones.\n\n---\n\n### 📋 Repaso de conceptos clave:\n* Bucle `while` para repetir instrucciones mientras una condición sea `true`.\n* Bucle `for` con `range()` para iteraciones con cantidad conocida de vueltas.\n* Uso de **contadores** y **acumuladores** para procesar colecciones de datos sin caer en bucles infinitos.\n\n> 🎯 **Siguiente Reto:** Presenta la evaluación del módulo (mínimo 70%) para desbloquear la insignia **Maestro del Bucle** y completar la Misión 1.",
+                        'pseudocode' => [
+                            'codigo' => "pares_encontrados = 0\n\nfor num in range(1, 7):\n    if num % 2 == 0:\n        pares_encontrados = pares_encontrados + 1\n        print(\"Número par detectado:\", num)\n\nprint(\"Total de números pares:\", pares_encontrados)",
+                            'explicacion' => "Combina un bucle for del 1 al 6 con un condicional if que verifica si el residuo al dividir entre 2 es 0 (2, 4 y 6), contando 3 números pares.",
+                            'reto' => [
+                                'pregunta' => "¿Qué ocurre si ejecutamos un bucle `while x < 5: print(x)` donde inicialmente `x = 1`, pero **olvidamos** escribir `x = x + 1` dentro del bucle?",
+                                'opciones' => [
+                                    ['id' => 'a', 'texto' => 'Se produce un bucle infinito porque `x` siempre valdrá 1 y la condición `1 < 5` nunca dejará de ser true.', 'es_correcta' => true, 'feedback' => '¡Exacto! Sin actualizar la variable de control, la condición jamás se vuelve false.'],
+                                    ['id' => 'b', 'texto' => 'Imprime el número 1 una sola vez y el programa finaliza normalmente.', 'es_correcta' => false, 'feedback' => 'Incorrecto: eso ocurriría con un `if`, pero `while` vuelve a evaluar la condición una y otra vez.'],
+                                    ['id' => 'c', 'texto' => 'La computadora incrementa `x` automáticamente aunque no esté escrito en el código.', 'es_correcta' => false, 'feedback' => 'Incorrecto: a diferencia de `for`, en un bucle `while` el programador debe actualizar explícitamente la variable.']
+                                ]
+                            ]
+                        ],
+                        'minutes' => 10,
+                        'xp' => 10,
+                        'requires_quiz' => true,
+                    ]
+                ],
+                'quiz_questions' => [
+                    [
+                        'statement' => "Analiza el siguiente bucle `while`:\n\n```\nx = 2\nwhile x <= 8:\n    print(x)\n    x = x + 3\n```\n\n¿Qué secuencia de números se imprimirá en pantalla?",
+                        'explanation' => "Inicia en `x = 2` (imprime 2), suma 3 y pasa a `5` (imprime 5), suma 3 y pasa a `8` (imprime 8), suma 3 y pasa a `11` (`11 <= 8` es false y termina).",
+                        'options' => [
+                            ['texto' => '2, 5, 8', 'correcta' => true, 'feedback' => '¡Correcto! Imprime 2, luego 2 + 3 = 5, luego 5 + 3 = 8. Al pasar a 11, `11 <= 8` es false y finaliza.'],
+                            ['texto' => '2, 5, 8, 11', 'correcta' => false, 'feedback' => 'Incorrecto: cuando `x` toma el valor 11, la condición `x <= 8` evalúa a false y ya no imprime.'],
+                            ['texto' => '2, 3, 4, 5, 6, 7, 8', 'correcta' => false, 'feedback' => 'Incorrecto: observa que el incremento en cada vuelta es de 3 en 3 (`x = x + 3`), no de 1 en 1.']
+                        ]
+                    ],
+                    [
+                        'statement' => "¿Cuál es el valor final de la variable `acumulador` tras ejecutar el siguiente bucle `for`?\n\n```\nacumulador = 10\nfor i in range(3):\n    acumulador = acumulador + 5\nprint(acumulador)\n```",
+                        'explanation' => "`range(3)` ejecuta el bloque exactamente 3 veces. En cada vuelta se suman 5 a los 10 iniciales: `10 + 5 + 5 + 5 = 25`.",
+                        'options' => [
+                            ['texto' => '15', 'correcta' => false, 'feedback' => 'Incorrecto: 15 es el valor tras la primera vuelta, pero el bucle se repite 3 veces.'],
+                            ['texto' => '25', 'correcta' => true, 'feedback' => '¡Correcto! Inicia en 10 y suma 5 en cada una de las 3 iteraciones: 10 + 15 = 25.'],
+                            ['texto' => '30', 'correcta' => false, 'feedback' => 'Incorrecto: `range(3)` ejecuta 3 iteraciones (índices 0, 1 y 2), no 4.']
+                        ]
+                    ],
+                    [
+                        'statement' => "¿Por qué el siguiente fragmento de código provoca un **bucle infinito**?\n\n```\nintentos = 1\nwhile intentos <= 5:\n    print(\"Verificando conexión...\")\n```",
+                        'explanation' => "La variable `intentos` vale 1 y nunca se modifica dentro del bloque `while`, por lo que `intentos <= 5` siempre es `true`.",
+                        'options' => [
+                            ['texto' => 'Porque falta actualizar la variable `intentos` dentro del bucle (ej. `intentos = intentos + 1`)', 'correcta' => true, 'feedback' => '¡Exacto! Al no incrementar `intentos`, siempre vale 1 y la condición jamás deja de cumplirse.'],
+                            ['texto' => 'Porque la función `print` reinicia la variable `intentos` a cero en cada vuelta', 'correcta' => false, 'feedback' => 'Incorrecto: `print` únicamente muestra texto en pantalla y no altera variables.'],
+                            ['texto' => 'Porque el operador `<=` no puede utilizarse dentro de una instrucción `while`', 'correcta' => false, 'feedback' => 'Incorrecto: el operador `<=` es totalmente válido en condiciones de bucles `while`.']
+                        ]
+                    ],
+                    [
+                        'statement' => "Observa el siguiente algoritmo que combina un bucle `for` con una estructura condicional `if`:\n\n```\ncontador_mayores = 0\nfor n in range(1, 6):\n    if n > 3:\n        contador_mayores = contador_mayores + 1\nprint(contador_mayores)\n```\n\n¿Qué número imprimirá al final?",
+                        'explanation' => "`range(1, 6)` genera los números `1, 2, 3, 4, 5`. De ellos, solo `4` y `5` cumplen la condición `n > 3`, por lo que el contador aumenta 2 veces.",
+                        'options' => [
+                            ['texto' => '3', 'correcta' => false, 'feedback' => 'Incorrecto: el número 3 no cumple `3 > 3`, y el 6 no está incluido en `range(1, 6)`.'],
+                            ['texto' => '2', 'correcta' => true, 'feedback' => '¡Correcto! Del 1 al 5, únicamente los valores 4 y 5 son mayores que 3.'],
+                            ['texto' => '5', 'correcta' => false, 'feedback' => 'Incorrecto: 5 es el total de vueltas, pero el contador solo incrementa cuando `n > 3`.']
+                        ]
+                    ],
+                    [
+                        'statement' => "¿En qué situación es más recomendable utilizar un bucle **`for`** en lugar de un bucle **`while`**?",
+                        'explanation' => "El bucle `for` está diseñado para recorrer secuencias o rangos cuando conocemos de antemano el número exacto de iteraciones.",
+                        'options' => [
+                            ['texto' => 'Cuando nunca queremos que el bloque de código se repita más de una vez', 'correcta' => false, 'feedback' => 'Incorrecto: si no se requiere repetición, se usa una estructura secuencial o condicional `if`.'],
+                            ['texto' => 'Cuando desconocemos por completo cuántas veces se repetirá y dependemos de que el usuario escriba "salir"', 'correcta' => false, 'feedback' => 'Incorrecto: para repeticiones indefinidas basadas en un evento externo es ideal el bucle `while`.'],
+                            ['texto' => 'Cuando sabemos exactamente cuántas veces queremos repetir el bloque o recorremos un rango fijo', 'correcta' => true, 'feedback' => '¡Correcto! El bucle `for` es la herramienta ideal para iteraciones definidas y rangos conocidos.']
+                        ]
+                    ]
+                ]
             ]
         ];
 
         foreach ($curriculumData as $i => $modData) {
-            $module = Module::query()->create([
-                'mission_id' => $mission->id,
-                'title' => $modData['module_title'],
-                'required_level' => $i + 1,
-                'order_index' => $i,
-                'status' => 'published',
-            ]);
+            $module = Module::query()->updateOrCreate(
+                ['mission_id' => $mission->id, 'order_index' => $i],
+                [
+                    'title' => $modData['module_title'],
+                    'required_level' => $i + 1,
+                    'status' => 'published',
+                ]
+            );
 
             foreach ($modData['lessons'] as $n => $lData) {
-                Lesson::query()->create([
-                    'module_id' => $module->id,
-                    'title' => $lData['title'],
-                    'content_markdown' => $lData['markdown'],
-                    'pseudocode_json' => $lData['pseudocode'],
-                    'estimated_minutes' => $lData['minutes'],
-                    'xp_reward' => $lData['xp'],
-                    'order_index' => $n,
-                    'requires_quiz_pass' => $lData['requires_quiz'],
-                    'status' => 'published',
-                ]);
+                Lesson::query()->updateOrCreate(
+                    ['module_id' => $module->id, 'order_index' => $n],
+                    [
+                        'title' => $lData['title'],
+                        'content_markdown' => $lData['markdown'],
+                        'pseudocode_json' => $lData['pseudocode'],
+                        'estimated_minutes' => $lData['minutes'],
+                        'xp_reward' => $lData['xp'],
+                        'requires_quiz_pass' => $lData['requires_quiz'],
+                        'status' => 'published',
+                    ]
+                );
             }
 
-            $quiz = Quiz::query()->create([
-                'module_id' => $module->id,
-                'title' => "Evaluación: {$modData['module_title']}",
-                'passing_score' => 70,
-            ]);
+            $quiz = Quiz::query()->updateOrCreate(
+                ['module_id' => $module->id],
+                [
+                    'title' => "Evaluación: {$modData['module_title']}",
+                    'passing_score' => 70,
+                ]
+            );
 
             foreach ($modData['quiz_questions'] as $qn => $qData) {
-                $q = Question::query()->create([
-                    'quiz_id' => $quiz->id,
-                    'statement' => $qData['statement'],
-                    'explanation' => $qData['explanation'],
-                    'order_index' => $qn + 1,
-                ]);
+                $q = Question::query()->updateOrCreate(
+                    ['quiz_id' => $quiz->id, 'order_index' => $qn + 1],
+                    [
+                        'statement' => $qData['statement'],
+                        'explanation' => $qData['explanation'],
+                    ]
+                );
 
                 foreach ($qData['options'] as $oi => $opt) {
-                    QuestionOption::query()->create([
-                        'question_id' => $q->id,
-                        'option_text' => $opt['texto'],
-                        'is_correct' => $opt['correcta'],
-                        'feedback' => $opt['feedback'],
-                        'order_index' => $oi,
-                    ]);
+                    QuestionOption::query()->updateOrCreate(
+                        ['question_id' => $q->id, 'order_index' => $oi],
+                        [
+                            'option_text' => $opt['texto'],
+                            'is_correct' => $opt['correcta'],
+                            'feedback' => $opt['feedback'],
+                        ]
+                    );
                 }
             }
         }
@@ -479,13 +614,14 @@ class ContentSeeder extends Seeder
         ];
 
         foreach (['pre' => 1, 'post' => 1] as $kind => $version) {
-            $test = DiagnosticTest::query()->create([
-                'kind' => $kind,
-                'version' => $version,
-                'question_count' => 14,
-                'time_limit_minutes' => 15,
-                'is_active' => true,
-            ]);
+            $test = DiagnosticTest::query()->updateOrCreate(
+                ['kind' => $kind, 'version' => $version],
+                [
+                    'question_count' => 14,
+                    'time_limit_minutes' => 15,
+                    'is_active' => true,
+                ]
+            );
 
             foreach ($dimensions as $i => $dim) {
                 // j=1 pregunta base, j=2 variante distinta (misma dimensión, problema equivalente)
@@ -511,17 +647,21 @@ class ContentSeeder extends Seeder
                         $final[$pos] = ($pos === $posCorrecta) ? $correcta : $distractoras[$di++];
                     }
 
-                    DiagnosticQuestion::query()->create([
-                        'diagnostic_test_id' => $test->id,
-                        'dimension' => $dim,
-                        'statement' => $isPost && $j === 1
-                            ? $d['statement'].' (versión postest)'
-                            : $d['statement'],
-                        'options' => $final,
-                        'correct_index' => $posCorrecta,
-                        'explanation' => $d['explanation'],
-                        'order_index' => $i * 2 + $j,
-                    ]);
+                    DiagnosticQuestion::query()->updateOrCreate(
+                        [
+                            'diagnostic_test_id' => $test->id,
+                            'order_index' => $i * 2 + $j,
+                        ],
+                        [
+                            'dimension' => $dim,
+                            'statement' => $isPost && $j === 1
+                                ? $d['statement'].' (versión postest)'
+                                : $d['statement'],
+                            'options' => $final,
+                            'correct_index' => $posCorrecta,
+                            'explanation' => $d['explanation'],
+                        ]
+                    );
                 }
             }
         }

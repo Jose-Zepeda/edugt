@@ -78,6 +78,27 @@ describe('RB-05 — desbloqueo secuencial', function () {
         getJson("/api/v1/lessons/{$this->l2->id}", ['Authorization' => "Bearer $token"])
             ->assertStatus(200);
     });
+
+    it('bloquea el inicio del Módulo 1 mientras el estudiante no haya completado el Pre-test diagnóstico', function () {
+        \App\Domain\Diagnostic\Models\DiagnosticTest::query()->create([
+            'kind' => 'pre', 'version' => 1, 'question_count' => 14,
+            'time_limit_minutes' => 15, 'is_active' => true,
+        ]);
+
+        $user = User::factory()->student()->create(['learning_track' => null]);
+        $token = $user->createToken('spa')->plainTextToken;
+
+        // Sin pretest completado, incluso la Lección 1 está bloqueada
+        getJson("/api/v1/lessons/{$this->l1->id}", ['Authorization' => "Bearer $token"])
+            ->assertStatus(403)
+            ->assertJsonPath('message', 'LOCKED_CONTENT');
+
+        // Al completar el pretest (learning_track asignado), la Lección 1 se desbloquea
+        $user->update(['learning_track' => 'beginner']);
+
+        getJson("/api/v1/lessons/{$this->l1->id}", ['Authorization' => "Bearer $token"])
+            ->assertStatus(200);
+    });
 });
 
 describe('RF-10 — XP y progreso', function () {
