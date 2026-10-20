@@ -913,8 +913,10 @@ function renderClassroomStudentsList(students) {
           <!-- Columna Izquierda: Datos del Estudiante, Pre-test, XP e Insignias -->
           <div class="col-12 col-lg-5">
             <div class="d-flex align-items-start gap-3">
-              <div class="teacher-student-avatar flex-shrink-0 shadow-sm">
-                ${esc(initial)}
+              <div class="teacher-student-avatar flex-shrink-0 shadow-sm" style="overflow:hidden;padding:0;">
+                ${s.avatar_url
+                  ? `<img src="${esc(s.avatar_url)}" alt="${esc(s.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block;">`
+                  : esc(initial)}
               </div>
               <div class="flex-grow-1" style="min-width:0;">
                 <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">

@@ -863,6 +863,10 @@ async function loadRankings(targetClassroomId = null) {
     const renderPodiumItem = (student, rankClass, rankBadgeClass, vectorIconClass, rankLabel, iconName, rankNum, colSize) => {
       if (!student) return '';
       const isMe = student.user_id === Auth.user.id;
+      const avatarUrl = student.avatar_url || (isMe ? Auth.user?.avatar_url : null);
+      const avatarInner = avatarUrl
+        ? `<img src="${esc(avatarUrl)}" alt="${esc(student.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block;">`
+        : `<span class="fw-bold" style="font-size:1.2rem;">${student.name.charAt(0).toUpperCase()}</span>`;
       return `
         <div class="col-md-${colSize}">
           <div class="podium-card ${rankClass} h-100 shadow-sm">
@@ -874,8 +878,8 @@ async function loadRankings(targetClassroomId = null) {
                 <i class="bi ${iconName}"></i>
               </span>
             </div>
-            <div class="podium-avatar shadow-sm">
-              <span class="fw-bold" style="font-size:1.2rem;">${student.name.charAt(0).toUpperCase()}</span>
+            <div class="podium-avatar shadow-sm" style="overflow:hidden;padding:0;">
+              ${avatarInner}
             </div>
             <h4 class="fw-bold mb-1 podium-name" style="font-size:1.05rem;color:var(--edugt-text);">
               ${esc(student.name)}${isMe ? ' <span class="badge bg-primary" style="font-size:.7rem;">Tú</span>' : ''}
@@ -911,10 +915,15 @@ async function loadRankings(targetClassroomId = null) {
       rankBadgeHtml = `<div class="rank-pos-badge rank-default">${r.position}</div>`;
     }
     const me = r.user_id === Auth.user.id;
+    const rowAvatarUrl = r.avatar_url || (me ? Auth.user?.avatar_url : null);
+    const rowAvatarHtml = rowAvatarUrl
+      ? `<img src="${esc(rowAvatarUrl)}" alt="${esc(r.name)}" width="34" height="34" style="width:34px;height:34px;object-fit:cover;border-radius:10px;flex-shrink:0;" loading="lazy">`
+      : `<div class="d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:34px;height:34px;border-radius:10px;background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:.85rem;">${esc((r.name || 'E').charAt(0).toUpperCase())}</div>`;
 
     return `
       <div class="ranking-row d-flex align-items-center gap-3 border rounded-4 px-3 py-2.5 ${me ? 'is-me' : ''}">
         <div style="width:36px;display:flex;align-items:center;justify-content:center;">${rankBadgeHtml}</div>
+        ${rowAvatarHtml}
         <div class="flex-grow-1">
           <span style="font-size:.95rem;color:var(--edugt-text);font-weight:600;">${esc(r.name)}</span>
           ${me ? '<span class="badge bg-primary ms-2" style="font-size:.7rem;">Tú</span>' : ''}
