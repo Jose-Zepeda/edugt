@@ -60,8 +60,9 @@ async function boot() {
     // Markdown sanitizado
     const htmlContent = DOMPurify.sanitize(marked.parse(l.content_markdown ?? ''));
 
-    // Bloque de Pseudocódigo
+    // Bloque de Pseudocódigo con Simulador Interactivo Paso a Paso (Prueba de Escritorio)
     let pseudocodeHtml = '';
+    let rawCodeForSim = '';
     if (l.pseudocode_json) {
       let codeText = '';
       let codeExplanation = '';
@@ -73,22 +74,95 @@ async function boot() {
         codeText = String(l.pseudocode_json);
       }
 
+      rawCodeForSim = codeText;
+      const codeLines = codeText.split('\n');
+      const linesHtml = codeLines.map((lineText, idx) => {
+        const lineNum = idx + 1;
+        const trimmed = lineText.trim();
+        const isComment = trimmed.startsWith('//') || trimmed.startsWith('#');
+        return `
+          <div class="code-line-row" data-line="${lineNum}">
+            <span class="code-line-arrow" data-arrow="${lineNum}"></span>
+            <span class="code-line-num">${lineNum}</span>
+            <span class="code-line-text ${isComment ? 'is-comment' : ''}">${esc(lineText || ' ')}</span>
+          </div>`;
+      }).join('');
+
       pseudocodeHtml = `
-        <div class="code-window">
-          <div class="code-window-header">
+        <div class="code-window" id="lesson-code-window">
+          <div class="code-window-header flex-wrap gap-2">
             <div class="d-flex align-items-center gap-2">
               <div class="window-dots">
                 <span class="window-dot dot-red"></span>
                 <span class="window-dot dot-yellow"></span>
                 <span class="window-dot dot-green"></span>
               </div>
-              <span class="ms-2"><i class="bi bi-terminal me-1"></i> Pseudocódigo de Ejemplo</span>
+              <span class="ms-2"><i class="bi bi-terminal me-1"></i> Pseudocódigo · Simulador de Prueba de Escritorio</span>
             </div>
-            <button type="button" class="btn btn-sm btn-dark text-light border-0 px-2 py-0" id="btn-copy-code" title="Copiar pseudocódigo">
-              <i class="bi bi-clipboard me-1"></i> Copiar
-            </button>
+            <div class="d-flex align-items-center gap-1.5 flex-wrap">
+              <button type="button" class="sim-toolbar-btn sim-btn-primary" id="btn-sim-step" title="Avanzar una instrucción">
+                <i class="bi bi-play-fill"></i> Paso a paso
+              </button>
+              <button type="button" class="sim-toolbar-btn" id="btn-sim-auto" title="Ejecutar automáticamente línea por línea">
+                <i class="bi bi-lightning-charge-fill text-warning"></i> Auto
+              </button>
+              <button type="button" class="sim-toolbar-btn d-none" id="btn-sim-reset" title="Reiniciar simulación">
+                <i class="bi bi-arrow-counterclockwise"></i> Reiniciar
+              </button>
+              <button type="button" class="sim-toolbar-btn" id="btn-copy-code" title="Copiar pseudocódigo">
+                <i class="bi bi-clipboard"></i> Copiar
+              </button>
+            </div>
           </div>
-          <pre class="code-window-body"><code>${esc(codeText)}</code></pre>
+
+          <div class="code-lines-container" id="sim-code-lines">${linesHtml}</div>
+
+          <!-- Panel de Prueba de Escritorio en Vivo (Memoria RAM + Consola) -->
+          <div class="sim-workbench" id="sim-workbench">
+            <div class="sim-step-banner">
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge rounded-pill px-2.5 py-1" id="sim-step-badge" style="background:#322B54;color:#C4B5FD;font-size:.75rem;">
+                  Listo para ejecutar
+                </span>
+                <span id="sim-step-explanation" style="color:#E4E1F5;">
+                  Haz clic en <strong>▶ Paso a paso</strong> o <strong>⚡ Auto</strong> para observar cómo cambian las variables en la memoria línea por línea.
+                </span>
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <!-- Columna 1: Memoria RAM (Variables) -->
+              <div class="col-12 col-md-6">
+                <div class="sim-panel-box">
+                  <div class="sim-panel-title">
+                    <span><i class="bi bi-cpu-fill text-info me-1"></i> Memoria RAM (Variables)</span>
+                    <span id="sim-vars-count" class="badge rounded-pill" style="background:#241F3D;color:#A39DBE;font-size:.68rem;">0 activas</span>
+                  </div>
+                  <div id="sim-vars-body">
+                    <div class="text-center py-3" style="color:#6E678F;font-size:.82rem;">
+                      Aún no se han declarado variables en memoria.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Columna 2: Consola de Salida (print) -->
+              <div class="col-12 col-md-6">
+                <div class="sim-panel-box">
+                  <div class="sim-panel-title">
+                    <span><i class="bi bi-window-terminal text-success me-1"></i> Consola de Salida (print)</span>
+                    <span class="badge rounded-pill" style="background:#241F3D;color:#A39DBE;font-size:.68rem;">stdout</span>
+                  </div>
+                  <div id="sim-console-body">
+                    <div class="text-center py-3" style="color:#6E678F;font-size:.82rem;">
+                      Sin salidas en pantalla todavía.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           ${codeExplanation ? `
             <div class="code-explanation-box">
               <i class="bi bi-info-circle-fill text-primary me-1"></i>
@@ -238,15 +312,18 @@ async function boot() {
       });
     }
 
-    // Botón copiar código
+    // Inicializar Simulador Paso a Paso y botón copiar
+    if (rawCodeForSim) {
+      initPseudocodeSimulator(rawCodeForSim);
+    }
+
     $('#btn-copy-code')?.addEventListener('click', (e) => {
-      const codeEl = $('.code-window-body code');
-      if (codeEl) {
-        navigator.clipboard.writeText(codeEl.textContent);
+      if (rawCodeForSim) {
+        navigator.clipboard.writeText(rawCodeForSim);
         const btn = e.currentTarget;
-        btn.innerHTML = '<i class="bi bi-check-lg text-success me-1"></i> ¡Copiado!';
+        btn.innerHTML = '<i class="bi bi-check-lg text-success"></i> ¡Copiado!';
         setTimeout(() => {
-          btn.innerHTML = '<i class="bi bi-clipboard me-1"></i> Copiar';
+          btn.innerHTML = '<i class="bi bi-clipboard"></i> Copiar';
         }, 2000);
       }
     });
@@ -328,6 +405,432 @@ async function completar() {
     btn.disabled = false;
     btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Completar lección';
   }
+}
+
+/* ==========================================================================
+   Motor del Simulador Paso a Paso (Prueba de Escritorio en Vivo)
+   Soporta variables, operaciones, if/else anidados, while, for/range y print
+   ========================================================================== */
+function stripInlineComment(line) {
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"' && line[i - 1] !== '\\') {
+      inQuotes = !inQuotes;
+    } else if (!inQuotes && line[i] === '/' && line[i + 1] === '/') {
+      return line.slice(0, i).trimEnd();
+    } else if (!inQuotes && line[i] === '#' && (i === 0 || /\s/.test(line[i - 1]))) {
+      return line.slice(0, i).trimEnd();
+    }
+  }
+  return line.trimEnd();
+}
+
+function splitPrintArgs(argsStr) {
+  const args = [];
+  let cur = '';
+  let inQuotes = false;
+  let depth = 0;
+  for (let i = 0; i < argsStr.length; i++) {
+    const ch = argsStr[i];
+    if (ch === '"' && argsStr[i - 1] !== '\\') {
+      inQuotes = !inQuotes;
+      cur += ch;
+    } else if (!inQuotes && ch === '(') {
+      depth++;
+      cur += ch;
+    } else if (!inQuotes && ch === ')') {
+      depth--;
+      cur += ch;
+    } else if (!inQuotes && depth === 0 && ch === ',') {
+      args.push(cur.trim());
+      cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  if (cur.trim()) args.push(cur.trim());
+  return args;
+}
+
+function evalPseudoExpr(exprStr, env) {
+  const trimmed = exprStr.trim();
+  if (!trimmed) return undefined;
+
+  // Reemplazar operadores lógicos fuera de comillas (and -> &&, or -> ||, not -> !)
+  const parts = trimmed.split(/(".*?")/g);
+  const jsExpr = parts.map((segment, idx) => {
+    if (idx % 2 === 1) return segment; // literal string intacto
+    return segment
+      .replace(/\band\b/g, '&&')
+      .replace(/\bor\b/g, '||')
+      .replace(/\bnot\b/g, '!');
+  }).join('');
+
+  const keys = Object.keys(env);
+  const vals = keys.map((k) => env[k].value);
+  try {
+    // eslint-disable-next-line no-new-func
+    const fn = new Function(...keys, `return (${jsExpr});`);
+    const res = fn(...vals);
+    if (typeof res === 'number' && !Number.isInteger(res)) {
+      return Number(res.toFixed(2));
+    }
+    return res;
+  } catch {
+    return trimmed;
+  }
+}
+
+function inferPseudoType(val, rawExpr = '') {
+  if (typeof val === 'boolean') return 'bool';
+  if (typeof val === 'string') return 'string';
+  if (typeof val === 'number') {
+    if (!Number.isInteger(val) || /\d+\.\d+/.test(rawExpr)) return 'float';
+    return 'int';
+  }
+  return 'dato';
+}
+
+function formatPseudoVal(val, type) {
+  if (type === 'string') return `"${val}"`;
+  if (type === 'bool') return val ? 'true' : 'false';
+  return String(val);
+}
+
+function buildPseudocodeTrace(codeText) {
+  const rawLines = codeText.split('\n');
+  const items = [];
+
+  rawLines.forEach((raw, idx) => {
+    const clean = stripInlineComment(raw);
+    if (!clean.trim()) return;
+    const indent = clean.search(/\S/);
+    items.push({
+      line: idx + 1,
+      indent: indent >= 0 ? indent : 0,
+      text: clean.trim(),
+    });
+  });
+
+  function parseBlock(startIdx, minIndent) {
+    const stmts = [];
+    let i = startIdx;
+
+    while (i < items.length) {
+      const it = items[i];
+      if (it.indent < minIndent) break;
+      if (it.text === 'else:') break;
+
+      if (it.text.startsWith('if ') && it.text.endsWith(':')) {
+        const cond = it.text.slice(3, -1).trim();
+        const thenRes = parseBlock(i + 1, it.indent + 1);
+        i = thenRes.nextIndex;
+        let elseBody = [];
+        if (i < items.length && items[i].indent === it.indent && items[i].text === 'else:') {
+          const elseLine = items[i].line;
+          const elseRes = parseBlock(i + 1, it.indent + 1);
+          elseBody = elseRes.stmts;
+          i = elseRes.nextIndex;
+          stmts.push({ type: 'if', line: it.line, elseLine, cond, thenBody: thenRes.stmts, elseBody });
+        } else {
+          stmts.push({ type: 'if', line: it.line, cond, thenBody: thenRes.stmts, elseBody });
+        }
+      } else if (it.text.startsWith('while ') && it.text.endsWith(':')) {
+        const cond = it.text.slice(6, -1).trim();
+        const bodyRes = parseBlock(i + 1, it.indent + 1);
+        i = bodyRes.nextIndex;
+        stmts.push({ type: 'while', line: it.line, cond, body: bodyRes.stmts });
+      } else if (it.text.startsWith('for ') && it.text.endsWith(':')) {
+        const m = it.text.match(/^for\s+([a-zA-Z_]\w*)\s+in\s+range\(([^)]+)\)\s*:$/);
+        const bodyRes = parseBlock(i + 1, it.indent + 1);
+        i = bodyRes.nextIndex;
+        if (m) {
+          stmts.push({
+            type: 'for',
+            line: it.line,
+            varName: m[1],
+            rangeArgs: m[2].split(',').map((s) => s.trim()),
+            body: bodyRes.stmts,
+          });
+        }
+      } else if (it.text.startsWith('print(') && it.text.endsWith(')')) {
+        const inner = it.text.slice(6, -1);
+        stmts.push({ type: 'print', line: it.line, args: splitPrintArgs(inner) });
+        i++;
+      } else if (it.text.includes('=')) {
+        const eqIdx = it.text.indexOf('=');
+        const varName = it.text.slice(0, eqIdx).trim();
+        const expr = it.text.slice(eqIdx + 1).trim();
+        stmts.push({ type: 'assign', line: it.line, varName, expr });
+        i++;
+      } else {
+        i++;
+      }
+    }
+
+    return { stmts, nextIndex: i };
+  }
+
+  const ast = parseBlock(0, 0).stmts;
+  const env = {};
+  const outputs = [];
+  const trace = [];
+  let safetyCounter = 0;
+
+  function snapshot(line, explanation, changedVar = null) {
+    const varsCopy = {};
+    Object.keys(env).forEach((k) => {
+      varsCopy[k] = { value: env[k].value, type: env[k].type };
+    });
+    trace.push({
+      line,
+      explanation,
+      changedVar,
+      vars: varsCopy,
+      outputs: [...outputs],
+    });
+  }
+
+  function execBlock(stmts) {
+    for (const s of stmts) {
+      if (++safetyCounter > 120) break;
+
+      if (s.type === 'assign') {
+        const val = evalPseudoExpr(s.expr, env);
+        const type = inferPseudoType(val, s.expr);
+        env[s.varName] = { value: val, type };
+        snapshot(
+          s.line,
+          `Línea ${s.line}: Se guarda <strong>${esc(s.varName)} = ${esc(formatPseudoVal(val, type))}</strong> (tipo <code>${type}</code>).`,
+          s.varName
+        );
+      } else if (s.type === 'print') {
+        const renderedArgs = s.args.map((a) => evalPseudoExpr(a, env));
+        const outLine = renderedArgs.join(' ');
+        outputs.push(outLine);
+        snapshot(
+          s.line,
+          `Línea ${s.line}: Imprime en pantalla → <strong>${esc(outLine)}</strong>`
+        );
+      } else if (s.type === 'if') {
+        const condVal = Boolean(evalPseudoExpr(s.cond, env));
+        snapshot(
+          s.line,
+          `Línea ${s.line}: Evalúa condición <code>${esc(s.cond)}</code> → <strong>${condVal ? 'true (entra al bloque if)' : 'false (salta al camino alternativo)'}</strong>`
+        );
+        if (condVal) {
+          execBlock(s.thenBody);
+        } else if (s.elseBody && s.elseBody.length > 0) {
+          if (s.elseLine) {
+            snapshot(s.elseLine, `Línea ${s.elseLine}: Entra a la rama <code>else</code> porque la condición anterior fue <code>false</code>.`);
+          }
+          execBlock(s.elseBody);
+        }
+      } else if (s.type === 'while') {
+        let loopGuard = 0;
+        while (loopGuard++ < 25) {
+          const condVal = Boolean(evalPseudoExpr(s.cond, env));
+          snapshot(
+            s.line,
+            `Línea ${s.line}: Evalúa bucle <code>while ${esc(s.cond)}</code> → <strong>${condVal ? 'true (ejecuta vuelta del bucle)' : 'false (finaliza el bucle)'}</strong>`
+          );
+          if (!condVal) break;
+          execBlock(s.body);
+        }
+      } else if (s.type === 'for') {
+        const nums = s.rangeArgs.map((r) => Number(evalPseudoExpr(r, env)));
+        const start = nums.length === 1 ? 0 : nums[0];
+        const end = nums.length === 1 ? nums[0] : nums[1];
+        for (let v = start; v < end; v++) {
+          env[s.varName] = { value: v, type: 'int' };
+          snapshot(
+            s.line,
+            `Línea ${s.line}: Bucle <code>for</code> → la variable <strong>${esc(s.varName)}</strong> toma el valor <strong>${v}</strong>.`,
+            s.varName
+          );
+          execBlock(s.body);
+        }
+      }
+    }
+  }
+
+  execBlock(ast);
+  return trace;
+}
+
+function initPseudocodeSimulator(codeText) {
+  const trace = buildPseudocodeTrace(codeText);
+  if (!trace || trace.length === 0) return;
+
+  let stepIdx = -1;
+  let autoTimer = null;
+  const visitedLines = new Set();
+
+  const btnStep = $('#btn-sim-step');
+  const btnAuto = $('#btn-sim-auto');
+  const btnReset = $('#btn-sim-reset');
+  const badgeEl = $('#sim-step-badge');
+  const expEl = $('#sim-step-explanation');
+  const varsCountEl = $('#sim-vars-count');
+  const varsBodyEl = $('#sim-vars-body');
+  const consoleBodyEl = $('#sim-console-body');
+
+  function stopAuto() {
+    if (autoTimer) {
+      clearInterval(autoTimer);
+      autoTimer = null;
+    }
+    if (btnAuto) {
+      btnAuto.innerHTML = '<i class="bi bi-lightning-charge-fill text-warning"></i> Auto';
+    }
+  }
+
+  function renderStepState() {
+    // Limpiar resaltado de líneas
+    document.querySelectorAll('#sim-code-lines .code-line-row').forEach((row) => {
+      const ln = Number(row.dataset.line);
+      row.classList.remove('is-active');
+      row.classList.toggle('is-visited', visitedLines.has(ln));
+      const arrow = row.querySelector('.code-line-arrow');
+      if (arrow) arrow.textContent = '';
+    });
+
+    if (stepIdx < 0) {
+      if (badgeEl) {
+        badgeEl.textContent = 'Listo para ejecutar';
+        badgeEl.style.background = '#322B54';
+        badgeEl.style.color = '#C4B5FD';
+      }
+      if (expEl) {
+        expEl.innerHTML = 'Haz clic en <strong>▶ Paso a paso</strong> o <strong>⚡ Auto</strong> para observar cómo cambian las variables en la memoria línea por línea.';
+      }
+      if (varsCountEl) varsCountEl.textContent = '0 activas';
+      if (varsBodyEl) {
+        varsBodyEl.innerHTML = '<div class="text-center py-3" style="color:#6E678F;font-size:.82rem;">Aún no se han declarado variables en memoria.</div>';
+      }
+      if (consoleBodyEl) {
+        consoleBodyEl.innerHTML = '<div class="text-center py-3" style="color:#6E678F;font-size:.82rem;">Sin salidas en pantalla todavía.</div>';
+      }
+      if (btnStep) {
+        btnStep.innerHTML = '<i class="bi bi-play-fill"></i> Paso a paso';
+      }
+      btnReset?.classList.add('d-none');
+      return;
+    }
+
+    btnReset?.classList.remove('d-none');
+    const cur = trace[stepIdx];
+    visitedLines.add(cur.line);
+
+    const activeRow = document.querySelector(`#sim-code-lines .code-line-row[data-line="${cur.line}"]`);
+    if (activeRow) {
+      activeRow.classList.add('is-active');
+      const arrow = activeRow.querySelector('.code-line-arrow');
+      if (arrow) arrow.textContent = '▶';
+    }
+
+    const isLast = stepIdx >= trace.length - 1;
+    if (badgeEl) {
+      badgeEl.textContent = isLast ? `Completado (${trace.length}/${trace.length})` : `Paso ${stepIdx + 1} de ${trace.length}`;
+      badgeEl.style.background = isLast ? '#065F46' : '#322B54';
+      badgeEl.style.color = isLast ? '#6EE7B7' : '#C4B5FD';
+    }
+    if (expEl) {
+      expEl.innerHTML = cur.explanation;
+    }
+
+    // Renderizar tabla de memoria RAM (variables)
+    const varNames = Object.keys(cur.vars);
+    if (varsCountEl) {
+      varsCountEl.textContent = `${varNames.length} ${varNames.length === 1 ? 'variable' : 'variables'}`;
+    }
+    if (varsBodyEl) {
+      if (varNames.length === 0) {
+        varsBodyEl.innerHTML = '<div class="text-center py-3" style="color:#6E678F;font-size:.82rem;">Sin variables modificadas aún.</div>';
+      } else {
+        varsBodyEl.innerHTML = varNames.map((name) => {
+          const info = cur.vars[name];
+          const isChanged = cur.changedVar === name;
+          return `
+            <div class="sim-var-row ${isChanged ? 'just-updated' : ''}">
+              <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold" style="color:#F8FAFC;">${esc(name)}</span>
+                <span class="sim-var-type">${esc(info.type)}</span>
+              </div>
+              <div class="fw-bold" style="color:${isChanged ? '#6EE7B7' : '#C4B5FD'};">
+                ${esc(formatPseudoVal(info.value, info.type))}
+              </div>
+            </div>`;
+        }).join('');
+      }
+    }
+
+    // Renderizar consola de salida (print)
+    if (consoleBodyEl) {
+      if (cur.outputs.length === 0) {
+        consoleBodyEl.innerHTML = '<div class="text-center py-3" style="color:#6E678F;font-size:.82rem;">Esperando instrucción print(...)</div>';
+      } else {
+        consoleBodyEl.innerHTML = cur.outputs.map((lineOut) => `
+          <div class="sim-console-line">
+            <span style="color:#6E678F;margin-right:6px;">&gt;</span>${esc(lineOut)}
+          </div>
+        `).join('');
+      }
+    }
+
+    if (btnStep) {
+      btnStep.innerHTML = isLast
+        ? '<i class="bi bi-arrow-repeat"></i> Reiniciar pasos'
+        : '<i class="bi bi-skip-end-fill"></i> Siguiente paso';
+    }
+
+    if (isLast) {
+      stopAuto();
+    }
+  }
+
+  btnStep?.addEventListener('click', () => {
+    stopAuto();
+    if (stepIdx >= trace.length - 1) {
+      stepIdx = -1;
+      visitedLines.clear();
+      renderStepState();
+      return;
+    }
+    stepIdx++;
+    renderStepState();
+  });
+
+  btnAuto?.addEventListener('click', () => {
+    if (autoTimer) {
+      stopAuto();
+      return;
+    }
+    if (stepIdx >= trace.length - 1) {
+      stepIdx = -1;
+      visitedLines.clear();
+    }
+    if (btnAuto) {
+      btnAuto.innerHTML = '<i class="bi bi-pause-fill text-warning"></i> Pausar';
+    }
+    stepIdx++;
+    renderStepState();
+    autoTimer = setInterval(() => {
+      if (stepIdx >= trace.length - 1) {
+        stopAuto();
+        return;
+      }
+      stepIdx++;
+      renderStepState();
+    }, 950);
+  });
+
+  btnReset?.addEventListener('click', () => {
+    stopAuto();
+    stepIdx = -1;
+    visitedLines.clear();
+    renderStepState();
+  });
 }
 
 boot();
