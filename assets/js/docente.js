@@ -97,7 +97,7 @@ async function loadClassrooms() {
   if (currentClassrooms.length === 0) {
     box.innerHTML = `
       <div class="col-12">
-        <div class="card-edugt p-4 p-md-5 text-center" style="background:#FFFFFF;">
+        <div class="card-edugt p-4 p-md-5 text-center">
           <div class="stat-icon mx-auto mb-3 shadow-sm" style="width:64px;height:64px;background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:2rem;border-radius:20px;">
             <i class="bi bi-people-fill"></i>
           </div>
@@ -108,7 +108,7 @@ async function loadClassrooms() {
 
           <div class="row g-3 mx-auto mb-4 text-start" style="max-width:740px;">
             <div class="col-12 col-md-4">
-              <div class="p-3 rounded-4 h-100 border" style="background:#FAF8FF;border-color:var(--edugt-border)!important;">
+              <div class="p-3 rounded-4 h-100 border" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
                 <div class="d-flex align-items-center gap-2 mb-2">
                   <span class="badge bg-primary rounded-circle" style="width:24px;height:24px;display:grid;place-items:center;font-size:.8rem;">1</span>
                   <strong class="small" style="color:var(--edugt-text);">Crea tu aula</strong>
@@ -117,7 +117,7 @@ async function loadClassrooms() {
               </div>
             </div>
             <div class="col-12 col-md-4">
-              <div class="p-3 rounded-4 h-100 border" style="background:#FAF8FF;border-color:var(--edugt-border)!important;">
+              <div class="p-3 rounded-4 h-100 border" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
                 <div class="d-flex align-items-center gap-2 mb-2">
                   <span class="badge bg-primary rounded-circle" style="width:24px;height:24px;display:grid;place-items:center;font-size:.8rem;">2</span>
                   <strong class="small" style="color:var(--edugt-text);">Comparte el código</strong>
@@ -126,7 +126,7 @@ async function loadClassrooms() {
               </div>
             </div>
             <div class="col-12 col-md-4">
-              <div class="p-3 rounded-4 h-100 border" style="background:#FAF8FF;border-color:var(--edugt-border)!important;">
+              <div class="p-3 rounded-4 h-100 border" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
                 <div class="d-flex align-items-center gap-2 mb-2">
                   <span class="badge bg-primary rounded-circle" style="width:24px;height:24px;display:grid;place-items:center;font-size:.8rem;">3</span>
                   <strong class="small" style="color:var(--edugt-text);">Monitorea y evalúa</strong>
@@ -372,9 +372,10 @@ $('#btn-confirm-delete-aula')?.addEventListener('click', async () => {
   }
 });
 
-/* ---------------- Modal Lista de Estudiantes ---------------- */
+/* ---------------- Modal Lista y Progreso de Estudiantes ---------------- */
 const studentsModalEl = $('#modal-estudiantes');
 let studentsModalInstance = null;
+let loadedClassroomStudents = [];
 
 function getStudentsModal() {
   if (!studentsModalInstance && studentsModalEl && window.bootstrap) {
@@ -383,13 +384,244 @@ function getStudentsModal() {
   return studentsModalInstance;
 }
 
+function renderClassroomStudentsKpis(students) {
+  const kpiBox = $('#modal-estudiantes-kpis');
+  if (!kpiBox) return;
+
+  const total = students.length;
+  const withPretest = students.filter((s) => s.pretest_completed || Boolean(s.learning_track)).length;
+  const completedAll = students.filter((s) => (s.progress_percent ?? 0) >= 100).length;
+  const avgProgress = total > 0
+    ? Math.round(students.reduce((acc, s) => acc + (s.progress_percent ?? 0), 0) / total)
+    : 0;
+
+  kpiBox.innerHTML = `
+    <div class="col-6 col-lg-3">
+      <div class="teacher-student-kpi-card p-3 h-100">
+        <div class="d-flex align-items-center justify-content-between mb-1">
+          <span class="small text-muted fw-bold text-uppercase" style="font-size:.7rem;letter-spacing:.04em;">Inscritos</span>
+          <i class="bi bi-people-fill text-primary"></i>
+        </div>
+        <div class="h4 fw-bold mb-0" style="color:var(--edugt-text);">${total}</div>
+        <small class="text-muted" style="font-size:.76rem;">Estudiantes activos</small>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="teacher-student-kpi-card p-3 h-100">
+        <div class="d-flex align-items-center justify-content-between mb-1">
+          <span class="small text-muted fw-bold text-uppercase" style="font-size:.7rem;letter-spacing:.04em;">Pre-test</span>
+          <i class="bi bi-compass-fill text-info"></i>
+        </div>
+        <div class="h4 fw-bold mb-0" style="color:var(--edugt-text);">${withPretest} <span class="fs-6 text-muted fw-normal">/ ${total}</span></div>
+        <small class="text-muted" style="font-size:.76rem;">Diagnóstico completado</small>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="teacher-student-kpi-card p-3 h-100">
+        <div class="d-flex align-items-center justify-content-between mb-1">
+          <span class="small text-muted fw-bold text-uppercase" style="font-size:.7rem;letter-spacing:.04em;">Avance Promedio</span>
+          <i class="bi bi-bar-chart-fill text-success"></i>
+        </div>
+        <div class="h4 fw-bold mb-1" style="color:var(--edugt-primary);">${avgProgress}%</div>
+        <div class="teacher-progress-track" style="height:6px;">
+          <div class="teacher-progress-fill ${avgProgress >= 100 ? 'is-complete' : ''}" style="width:${avgProgress}%;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="teacher-student-kpi-card p-3 h-100">
+        <div class="d-flex align-items-center justify-content-between mb-1">
+          <span class="small text-muted fw-bold text-uppercase" style="font-size:.7rem;letter-spacing:.04em;">Curso 100%</span>
+          <i class="bi bi-trophy-fill text-warning"></i>
+        </div>
+        <div class="h4 fw-bold mb-0" style="color:var(--edugt-text);">${completedAll} <span class="fs-6 text-muted fw-normal">/ ${total}</span></div>
+        <small class="text-muted" style="font-size:.76rem;">3 módulos finalizados</small>
+      </div>
+    </div>`;
+}
+
+function renderClassroomStudentsList(students) {
+  const tbody = $('#modal-estudiantes-tbody');
+  if (!tbody) return;
+
+  if (students.length === 0) {
+    tbody.innerHTML = `
+      <div class="text-center py-4 text-muted">
+        <i class="bi bi-search fs-3 d-block mb-2"></i>
+        No se encontraron estudiantes con ese criterio de búsqueda.
+      </div>`;
+    return;
+  }
+
+  const trackNames = {
+    beginner: 'Básico',
+    intermediate: 'Intermedio',
+    advanced: 'Avanzado',
+  };
+
+  tbody.innerHTML = students.map((s) => {
+    const initial = (s.name || 'E').trim().charAt(0).toUpperCase();
+    const hasPretest = Boolean(s.pretest_completed || s.learning_track);
+    const trackLabel = trackNames[s.learning_track] || null;
+    const preScoreTxt = s.pretest_score !== null && s.pretest_score !== undefined ? `${s.pretest_score}%` : '';
+
+    let pretestBadge = '';
+    if (hasPretest) {
+      const detail = [preScoreTxt, trackLabel].filter(Boolean).join(' · ');
+      pretestBadge = `
+        <span class="student-meta-pill pill-pretest-ok" title="Diagnóstico Inicial completado">
+          <i class="bi bi-check-circle-fill"></i> Pre-test: ${detail || 'Completado'}
+        </span>`;
+    } else {
+      pretestBadge = `
+        <span class="student-meta-pill pill-pretest-pending" title="Aún no ha realizado el Pre-test obligatorio">
+          <i class="bi bi-clock-history"></i> Pre-test: Pendiente
+        </span>`;
+    }
+
+    const posttestBadge = s.posttest_completed
+      ? `<span class="student-meta-pill pill-posttest-ok" title="Evaluación Final completada">
+           <i class="bi bi-patch-check-fill"></i> Post-test: ${s.posttest_score ?? 0}%
+         </span>`
+      : '';
+
+    const joinDate = s.joined_at ? new Date(s.joined_at).toLocaleDateString('es-GT', {
+      year: 'numeric', month: 'short', day: 'numeric'
+    }) : '—';
+
+    const pct = Math.min(100, Math.max(0, s.progress_percent ?? 0));
+    const doneLessons = s.completed_lessons ?? 0;
+    const totalLessons = s.total_lessons ?? 12;
+    const xpTotal = s.xp_total ?? 0;
+    const xpLevel = s.xp_level ?? 1;
+    const badgesCount = s.badges_count ?? 0;
+
+    let stageStatusHtml = '';
+    if (pct >= 100) {
+      stageStatusHtml = `<span class="text-success fw-bold"><i class="bi bi-patch-check-fill me-1"></i>¡Curso completado al 100%!</span>`;
+    } else if (!hasPretest) {
+      stageStatusHtml = `<span class="text-warning fw-semibold"><i class="bi bi-lock-fill me-1"></i>Pendiente de realizar el Pre-test diagnóstico</span>`;
+    } else if (s.current_stage) {
+      const st = s.current_stage;
+      stageStatusHtml = `
+        <span class="fw-bold" style="color:var(--edugt-primary);">Módulo ${st.module_number}: ${esc(st.module_title)}</span>
+        <span class="text-muted mx-1">·</span>
+        <span style="color:var(--edugt-text);">${esc(st.step_title)}</span>`;
+    } else {
+      stageStatusHtml = `<span class="text-muted">En curso</span>`;
+    }
+
+    const modulesList = Array.isArray(s.modules_progress) ? s.modules_progress : [];
+    const modulesBreakdownHtml = modulesList.map((m) => {
+      const mPct = Math.min(100, Math.max(0, m.percent ?? 0));
+      const isModDone = m.done >= m.total && m.total > 0;
+      const quizTag = m.best_quiz_score !== null && m.best_quiz_score !== undefined
+        ? `<span class="ms-1 ${m.quiz_passed ? 'text-success' : 'text-warning'} fw-bold" title="Mejor nota en evaluación del módulo">(${m.best_quiz_score} pts)</span>`
+        : '';
+
+      return `
+        <div class="student-module-mini-box">
+          <div class="d-flex align-items-center justify-content-between mb-1 gap-1">
+            <span class="text-truncate fw-bold" style="font-size:.74rem;color:var(--edugt-text);" title="Módulo ${m.module_number}: ${esc(m.title)}">
+              ${isModDone ? '<i class="bi bi-check-circle-fill text-success me-1"></i>' : `<i class="bi bi-layers text-primary me-1"></i>`}Mód. ${m.module_number}: ${esc(m.title)}
+            </span>
+            <span class="text-muted flex-shrink-0" style="font-size:.72rem;">
+              <strong>${m.done}/${m.total}</strong>${quizTag}
+            </span>
+          </div>
+          <div class="teacher-progress-track" style="height:6px;">
+            <div class="teacher-progress-fill ${isModDone ? 'is-complete' : ''}" style="width:${mPct}%;"></div>
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="teacher-student-progress-card p-3 p-md-4">
+        <div class="row g-3 align-items-center">
+          <!-- Columna Izquierda: Datos del Estudiante, Pre-test, XP e Insignias -->
+          <div class="col-12 col-lg-5">
+            <div class="d-flex align-items-start gap-3">
+              <div class="teacher-student-avatar flex-shrink-0 shadow-sm">
+                ${esc(initial)}
+              </div>
+              <div class="flex-grow-1" style="min-width:0;">
+                <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                  <h6 class="fw-bold mb-0 text-truncate" style="color:var(--edugt-text);font-size:.98rem;">${esc(s.name)}</h6>
+                  <small class="text-muted" style="font-size:.75rem;" title="Fecha de inscripción en el aula">
+                    <i class="bi bi-calendar3 me-1"></i>${joinDate}
+                  </small>
+                </div>
+                <div class="text-muted text-truncate mb-2" style="font-size:.82rem;">${esc(s.email || '—')}</div>
+
+                <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                  ${pretestBadge}
+                  ${posttestBadge}
+                  <span class="student-meta-pill pill-xp" title="Experiencia y nivel actual">
+                    <i class="bi bi-lightning-charge-fill text-warning"></i> ${xpTotal} XP · Nv. ${xpLevel}
+                  </span>
+                  <span class="student-meta-pill pill-badges" title="Insignias desbloqueadas">
+                    <i class="bi bi-trophy-fill text-warning"></i> ${badgesCount}/6
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna Derecha: Barra Horizontal de Progreso General + Desglose por Módulos -->
+          <div class="col-12 col-lg-7">
+            <div class="teacher-student-progress-box p-3 rounded-4">
+              <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-1.5">
+                <div class="small text-truncate" style="max-width: 72%;">
+                  ${stageStatusHtml}
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                  <span class="small text-muted fw-semibold">${doneLessons} de ${totalLessons} etapas</span>
+                  <span class="badge rounded-pill ${pct >= 100 ? 'bg-success' : 'bg-primary'} px-2.5 py-1 fw-bold" style="font-size:.76rem;">
+                    ${pct}%
+                  </span>
+                </div>
+              </div>
+
+              <!-- Barra horizontal principal -->
+              <div class="teacher-progress-track mb-3" style="height:11px;" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
+                <div class="teacher-progress-fill ${pct >= 100 ? 'is-complete' : ''}" style="width:${pct}%;"></div>
+              </div>
+
+              <!-- Mini barras horizontales por cada Módulo -->
+              ${modulesBreakdownHtml ? `
+                <div class="student-modules-grid">
+                  ${modulesBreakdownHtml}
+                </div>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+$('#student-search-input')?.addEventListener('input', (e) => {
+  const q = (e.target.value || '').trim().toLowerCase();
+  if (!q) {
+    renderClassroomStudentsList(loadedClassroomStudents);
+    return;
+  }
+  const filtered = loadedClassroomStudents.filter((s) =>
+    (s.name || '').toLowerCase().includes(q) ||
+    (s.email || '').toLowerCase().includes(q)
+  );
+  renderClassroomStudentsList(filtered);
+});
+
 async function openStudentsModal(classroomId, classroomName, studentCount) {
   const modal = getStudentsModal();
   if (!modal) return;
 
-  $('#modal-estudiantes-titulo').textContent = 'Estudiantes inscritos';
+  $('#modal-estudiantes-titulo').textContent = 'Progreso de Estudiantes';
   $('#modal-estudiantes-subtitulo').textContent = `Aula: ${classroomName}`;
   $('#modal-estudiantes-badge').textContent = `${studentCount}`;
+
+  const searchInput = $('#student-search-input');
+  if (searchInput) searchInput.value = '';
 
   const loadingEl = $('#modal-estudiantes-loading');
   const alertEl = $('#modal-estudiantes-alert');
@@ -406,8 +638,10 @@ async function openStudentsModal(classroomId, classroomName, studentCount) {
   try {
     const { data } = await api(`/classrooms/${classroomId}/students`);
     const students = data.data || [];
+    loadedClassroomStudents = students;
 
     loadingEl.classList.add('d-none');
+    $('#modal-estudiantes-badge').textContent = `${students.length}`;
 
     if (students.length === 0) {
       alertEl.className = 'alert alert-info';
@@ -416,35 +650,8 @@ async function openStudentsModal(classroomId, classroomName, studentCount) {
       return;
     }
 
-    tbody.innerHTML = students.map((s) => {
-      let trackBadge = '<span class="pill-edugt pill-locked">Sin pretest</span>';
-      if (s.learning_track === 'beginner') {
-        trackBadge = '<span class="pill-edugt pill-now">Inicial</span>';
-      } else if (s.learning_track === 'intermediate') {
-        trackBadge = '<span class="pill-edugt pill-done">Intermedio</span>';
-      } else if (s.learning_track === 'advanced') {
-        trackBadge = '<span class="pill-edugt" style="background:#EDE9FE;color:#5A38D6;">Avanzado</span>';
-      }
-
-      const joinDate = s.joined_at ? new Date(s.joined_at).toLocaleDateString('es-GT', {
-        year: 'numeric', month: 'short', day: 'numeric'
-      }) : '—';
-
-      return `
-        <tr>
-          <td>
-            <div class="d-flex align-items-center gap-2">
-              <div class="stat-icon" style="width:34px;height:34px;font-size:.95rem;background:var(--edugt-primary-soft);color:var(--edugt-primary);">
-                <i class="bi bi-person"></i>
-              </div>
-              <span class="fw-bold">${esc(s.name)}</span>
-            </div>
-          </td>
-          <td><span class="text-muted small">${esc(s.email || '—')}</span></td>
-          <td>${trackBadge}</td>
-          <td><small class="text-muted">${joinDate}</small></td>
-        </tr>`;
-    }).join('');
+    renderClassroomStudentsKpis(students);
+    renderClassroomStudentsList(students);
 
     contentEl.classList.remove('d-none');
   } catch (err) {
