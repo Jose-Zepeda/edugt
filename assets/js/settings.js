@@ -14,16 +14,19 @@
 })();
 
 const EDUGT_AVATARS = [
-  { id: 'avatar-01', url: 'assets/img/avatars/avatar-01.jpg', name: 'Bot Compilador { }' },
-  { id: 'avatar-02', url: 'assets/img/avatars/avatar-02.jpg', name: 'Ciber-Depurador' },
-  { id: 'avatar-03', url: 'assets/img/avatars/avatar-03.jpg', name: 'Guardián de Variables' },
-  { id: 'avatar-04', url: 'assets/img/avatars/avatar-04.jpg', name: 'Oráculo Condicional' },
-  { id: 'avatar-05', url: 'assets/img/avatars/avatar-05.jpg', name: 'Corredor de Bucles' },
-  { id: 'avatar-06', url: 'assets/img/avatars/avatar-06.jpg', name: 'Arquitecto de Algoritmos' },
-  { id: 'avatar-07', url: 'assets/img/avatars/avatar-07.jpg', name: 'Ninja del Pseudocódigo' },
-  { id: 'avatar-08', url: 'assets/img/avatars/avatar-08.jpg', name: 'Explorador Binario' },
-  { id: 'avatar-09', url: 'assets/img/avatars/avatar-09.jpg', name: 'Centinela Booleano' },
-  { id: 'avatar-10', url: 'assets/img/avatars/avatar-10.jpg', name: 'Gran Maestro Sintáctico' },
+  { id: 'avatar-01', url: 'assets/img/avatars/avatar-01.jpg', name: 'Bot Compilador { }', short: 'Compilador' },
+  { id: 'avatar-11', url: 'assets/img/avatars/avatar-11.jpg', name: 'Ada Ciber-Codificadora { }', short: 'Ada { }' },
+  { id: 'avatar-02', url: 'assets/img/avatars/avatar-02.jpg', name: 'Ciber-Depurador', short: 'Depurador' },
+  { id: 'avatar-12', url: 'assets/img/avatars/avatar-12.jpg', name: 'Androide Depuradora', short: 'Depuradora' },
+  { id: 'avatar-03', url: 'assets/img/avatars/avatar-03.jpg', name: 'Guardián de Variables', short: 'Variables' },
+  { id: 'avatar-13', url: 'assets/img/avatars/avatar-13.jpg', name: 'Hechicera del Algoritmo', short: 'Hechicera' },
+  { id: 'avatar-04', url: 'assets/img/avatars/avatar-04.jpg', name: 'Oráculo Condicional (if/else)', short: 'Oráculo' },
+  { id: 'avatar-05', url: 'assets/img/avatars/avatar-05.jpg', name: 'Corredor de Bucles (while)', short: 'Bucles' },
+  { id: 'avatar-06', url: 'assets/img/avatars/avatar-06.jpg', name: 'Arquitecto de Algoritmos', short: 'Arquitecto' },
+  { id: 'avatar-07', url: 'assets/img/avatars/avatar-07.jpg', name: 'Ninja del Pseudocódigo >_', short: 'Ninja >_' },
+  { id: 'avatar-08', url: 'assets/img/avatars/avatar-08.jpg', name: 'Exploradora Binaria (01)', short: 'Binaria' },
+  { id: 'avatar-09', url: 'assets/img/avatars/avatar-09.jpg', name: 'Centinela Booleano (T/F)', short: 'Booleano' },
+  { id: 'avatar-10', url: 'assets/img/avatars/avatar-10.jpg', name: 'Gran Maestro Sintáctico', short: 'Maestro' },
 ];
 
 window.EDUGT_AVATARS = EDUGT_AVATARS;
@@ -103,7 +106,7 @@ const Settings = {
                 title="${av.name}"
                 style="background:var(--edugt-card-subtle);border:2px solid ${isSelected ? 'var(--edugt-primary)' : 'var(--edugt-border)'};transition:all .15s ease;">
           <img src="${av.url}" alt="${av.name}" width="48" height="48" style="width:48px;height:48px;object-fit:cover;border-radius:14px;" loading="lazy">
-          <span class="text-truncate w-100 text-center fw-semibold" style="font-size:.68rem;color:var(--edugt-text);">${av.name.split(' ')[0]}</span>
+          <span class="text-truncate w-100 text-center fw-semibold" style="font-size:.68rem;color:var(--edugt-text);">${av.short || av.name.split(' ')[0]}</span>
           ${isSelected ? '<span class="position-absolute top-0 end-0 translate-middle-y me-1 badge rounded-pill bg-primary" style="font-size:.6rem;padding:2px 5px;"><i class="bi bi-check-lg"></i></span>' : ''}
         </button>`;
     }).join('');
