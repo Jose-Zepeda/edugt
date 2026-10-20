@@ -511,7 +511,8 @@ class ContentSeeder extends Seeder
 
     /**
      * RB-17: pretest y postest con la MISMA estructura — 14 preguntas (12-15 recomendado),
-     * 2 por cada una de las 7 dimensiones del documento.
+     * 2 por cada una de las 7 dimensiones del documento, utilizando formas paralelas
+     * isomórficas para evitar sesgo de memorización entre el diagnóstico inicial y el final.
      */
     private function seedDiagnostics(): void
     {
@@ -520,8 +521,8 @@ class ContentSeeder extends Seeder
             'algorithms', 'variables', 'conditionals', 'loops',
         ];
 
-        // Contenido real por dimensión (crítica de render: placeholders "[pre]/decomposition" confunden)
-        $demo = [
+        // ---------------- PRE-TEST (Reactivos 1 y 2 por dimensión) ----------------
+        $preDemo = [
             'abstraction' => [
                 'statement' => 'Para registrar las notas de tu clase, ¿cuál es el dato MÁS importante que debe guardar el programa?',
                 'options' => ['La nota de cada estudiante', 'El color del aula', 'La marca de las computadoras'],
@@ -564,11 +565,9 @@ class ContentSeeder extends Seeder
                 'correct' => 0,
                 'explanation' => 'Se imprime con i = 1, 2, 3. Cuando i = 4 la condición es false y termina.',
             ],
-
         ];
 
-        // ---------------- VARIANTE (j=2) — misma dimensión, problema distinto ----------------
-        $variante = [
+        $preVariante = [
             'abstraction' => [
                 'statement' => 'Una app de la biblioteca registra libros. ¿Cuál dato es esencial para saber si un libro está disponible?',
                 'options' => ['Si está prestado o no', 'El color de la portada', 'El nombre del editor'],
@@ -613,6 +612,102 @@ class ContentSeeder extends Seeder
             ],
         ];
 
+        // ---------------- POST-TEST ISOMÓRFICO (Formas Paralelas Equivalentes) ----------------
+        $postDemo = [
+            'abstraction' => [
+                'statement' => 'Para diseñar un sistema que controle la asistencia diaria en el instituto, ¿qué dato es INDISPENSABLE almacenar por cada alumno?',
+                'options' => ['La fecha y si estuvo presente o ausente', 'La marca de su mochila escolar', 'Su deporte favorito'],
+                'correct' => 0,
+                'explanation' => 'La abstracción filtra detalles irrelevantes y conserva únicamente la fecha y el estado de asistencia.',
+            ],
+            'decomposition' => [
+                'statement' => 'Debes crear un programa para cobrar en la tienda escolar aplicando descuento y dando vuelto. ¿Cómo descompones la tarea?',
+                'options' => ['1) Calcular subtotal, 2) Restar descuento, 3) Calcular vuelto sobre el efectivo recibido', 'Cambiar el logotipo de la tienda y reiniciar el equipo', 'Cobrar siempre el mismo monto fijo sin importar los productos'],
+                'correct' => 0,
+                'explanation' => 'Descomponer divide el proceso de cobro en subproblemas secuenciales claros.',
+            ],
+            'pattern_recognition' => [
+                'statement' => 'Analiza la sucesión numérica: 5, 10, 20, 40, 80... ¿qué regla se repite en cada paso?',
+                'options' => ['Multiplicar por 2 el número anterior', 'Sumar 5 al número anterior', 'Restar 10 al número anterior'],
+                'correct' => 0,
+                'explanation' => 'Cada término se obtiene duplicando (multiplicando por 2) el valor previo.',
+            ],
+            'algorithms' => [
+                'statement' => '¿Cuál es la secuencia lógica correcta de un algoritmo para enviar una tarea por correo electrónico?',
+                'options' => ['Redactar mensaje → adjuntar archivo de la tarea → escribir destinatario → presionar Enviar', 'Presionar Enviar → apagar la computadora → adjuntar el archivo', 'Borrar el archivo → presionar Enviar → abrir el correo'],
+                'correct' => 0,
+                'explanation' => 'No se puede enviar el archivo correcto si antes no se adjunta e indica el destinatario.',
+            ],
+            'variables' => [
+                'statement' => 'Si ejecutamos: `puntos = 20`, luego `puntos = puntos + 15`, ¿qué valor guarda la variable `puntos` al terminar?',
+                'options' => ['35', '20', '15'],
+                'correct' => 0,
+                'explanation' => 'La variable toma su valor previo (20) y le suma 15, actualizándose a 35.',
+            ],
+            'conditionals' => [
+                'statement' => 'Dado el código: `if bateria <= 15: print("Conectar cargador") else: print("Batería normal")`. Si `bateria = 15`, ¿qué muestra?',
+                'options' => ['Conectar cargador', 'Batería normal', 'Ningún mensaje'],
+                'correct' => 0,
+                'explanation' => 'Como 15 <= 15 es verdadero (true), se ejecuta la rama del bloque "if".',
+            ],
+            'loops' => [
+                'statement' => 'En el código: `paso = 1` y luego `while paso <= 4: print(paso); paso = paso + 1`, ¿cuántas veces se ejecuta `print`?',
+                'options' => ['4 veces', '3 veces', '5 veces'],
+                'correct' => 0,
+                'explanation' => 'El ciclo se repite para paso = 1, 2, 3 y 4. Al llegar a 5 la condición es falsa y finaliza.',
+            ],
+        ];
+
+        $postVariante = [
+            'abstraction' => [
+                'statement' => 'Una aplicación médica calcula si un paciente tiene fiebre. ¿Cuál es el único dato esencial para tomar esa decisión?',
+                'options' => ['La temperatura corporal actual en grados', 'El color de la camisa del paciente', 'El número de sillas en la clínica'],
+                'correct' => 0,
+                'explanation' => 'Para determinar fiebre, el modelo computacional solo requiere la temperatura corporal.',
+            ],
+            'decomposition' => [
+                'statement' => 'Quieres programar un reporte que indique cuántos alumnos aprobaron y cuántos reprobaron. ¿Cómo divides el problema?',
+                'options' => ['Paso 1: revisar cada nota contra el mínimo (60), Paso 2: incrementar el contador de aprobados o reprobados', 'Paso 1: ordenar los nombres por estatura, Paso 2: borrar las notas bajas', 'Imprimir la lista sin revisar ninguna calificación'],
+                'correct' => 0,
+                'explanation' => 'Primero se clasifica cada caso y luego se acumula el conteo correspondiente.',
+            ],
+            'pattern_recognition' => [
+                'statement' => 'Observa la secuencia: 45, 36, 27, 18, 9... ¿cuál es el patrón que transforma un número en el siguiente?',
+                'options' => ['Restar 9 al número anterior', 'Dividir entre 3 el número anterior', 'Sumar 9 al número anterior'],
+                'correct' => 0,
+                'explanation' => 'En cada transición disminuye exactamente 9 unidades.',
+            ],
+            'algorithms' => [
+                'statement' => 'Para retirar dinero en un cajero automático, ¿qué secuencia ordenada de pasos es la correcta?',
+                'options' => ['Insertar tarjeta → ingresar PIN → elegir monto → retirar efectivo y tarjeta', 'Retirar efectivo → insertar tarjeta → elegir monto → ingresar PIN', 'Elegir monto → retirar tarjeta → ingresar PIN'],
+                'correct' => 0,
+                'explanation' => 'La autenticación con tarjeta y PIN debe ocurrir antes de autorizar y entregar el efectivo.',
+            ],
+            'variables' => [
+                'statement' => 'Analiza la traza: `energia = 40`, `energia = energia - 10`, `energia = energia * 3`. ¿Cuál es el valor final de `energia`?',
+                'options' => ['90', '30', '10'],
+                'correct' => 0,
+                'explanation' => 'Primero 40 - 10 = 30; después 30 * 3 = 90.',
+            ],
+            'conditionals' => [
+                'statement' => 'Dado el código: `if temperatura > 30: print("Calor") else: print("Templado")`. Con `temperatura = 28`, ¿qué imprime?',
+                'options' => ['Templado', 'Calor', 'Error de sintaxis'],
+                'correct' => 0,
+                'explanation' => '28 > 30 es falso (false), por lo que el flujo entra al bloque "else".',
+            ],
+            'loops' => [
+                'statement' => 'Al ejecutar el ciclo: `for k in range(5): print("Hola")`, ¿cuántas veces aparece la palabra "Hola" en consola?',
+                'options' => ['5', '4', '6'],
+                'correct' => 0,
+                'explanation' => 'range(5) genera 5 iteraciones (k = 0, 1, 2, 3, 4), imprimiendo 5 veces.',
+            ],
+        ];
+
+        $rotacionesPorTipo = [
+            'pre' => [0, 1, 2, 0, 2, 1, 0, 1, 2, 0, 2, 1, 0, 1],
+            'post' => [1, 2, 0, 2, 0, 1, 2, 0, 1, 1, 0, 2, 2, 0],
+        ];
+
         foreach (['pre' => 1, 'post' => 1] as $kind => $version) {
             $test = DiagnosticTest::query()->updateOrCreate(
                 ['kind' => $kind, 'version' => $version],
@@ -623,22 +718,19 @@ class ContentSeeder extends Seeder
                 ]
             );
 
+            $rotaciones = $rotacionesPorTipo[$kind];
+
             foreach ($dimensions as $i => $dim) {
-                // j=1 pregunta base, j=2 variante distinta (misma dimensión, problema equivalente)
-                // RB-17: pre y post comparten estructura; el postest reordena opciones (anti-memoria)
-                $base = [$demo[$dim], $variante[$dim]];
+                $base = ($kind === 'post')
+                    ? [$postDemo[$dim], $postVariante[$dim]]
+                    : [$preDemo[$dim], $preVariante[$dim]];
 
                 foreach ([1, 2] as $j) {
                     $d = $base[$j - 1];
-                    $isPost = ($kind === 'post');
 
-                    // Rotación DETERMINISTA de la posición correcta: no todas son "A"
-                    // patrón por pregunta global: A, B, C, A, C, B... (i*2+j) manda
-                    $rotaciones = [0, 1, 2, 0, 2, 1, 0, 1, 2, 0, 2, 1, 0, 1]; // 14 preguntas
-                    $indiceGlobal = $i * 2 + $j - 1;                          // 0..13
+                    $indiceGlobal = $i * 2 + $j - 1; // 0..13
                     $posCorrecta = $rotaciones[$indiceGlobal % count($rotaciones)];
 
-                    // Opciones finales: correcta en la posición rotada, distractoras en el resto
                     $correcta = $d['options'][$d['correct']];
                     $distractoras = array_values(array_diff($d['options'], [$correcta]));
                     $final = [];
@@ -654,9 +746,7 @@ class ContentSeeder extends Seeder
                         ],
                         [
                             'dimension' => $dim,
-                            'statement' => $isPost && $j === 1
-                                ? $d['statement'].' (versión postest)'
-                                : $d['statement'],
+                            'statement' => $d['statement'],
                             'options' => $final,
                             'correct_index' => $posCorrecta,
                             'explanation' => $d['explanation'],
