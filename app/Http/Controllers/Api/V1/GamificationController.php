@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Curriculum\Actions\CompleteLesson;
 use App\Domain\Curriculum\Models\Lesson;
+use App\Domain\Gamification\Contracts\BadgeAwarder;
+use App\Domain\Gamification\Contracts\RankingService;
 use App\Domain\Gamification\Contracts\StreakService;
 use App\Domain\Gamification\Contracts\XpLedger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 
 /**
  * RF-17: XP, racha, insignias, rankings.
@@ -19,7 +22,8 @@ final class GamificationController extends Controller
         private readonly XpLedger $xpLedger,
         private readonly StreakService $streak,
         private readonly CompleteLesson $completeLesson,
-        private readonly \App\Domain\Gamification\Contracts\RankingService $rankings,
+        private readonly RankingService $rankings,
+        private readonly BadgeAwarder $badges,
     ) {}
 
     /** POST /api/v1/lessons/{id}/complete {time_spent_seconds} */
@@ -71,9 +75,13 @@ final class GamificationController extends Controller
     {
         $user = $request->user();
 
+        // Evalúa el estado del usuario y otorga automáticamente cualquier insignia merecida
+        $this->badges->evaluateAll($user);
+
         $obtained = \App\Domain\Gamification\Models\UserBadge::query()
             ->where('user_id', $user->id)
             ->with('badge')
+            ->orderBy('awarded_at', 'asc')
             ->get()
             ->map(fn ($ub) => [
                 'id' => $ub->badge->id,
@@ -81,6 +89,8 @@ final class GamificationController extends Controller
                 'title' => $ub->badge->title,
                 'description' => $ub->badge->description,
                 'awarded_at' => $ub->awarded_at?->toIso8601String(),
+                'notified' => $ub->notified_at !== null,
+                'notified_at' => $ub->notified_at?->toIso8601String(),
             ]);
 
         $obtainedIds = $obtained->pluck('id');
@@ -95,9 +105,38 @@ final class GamificationController extends Controller
                 'description' => $b->description,
             ]);
 
+        // Insignias recién obtenidas que no han sido notificadas/cerradas
+        $unnotified = $obtained->where('notified', false)->values();
+
         return response()->json([
             'obtained' => $obtained,
             'locked' => $locked,
+            'unnotified' => $unnotified,
+        ]);
+    }
+
+    /** POST /api/v1/me/badges/dismiss or POST /api/v1/me/badges/{id}/dismiss */
+    public function dismissBadgeNotification(Request $request, ?int $id = null): JsonResponse
+    {
+        $user = $request->user();
+
+        $query = \App\Domain\Gamification\Models\UserBadge::query()
+            ->where('user_id', $user->id)
+            ->whereNull('notified_at');
+
+        if ($id !== null) {
+            $query->where('badge_id', $id);
+        } elseif ($request->filled('badge_id')) {
+            $query->where('badge_id', (int) $request->input('badge_id'));
+        } elseif ($request->filled('badge_ids')) {
+            $query->whereIn('badge_id', (array) $request->input('badge_ids'));
+        }
+
+        $affected = $query->update(['notified_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'dismissed_count' => $affected,
         ]);
     }
 
@@ -105,14 +144,53 @@ final class GamificationController extends Controller
     public function rankings(Request $request): JsonResponse
     {
         $scope = $request->query('scope', 'global');
+        $user = $request->user();
 
-        $rows = $scope === 'classroom'
-            ? $this->rankings->forClassroom((int) $request->query('classroom_id'))
-            : $this->rankings->global();
+        if ($scope === 'classroom') {
+            $classroomId = (int) $request->query('classroom_id');
+
+            // Si no se especificó un aula, buscar la primera aula activa a la que pertenece el usuario
+            if ($classroomId <= 0 && $user) {
+                if ($user->isTeacher()) {
+                    $classroomId = (int) DB::table('classrooms')
+                        ->where('teacher_id', $user->id)
+                        ->value('id');
+                } else {
+                    $classroomId = (int) DB::table('classroom_students')
+                        ->where('student_id', $user->id)
+                        ->where('state', 'active')
+                        ->value('classroom_id');
+                }
+            }
+
+            $classroom = $classroomId > 0
+                ? DB::table('classrooms')->where('id', $classroomId)->first(['id', 'name', 'grade_level', 'academic_year'])
+                : null;
+
+            $rows = $classroomId > 0 ? $this->rankings->forClassroom($classroomId) : [];
+
+            $userClassrooms = [];
+            if ($user && $user->isStudent()) {
+                $userClassrooms = DB::table('classroom_students as cs')
+                    ->join('classrooms as c', 'c.id', '=', 'cs.classroom_id')
+                    ->where('cs.student_id', $user->id)
+                    ->where('cs.state', 'active')
+                    ->orderBy('c.name')
+                    ->get(['c.id', 'c.name']);
+            }
+
+            return response()->json([
+                'scope' => $scope,
+                'classroom_id' => $classroomId ?: null,
+                'classroom_name' => $classroom?->name,
+                'classrooms' => $userClassrooms,
+                'data' => $rows,
+            ]);
+        }
 
         return response()->json([
             'scope' => $scope,
-            'data' => $rows,
+            'data' => $this->rankings->global(),
         ]);
     }
 

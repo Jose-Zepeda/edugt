@@ -8,13 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class UserBadge extends Model
 {
     protected $fillable = [
-        'user_id', 'badge_id', 'awarded_at',
+        'user_id', 'badge_id', 'awarded_at', 'notified_at',
     ];
 
     protected function casts(): array
     {
         return [
             'awarded_at' => 'datetime',
+            'notified_at' => 'datetime',
         ];
     }
 

@@ -33,18 +33,23 @@ final class RankingServiceDb implements RankingService
     public function forClassroom(int $classroomId, int $limit = 50, int $offset = 0): array
     {
         $rows = DB::table('classroom_students as cs')
-            ->join('user_xp_profiles as p', 'p.user_id', '=', 'cs.student_id')
             ->join('users as u', 'u.id', '=', 'cs.student_id')
+            ->leftJoin('user_xp_profiles as p', 'p.user_id', '=', 'cs.student_id')
             ->where('cs.classroom_id', $classroomId)
             ->where('cs.state', 'active')
             ->where('u.status', 'active')
-            ->orderByDesc('p.xp_total')
-            ->orderBy('p.user_id')
+            ->orderByRaw('COALESCE(p.xp_total, 0) DESC')
+            ->orderBy('u.name')
             ->offset($offset)->limit($limit)
-            ->get(['cs.student_id as user_id', 'u.name', 'p.xp_total', 'p.xp_level']);
+            ->get([
+                'cs.student_id as user_id',
+                'u.name',
+                DB::raw('COALESCE(p.xp_total, 0) as xp_total'),
+                DB::raw('COALESCE(p.xp_level, 1) as xp_level'),
+            ]);
 
         return $rows->map(fn ($r, $i) => [
-            'user_id' => $r->user_id,
+            'user_id' => (int) $r->user_id,
             'name' => $r->name,
             'xp_total' => (int) $r->xp_total,
             'xp_level' => (int) $r->xp_level,

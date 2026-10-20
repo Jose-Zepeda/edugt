@@ -9,6 +9,7 @@ use App\Domain\Assessments\Models\QuizAttempt;
 use App\Domain\Assessments\Models\AttemptAnswer;
 use App\Domain\Assessments\Services\QuizGrader;
 use App\Domain\Gamification\Contracts\XpLedger;
+use App\Domain\Gamification\Models\Badge;
 use App\Domain\Users\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -47,6 +48,18 @@ final readonly class TakeQuiz
 
     public function start(User $user, Quiz $quiz): QuizAttempt
     {
+        // Reanuda intento en progreso si existe (evita inflar attempt_number al refrescar)
+        $existing = QuizAttempt::query()
+            ->where('user_id', $user->id)
+            ->where('quiz_id', $quiz->id)
+            ->where('status', 'in_progress')
+            ->latest('id')
+            ->first();
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
         // ordinal en servidor (RB-06)
         $next = (int) QuizAttempt::query()
             ->where('user_id', $user->id)
@@ -131,12 +144,20 @@ final readonly class TakeQuiz
                 $xpAmount = $xp;
 
                 // RF-17: insignias por reglas + actividad de racha (RB-16)
-                $this->badges->evaluate('quiz_passed', [
+                $awardedBadgeIds = $this->badges->evaluate('quiz_passed', [
+                    'user' => $user,
+                    'user_id' => $user->id,
                     'quiz_id' => $attempt->quiz_id,
                     'attempt_number' => $attempt->attempt_number,
-                    'count' => 1, // cada aprobación suma 1 al contador del evento
+                    'count' => 1,
                 ]);
                 $this->streak->markActivity($user->id);
+
+                $newBadges = ! empty($awardedBadgeIds)
+                    ? Badge::query()->whereIn('id', $awardedBadgeIds)->get(['id', 'slug', 'title', 'description'])->toArray()
+                    : [];
+            } else {
+                $newBadges = [];
             }
 
             return [
@@ -145,6 +166,7 @@ final readonly class TakeQuiz
                 'attempt_number' => $attempt->attempt_number,
                 'xp_awarded' => $xpAwarded,
                 'xp_amount' => $xpAmount,
+                'new_badges' => $newBadges,
             ];
         });
     }

@@ -5,8 +5,10 @@ namespace App\Domain\Curriculum\Actions;
 use App\Domain\Curriculum\Contracts\UnlockEvaluator;
 use App\Domain\Curriculum\Models\Lesson;
 use App\Domain\Curriculum\Models\LessonProgress;
-use App\Domain\Gamification\Contracts\XpLedger;
+use App\Domain\Gamification\Contracts\BadgeAwarder;
 use App\Domain\Gamification\Contracts\StreakService;
+use App\Domain\Gamification\Contracts\XpLedger;
+use App\Domain\Gamification\Models\Badge;
 use App\Domain\Users\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -20,6 +22,7 @@ final readonly class CompleteLesson
         private UnlockEvaluator $unlockEvaluator,
         private XpLedger $xpLedger,
         private StreakService $streak,
+        private BadgeAwarder $badges,
     ) {}
 
     public function start(User $user, Lesson $lesson): LessonProgress
@@ -71,7 +74,20 @@ final readonly class CompleteLesson
                     metadata: ['lesson_id' => $lesson->id],
                 );
                 $this->streak->markActivity($user->id);
+
+                // Evalúa insignias por lecciones completadas
+                $awardedBadgeIds = $this->badges->evaluate('lesson_completed', [
+                    'user' => $user,
+                    'user_id' => $user->id,
+                    'lesson_id' => $lesson->id,
+                    'module_id' => $lesson->module_id,
+                ]);
+
+                $newBadges = ! empty($awardedBadgeIds)
+                    ? Badge::query()->whereIn('id', $awardedBadgeIds)->get(['id', 'slug', 'title', 'description'])->toArray()
+                    : [];
             } else {
+                $newBadges = [];
                 $progress->forceFill([
                     'time_spent_seconds' => $progress->time_spent_seconds + $timeSpent,
                     'last_visited_at' => now(),
@@ -82,6 +98,7 @@ final readonly class CompleteLesson
                 'xp_awarded' => $xpAwarded,
                 'xp_amount' => $xpAwarded ? $lesson->xp_reward : 0,
                 'completed' => true,
+                'new_badges' => $newBadges,
             ];
         });
     }
