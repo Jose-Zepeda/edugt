@@ -13,16 +13,23 @@ final class RankingServiceDb implements RankingService
 {
     public function global(int $limit = 50, int $offset = 0): array
     {
-        $rows = DB::table('user_xp_profiles as p')
-            ->join('users as u', 'u.id', '=', 'p.user_id')
+        $rows = DB::table('users as u')
+            ->leftJoin('user_xp_profiles as p', 'p.user_id', '=', 'u.id')
+            ->where('u.role', 'student')
             ->where('u.status', 'active')
-            ->orderByDesc('p.xp_total')
-            ->orderBy('p.user_id')
+            ->orderByRaw('COALESCE(p.xp_total, 0) DESC')
+            ->orderBy('u.id')
             ->offset($offset)->limit($limit)
-            ->get(['p.user_id', 'u.name', 'u.avatar_url', 'p.xp_total', 'p.xp_level']);
+            ->get([
+                'u.id as user_id',
+                'u.name',
+                'u.avatar_url',
+                DB::raw('COALESCE(p.xp_total, 0) as xp_total'),
+                DB::raw('COALESCE(p.xp_level, 1) as xp_level'),
+            ]);
 
         return $rows->map(fn ($r, $i) => [
-            'user_id' => $r->user_id,
+            'user_id' => (int) $r->user_id,
             'name' => $r->name,
             'avatar_url' => $r->avatar_url,
             'xp_total' => (int) $r->xp_total,
