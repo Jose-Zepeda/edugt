@@ -1,0 +1,15 @@
+vendor/
+node_modules/
+.env
+.env.*.local
+.phpunit.cache/
+storage/*.key
+storage/logs/*.log
+public/build/
+public/hot
+database/database.sqlite
+.idea/
+.vscode/
+*.iml
+.playwright-cli/
+*.png
