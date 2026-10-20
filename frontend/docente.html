@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EduGT — Panel docente</title>
+<link rel="icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/logo-mark-32.png">
+<link rel="apple-touch-icon" href="assets/img/logo-mark-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="assets/css/app.css?v=20261015_06" rel="stylesheet">
+</head>
+<body>
+
+<div class="container-fluid p-3 p-lg-4">
+  <div class="row g-3">
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="col-lg-2 d-none d-lg-block">
+      <nav class="sidebar-edugt p-3 h-100 d-flex flex-column" aria-label="Navegación principal">
+        <div class="d-flex align-items-center justify-content-between mb-4 px-2">
+          <div class="d-flex align-items-center gap-2">
+            <img src="assets/img/logo-mark-48.png" alt="Logo EduGT" width="38" height="38" style="border-radius:12px;">
+            <span class="fw-bold" style="font-size:1.05rem;">EduGT</span>
+          </div>
+          <button type="button" class="btn btn-settings-icon" data-action="open-settings" title="Ajustes y preferencias" aria-label="Ajustes">
+            <i class="bi bi-gear-fill"></i>
+          </button>
+        </div>
+        <ul class="nav nav-pills flex-column gap-2 mb-auto" id="docente-nav">
+          <li>
+            <button class="nav-link active" type="button" data-tab-target="aulas" onclick="window.switchDocenteTab('aulas')">
+              <i class="bi bi-people"></i> Mis aulas
+            </button>
+          </li>
+          <li>
+            <button class="nav-link" type="button" data-tab-target="reportes" onclick="window.switchDocenteTab('reportes')">
+              <i class="bi bi-file-earmark-pdf"></i> Reportes PDF
+            </button>
+          </li>
+          <li>
+            <button class="nav-link" type="button" onclick="window.openSupportModal()">
+              <i class="bi bi-life-preserver"></i> Ayuda y Soporte
+            </button>
+          </li>
+        </ul>
+        <button class="btn btn-edugt w-100 mt-3" id="btn-logout"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</button>
+      </nav>
+    </aside>
+
+    <!-- ============ CONTENIDO PRINCIPAL ============ -->
+    <main class="col-12 col-lg-10 pb-5" style="padding-bottom:5.5rem!important;">
+      <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+          <small style="color:var(--edugt-muted)" id="greeting-kicker">Buen día</small>
+          <h1 class="h4 fw-bold mb-0" id="greeting">—</h1>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-settings-icon d-lg-none" data-action="open-settings" title="Ajustes" aria-label="Ajustes">
+            <i class="bi bi-gear-fill"></i>
+          </button>
+          <button class="btn btn-edugt d-lg-none" id="btn-logout-m" aria-label="Cerrar sesión"><i class="bi bi-box-arrow-right"></i></button>
+        </div>
+      </div>
+
+      <!-- Alert docente pendiente (RB-02) -->
+      <div id="alert" class="alert d-none"></div>
+
+      <!-- ===== SECCIÓN: MIS AULAS ===== -->
+      <section id="tab-aulas" class="tab-content-panel">
+        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+          <div>
+            <h2 class="h5 fw-bold mb-1"><i class="bi bi-people" style="color:var(--edugt-primary)"></i> Mis aulas</h2>
+            <p class="mb-0 text-muted" style="font-size:.88rem;">Administra tus aulas, comparte los códigos de inscripción y consulta la lista de tus estudiantes.</p>
+          </div>
+          <button class="btn btn-edugt" data-bs-toggle="modal" data-bs-target="#modal-aula"><i class="bi bi-plus-lg"></i> Nueva aula</button>
+        </div>
+        <div id="classrooms" class="row g-3 mt-1"></div>
+      </section>
+
+      <!-- ===== SECCIÓN: REPORTES PDF (RF-22, RB-12) ===== -->
+      <section id="tab-reportes" class="tab-content-panel d-none">
+        <div class="mb-4">
+          <h2 class="h5 fw-bold mb-1"><i class="bi bi-file-earmark-pdf" style="color:var(--edugt-primary)"></i> Reportes y Analíticas</h2>
+          <p class="mb-0 text-muted" style="font-size:.88rem;">Genera y descarga informes oficiales en PDF con el rendimiento académico de tus estudiantes.</p>
+        </div>
+
+        <div class="card-edugt p-4 p-lg-5 mb-4">
+          <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge rounded-pill border px-3 py-1.5 fw-bold" style="font-size:.78rem;background:var(--edugt-primary-soft);color:var(--edugt-primary);border-color:var(--edugt-border)!important;">
+                  <i class="bi bi-file-earmark-bar-graph me-1"></i> Formato Oficial PDF
+                </span>
+              </div>
+              <h3 class="h5 fw-bold mb-2" style="color:var(--edugt-text);">Informe de rendimiento y diagnóstico por aula</h3>
+              <p class="mb-4" style="color:var(--edugt-muted);font-size:.9rem;line-height:1.6;">
+                Genera reportes estructurados para respaldar la acreditación pedagógica y el seguimiento individual de estudiantes:
+              </p>
+              
+              <div class="row g-3 mb-4">
+                <div class="col-sm-6">
+                  <div class="p-3 rounded-4 border h-100" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                      <i class="bi bi-graph-up-arrow text-success fs-5"></i>
+                      <strong style="font-size:.88rem;color:var(--edugt-text);">Eficacia Pedagógica</strong>
+                    </div>
+                    <p class="small text-muted mb-0">Comparativa directa Pretest vs. Postest y ganancia de aprendizaje (Hake).</p>
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="p-3 rounded-4 border h-100" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                      <i class="bi bi-shield-exclamation text-warning fs-5"></i>
+                      <strong style="font-size:.88rem;color:var(--edugt-text);">Detección Temprana</strong>
+                    </div>
+                    <p class="small text-muted mb-0">Identificación de estudiantes en riesgo de rezago académico.</p>
+                  </div>
+                </div>
+              </div>
+
+              <form id="form-reporte" class="row g-3 align-items-end">
+                <div class="col-md-7">
+                  <label class="form-label fw-semibold" for="reporte-aula">Filtrar por aula (actualiza vista en vivo y PDF)</label>
+                  <select class="form-control form-control-edugt" id="reporte-aula">
+                    <option value="">Todas mis aulas (Consolidado)</option>
+                  </select>
+                </div>
+                <div class="col-md-5">
+                  <button type="submit" class="btn btn-edugt w-100 py-2.5 shadow-sm" id="btn-reporte">
+                    <i class="bi bi-download me-1"></i> Descargar PDF
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div class="col-lg-5 text-center d-none d-lg-block">
+              <div class="p-4 rounded-4 border card-edugt" style="border-color:var(--edugt-border)!important;">
+                <div class="stat-icon mx-auto mb-3 shadow-sm" style="width:68px;height:68px;background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:2rem;border-radius:20px;">
+                  <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
+                </div>
+                <h4 class="h6 fw-bold mb-1" style="color:var(--edugt-text);">Documento de Validez Académica</h4>
+                <p class="small mb-3" style="color:var(--edugt-muted);line-height:1.5;">
+                  Optimizado para investigación educativa con tablas descriptivas y ganancia normalizada de Hake.
+                </p>
+                <div class="d-flex justify-content-center gap-2 flex-wrap">
+                  <span class="badge px-2.5 py-1.5 rounded-pill header-stat-pill"><i class="bi bi-check2 text-success me-1"></i>Tablas Resumen</span>
+                  <span class="badge px-2.5 py-1.5 rounded-pill header-stat-pill"><i class="bi bi-check2 text-success me-1"></i>Métricas G</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tablero de Analítica e Impacto Pedagógico en Vivo (RF-20, RF-21, RF-28) -->
+        <div id="live-analytics-dashboard"></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============ MODAL NUEVA AULA (RF-19) ============ -->
+<div class="modal fade" id="modal-aula" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:var(--edugt-radius);border:none;">
+      <div class="modal-header" style="border:none;">
+        <h5 class="modal-title fw-bold">Crear nueva aula</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body px-4">
+        <div id="modal-alert" class="alert d-none"></div>
+        <form id="form-aula">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="aula-nombre">Nombre del aula</label>
+            <input type="text" class="form-control form-control-edugt" id="aula-nombre" placeholder="Cuarto Bachillerato A" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="aula-institucion">Institución</label>
+            <input type="text" class="form-control form-control-edugt" id="aula-institucion" placeholder="Instituto de Jutiapa">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="aula-grado">Grado</label>
+            <input type="text" class="form-control form-control-edugt" id="aula-grado" placeholder="Quinto bachillerato / Perito contador">
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold" for="aula-anio">Año académico</label>
+            <select class="form-control form-control-edugt" id="aula-anio" required>
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+              <option value="2029">2029</option>
+              <option value="2030">2030</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-edugt w-100">Crear aula</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL EDITAR AULA ============ -->
+<div class="modal fade" id="modal-editar-aula" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:var(--edugt-radius);border:none;">
+      <div class="modal-header px-4 pt-4 pb-2" style="border:none;">
+        <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>Editar aula</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body px-4 pb-4">
+        <div id="modal-edit-alert" class="alert d-none"></div>
+        <form id="form-editar-aula">
+          <input type="hidden" id="edit-aula-id">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="edit-aula-nombre">Nombre del aula</label>
+            <input type="text" class="form-control form-control-edugt" id="edit-aula-nombre" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="edit-aula-institucion">Institución</label>
+            <input type="text" class="form-control form-control-edugt" id="edit-aula-institucion" placeholder="Instituto de Jutiapa">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="edit-aula-grado">Grado</label>
+            <input type="text" class="form-control form-control-edugt" id="edit-aula-grado" placeholder="Quinto bachillerato / Perito contador">
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold" for="edit-aula-anio">Año académico</label>
+            <select class="form-control form-control-edugt" id="edit-aula-anio" required>
+              <option value="2025">2025</option>
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+              <option value="2029">2029</option>
+              <option value="2030">2030</option>
+            </select>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary w-50" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-edugt w-50" id="btn-save-edit-aula">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL ELIMINAR AULA ============ -->
+<div class="modal fade" id="modal-eliminar-aula" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:var(--edugt-radius);border:none;">
+      <div class="modal-header px-4 pt-4 pb-2" style="border:none;">
+        <div class="d-flex align-items-center gap-2">
+          <div class="stat-icon" style="background:#FEE2E2;color:#DC2626;width:38px;height:38px;font-size:1.1rem;">
+            <i class="bi bi-trash3-fill"></i>
+          </div>
+          <h5 class="modal-title fw-bold mb-0 text-danger">Eliminar aula</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body px-4 pb-4">
+        <p class="mb-3" style="color:var(--edugt-text);line-height:1.6;">
+          ¿Estás seguro de que deseas eliminar el aula <strong id="eliminar-aula-nombre-text" style="color:var(--edugt-text);">—</strong>?
+        </p>
+        <p class="small text-muted mb-4">
+          <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
+          Esta acción desvinculará a los estudiantes inscritos y revocará permanentemente el código de acceso.
+        </p>
+        <div id="modal-delete-alert" class="alert d-none"></div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary w-50" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-danger w-50 fw-bold" id="btn-confirm-delete-aula" style="border-radius:14px;">
+            <i class="bi bi-trash3 me-1"></i> Sí, eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL LISTA Y PROGRESO DE ESTUDIANTES ============ -->
+<div class="modal fade" id="modal-estudiantes" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+    <div class="modal-content card-edugt border-0 shadow-lg" style="border-radius:24px;overflow:hidden;">
+      <div class="modal-header border-bottom px-4 py-3" style="border-color:var(--edugt-border)!important;background:var(--edugt-card-subtle);">
+        <div class="d-flex align-items-center gap-3">
+          <div class="stat-icon shadow-sm" style="width:46px;height:46px;background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:1.35rem;border-radius:14px;">
+            <i class="bi bi-people-fill"></i>
+          </div>
+          <div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <h5 class="modal-title fw-bold mb-0" id="modal-estudiantes-titulo" style="color:var(--edugt-text);">Progreso de Estudiantes</h5>
+              <span class="badge bg-primary rounded-pill px-2.5 py-1" id="modal-estudiantes-badge">0</span>
+            </div>
+            <small class="text-muted fw-semibold" id="modal-estudiantes-subtitulo">Aula</small>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body p-4">
+        <!-- Spinner de carga -->
+        <div id="modal-estudiantes-loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+          <p class="text-muted small mt-2 mb-0">Cargando progreso académico de los estudiantes...</p>
+        </div>
+
+        <!-- Alerta de error -->
+        <div id="modal-estudiantes-alert" class="alert alert-danger d-none"></div>
+
+        <!-- Contenido enriquecido de estudiantes -->
+        <div id="modal-estudiantes-content" class="d-none">
+          <!-- Resumen KPI del Aula -->
+          <div class="row g-3 mb-4" id="modal-estudiantes-kpis"></div>
+
+          <!-- Barra de búsqueda y filtro rápido -->
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div class="input-group" style="max-width: 360px;">
+              <span class="input-group-text bg-transparent border-end-0" style="border-color:var(--edugt-border);color:var(--edugt-muted);">
+                <i class="bi bi-search"></i>
+              </span>
+              <input type="search" id="student-search-input" class="form-control form-control-edugt border-start-0" placeholder="Buscar estudiante por nombre o correo...">
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap small text-muted">
+              <span><i class="bi bi-layers-fill text-primary me-1"></i>3 Módulos · 12 Etapas en total</span>
+            </div>
+          </div>
+
+          <!-- Lista de tarjetas horizontales de progreso por estudiante -->
+          <div id="modal-estudiantes-tbody" class="d-flex flex-column gap-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Nav inferior móvil -->
+<nav class="bottom-nav d-flex justify-content-around px-3 d-lg-none" aria-label="Navegación móvil" id="mobile-docente-nav">
+  <button class="active border-0 bg-transparent" type="button" data-tab-target="aulas" onclick="window.switchDocenteTab('aulas')"><i class="bi bi-people"></i>Aulas</button>
+  <button class="border-0 bg-transparent" type="button" data-tab-target="reportes" onclick="window.switchDocenteTab('reportes')"><i class="bi bi-file-earmark-pdf"></i>Reportes</button>
+  <button class="border-0 bg-transparent" type="button" onclick="window.openSupportModal()"><i class="bi bi-life-preserver"></i>Soporte</button>
+</nav>
+
+<!-- ==========================================
+     MODAL DE AJUSTES Y PREFERENCIAS
+     ========================================== -->
+<div class="modal fade" id="modal-settings" tabindex="-1" aria-labelledby="modalSettingsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content card-edugt border-0 shadow-lg" style="border-radius:24px;overflow:hidden;">
+      
+      <!-- Cabecera del Modal -->
+      <div class="modal-header border-bottom px-4 py-3" style="border-color:var(--edugt-border)!important;background:var(--edugt-card-subtle);">
+        <div class="d-flex align-items-center gap-3">
+          <div class="stat-icon" style="width:42px;height:42px;background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:1.3rem;border-radius:12px;">
+            <i class="bi bi-gear-fill"></i>
+          </div>
+          <div>
+            <h2 class="modal-title h5 fw-bold mb-0" id="modalSettingsLabel" style="color:var(--edugt-text);">Ajustes de Cuenta</h2>
+            <small class="text-muted" style="font-size:.82rem;">Personaliza tu perfil, apariencia y preferencias</small>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <!-- Cuerpo con Pestañas -->
+      <div class="modal-body p-4">
+        
+        <!-- Pestañas Superiores de Ajustes -->
+        <ul class="nav nav-pills nav-fill settings-nav-pills gap-2 mb-4 p-1 rounded-4" style="background:var(--edugt-card-subtle);border:1px solid var(--edugt-border);" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold py-2 rounded-3" id="tab-pill-profile" data-bs-toggle="pill" data-bs-target="#settings-tab-profile" type="button" role="tab">
+              <i class="bi bi-person-circle me-1"></i> Mi Perfil
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold py-2 rounded-3" id="tab-pill-appearance" data-bs-toggle="pill" data-bs-target="#settings-tab-appearance" type="button" role="tab">
+              <i class="bi bi-palette-fill me-1"></i> Apariencia & Tema
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold py-2 rounded-3" id="tab-pill-security" data-bs-toggle="pill" data-bs-target="#settings-tab-security" type="button" role="tab">
+              <i class="bi bi-shield-lock-fill me-1"></i> Seguridad
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          
+          <!-- PESTAÑA 1: MI PERFIL -->
+          <div class="tab-pane fade show active" id="settings-tab-profile" role="tabpanel">
+            <div id="settings-profile-alert" class="alert d-none"></div>
+
+            <div class="d-flex align-items-center gap-3 p-3 rounded-4 mb-4" style="background:var(--edugt-card-subtle);border:1px solid var(--edugt-border);">
+              <div class="podium-avatar shadow-sm m-0" style="width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,#6D4AEF,#8B5CF6);color:#fff;font-size:1.5rem;">
+                <span class="fw-bold" id="settings-avatar-char">D</span>
+              </div>
+              <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <span id="settings-role-badge" class="badge bg-primary text-white border-0 px-2.5 py-1">Docente Verificado</span>
+                </div>
+                <small class="text-muted" style="font-size:.82rem;"><i class="bi bi-patch-check-fill text-primary me-1"></i>Cuenta de administración docente activa</small>
+              </div>
+            </div>
+
+            <form id="form-settings-profile">
+              <div class="mb-3">
+                <label for="settings-name" class="form-label fw-bold" style="font-size:.9rem;color:var(--edugt-text);">Nombre Completo</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0" style="border-color:var(--edugt-border);"><i class="bi bi-person text-muted"></i></span>
+                  <input type="text" class="form-control form-control-edugt border-start-0" id="settings-name" required minlength="2" maxlength="120">
+                </div>
+                <small class="text-muted" style="font-size:.78rem;">Nombre mostrado a tus estudiantes y en las firmas de reportes.</small>
+              </div>
+
+              <div class="mb-4">
+                <label for="settings-email" class="form-label fw-bold" style="font-size:.9rem;color:var(--edugt-text);">Correo Electrónico</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0" style="border-color:var(--edugt-border);"><i class="bi bi-envelope text-muted"></i></span>
+                  <input type="email" class="form-control form-control-edugt border-start-0 opacity-75" id="settings-email" readonly disabled>
+                </div>
+                <small class="text-muted" style="font-size:.78rem;">Identificador único de autenticación docente.</small>
+              </div>
+
+              <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-edugt px-4 shadow-sm" id="btn-save-profile">
+                  <i class="bi bi-check2 me-1"></i> Guardar cambios
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- PESTAÑA 2: APARIENCIA & TEMA -->
+          <div class="tab-pane fade" id="settings-tab-appearance" role="tabpanel">
+            <h3 class="h6 fw-bold mb-3" style="color:var(--edugt-text);">Tema de la Plataforma</h3>
+            <p class="text-muted mb-3" style="font-size:.88rem;">Selecciona el modo visual que mejor se adapte a tu entorno de trabajo docente.</p>
+
+            <div class="row g-3 mb-4">
+              <!-- Opción Tema Claro -->
+              <div class="col-12 col-sm-6">
+                <div class="theme-choice-card p-3 rounded-4" id="theme-card-light" role="button">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="bi bi-sun-fill text-warning fs-5"></i>
+                      <span class="fw-bold" style="font-size:.95rem;">Tema Claro</span>
+                    </div>
+                    <i class="bi bi-check-circle-fill theme-check-icon"></i>
+                  </div>
+                  <div class="theme-preview-box light-preview rounded-3 p-2 mb-2">
+                    <div class="d-flex gap-1 mb-1">
+                      <div class="theme-mock-pill w-50"></div>
+                      <div class="theme-mock-pill w-25"></div>
+                    </div>
+                    <div class="theme-mock-card"></div>
+                  </div>
+                  <small class="text-muted" style="font-size:.78rem;">Ideal para ambientes iluminados y presentaciones de aula.</small>
+                </div>
+              </div>
+
+              <!-- Opción Tema Oscuro -->
+              <div class="col-12 col-sm-6">
+                <div class="theme-choice-card p-3 rounded-4" id="theme-card-dark" role="button">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="bi bi-moon-stars-fill fs-5" style="color:#A78BFA;"></i>
+                      <span class="fw-bold" style="font-size:.95rem;">Tema Oscuro</span>
+                    </div>
+                    <i class="bi bi-check-circle-fill theme-check-icon"></i>
+                  </div>
+                  <div class="theme-preview-box dark-preview rounded-3 p-2 mb-2">
+                    <div class="d-flex gap-1 mb-1">
+                      <div class="theme-mock-pill w-50"></div>
+                      <div class="theme-mock-pill w-25"></div>
+                    </div>
+                    <div class="theme-mock-card"></div>
+                  </div>
+                  <small class="text-muted" style="font-size:.78rem;">Reduce el cansancio visual al calificar y monitorear aulas.</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-4" style="background:var(--edugt-card-subtle);border:1px solid var(--edugt-border);">
+              <div class="d-flex align-items-center justify-content-between">
+                <div>
+                  <span class="fw-bold d-block" style="font-size:.88rem;color:var(--edugt-text);">Animaciones y Efectos Visuales</span>
+                  <small class="text-muted" style="font-size:.78rem;">Transiciones fluidas de paneles, gráficos y modales</small>
+                </div>
+                <div class="form-check form-switch fs-5 mb-0">
+                  <input class="form-check-input" type="checkbox" id="switch-animations" checked>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PESTAÑA 3: SEGURIDAD -->
+          <div class="tab-pane fade" id="settings-tab-security" role="tabpanel">
+            <div id="settings-pass-alert" class="alert d-none"></div>
+
+            <form id="form-settings-password">
+              <div class="mb-3">
+                <label for="settings-current-pass" class="form-label fw-bold" style="font-size:.9rem;color:var(--edugt-text);">Contraseña Actual</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0" style="border-color:var(--edugt-border);"><i class="bi bi-key text-muted"></i></span>
+                  <input type="password" class="form-control form-control-edugt border-start-0" id="settings-current-pass" placeholder="Ingresa tu clave actual">
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="settings-new-pass" class="form-label fw-bold" style="font-size:.9rem;color:var(--edugt-text);">Nueva Contraseña</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0" style="border-color:var(--edugt-border);"><i class="bi bi-lock text-muted"></i></span>
+                  <input type="password" class="form-control form-control-edugt border-start-0" id="settings-new-pass" required minlength="8" placeholder="Mínimo 8 caracteres">
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label for="settings-confirm-pass" class="form-label fw-bold" style="font-size:.9rem;color:var(--edugt-text);">Confirmar Nueva Contraseña</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0" style="border-color:var(--edugt-border);"><i class="bi bi-shield-check text-muted"></i></span>
+                  <input type="password" class="form-control form-control-edugt border-start-0" id="settings-confirm-pass" required minlength="8" placeholder="Repite la nueva clave">
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-edugt px-4 shadow-sm" id="btn-save-password">
+                  <i class="bi bi-shield-lock me-1"></i> Actualizar contraseña
+                </button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Pie con Versión y Soporte -->
+      <div class="modal-footer border-top px-4 py-2.5 d-flex justify-content-between align-items-center" style="border-color:var(--edugt-border)!important;background:var(--edugt-card-subtle);">
+        <small class="text-muted" style="font-size:.78rem;">
+          <i class="bi bi-shield-shaded text-primary me-1"></i> EduGT v2.4 Docente · 2026
+        </small>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="bootstrap.Modal.getInstance(document.getElementById('modal-settings'))?.hide(); window.openSupportModal();">
+            <i class="bi bi-life-preserver me-1"></i> Ayuda y Soporte
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">
+            Cerrar
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================
+     MODAL DE SOPORTE Y TICKETS
+     ========================================== -->
+<div class="modal fade" id="modal-support" tabindex="-1" aria-labelledby="modalSupportDocenteLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content card-edugt border-0 shadow-lg" style="border-radius:24px;overflow:hidden;">
+      
+      <!-- Cabecera del Modal -->
+      <div class="modal-header border-bottom px-4 py-3" style="border-color:var(--edugt-border)!important;background:var(--edugt-card-subtle);">
+        <div class="d-flex align-items-center gap-3">
+          <div class="stat-icon" style="width:42px;height:42px;background:var(--edugt-pink-soft);color:var(--edugt-pink);font-size:1.3rem;border-radius:12px;">
+            <i class="bi bi-life-preserver"></i>
+          </div>
+          <div>
+            <h2 class="modal-title h5 fw-bold mb-0" id="modalSupportDocenteLabel" style="color:var(--edugt-text);">Centro de Ayuda y Soporte</h2>
+            <small class="text-muted" style="font-size:.82rem;">Envía reportes de fallos o sugerencias didácticas y consulta el estado de tus solicitudes</small>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <!-- Pestañas internas del Modal -->
+      <div class="px-4 pt-3 border-bottom" style="border-color:var(--edugt-border)!important;">
+        <ul class="nav nav-tabs border-0 gap-2" role="tablist">
+          <li class="nav-item">
+            <button type="button" class="nav-link active px-3 py-2 fw-bold" id="support-tab-new-btn" onclick="window.switchSupportModalTab('new')">
+              <i class="bi bi-send-plus me-1"></i> Enviar Ticket
+            </button>
+          </li>
+          <li class="nav-item">
+            <button type="button" class="nav-link px-3 py-2 fw-bold text-muted" id="support-tab-my-btn" onclick="window.switchSupportModalTab('my')">
+              <i class="bi bi-clock-history me-1"></i> Mis Tickets Enviados <span class="badge bg-primary text-white rounded-pill ms-1" id="support-my-count">0</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Cuerpo del Modal -->
+      <div class="modal-body p-4">
+        
+        <!-- Pestaña 1: Crear nuevo ticket -->
+        <div id="support-tab-new">
+          <div id="support-alert" class="alert d-none shadow-xs mb-3"></div>
+
+          <form id="form-support-ticket" onsubmit="window.submitSupportTicket(event)">
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-bold" style="font-size:.88rem;">Tipo de Reporte <span class="text-danger">*</span></label>
+                <div class="d-flex gap-2">
+                  <div class="form-check form-check-inline p-2 border rounded-3 flex-fill text-center m-0 cursor-pointer" style="border-color:var(--edugt-border)!important;background:var(--edugt-card);">
+                    <input class="form-check-input ms-0 me-2" type="radio" name="support_kind" id="support-kind-error" value="error" checked>
+                    <label class="form-check-label fw-bold cursor-pointer" for="support-kind-error" style="font-size:.85rem;">
+                      <i class="bi bi-bug-fill text-danger me-1"></i> Error técnico
+                    </label>
+                  </div>
+                  <div class="form-check form-check-inline p-2 border rounded-3 flex-fill text-center m-0 cursor-pointer" style="border-color:var(--edugt-border)!important;background:var(--edugt-card);">
+                    <input class="form-check-input ms-0 me-2" type="radio" name="support_kind" id="support-kind-suggestion" value="suggestion">
+                    <label class="form-check-label fw-bold cursor-pointer" for="support-kind-suggestion" style="font-size:.85rem;">
+                      <i class="bi bi-lightbulb-fill text-warning me-1"></i> Sugerencia
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label for="support-module" class="form-label fw-bold" style="font-size:.88rem;">Área o Módulo Relacionado</label>
+                <select class="form-select form-control-edugt" id="support-module">
+                  <option value="aulas">Aulas y Estudiantes</option>
+                  <option value="reportes">Reportes y Calificaciones</option>
+                  <option value="lecciones">Contenido Curricular</option>
+                  <option value="cuestionarios">Cuestionarios</option>
+                  <option value="cuenta">Mi Cuenta / Perfil</option>
+                  <option value="general">Plataforma General</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="support-description" class="form-label fw-bold" style="font-size:.88rem;">
+                Descripción detallada <span class="text-danger">*</span>
+              </label>
+              <textarea class="form-control form-control-edugt" id="support-description" rows="4" placeholder="Describe claramente el problema que ocurrió o la sugerencia que tienes para mejorar la plataforma..." minlength="10" maxlength="2000" required></textarea>
+              <div class="d-flex justify-content-between mt-1">
+                <small class="text-muted" style="font-size:.75rem;">Mínimo 10 caracteres. Sé lo más claro posible.</small>
+                <small class="text-muted" id="support-char-counter" style="font-size:.75rem;">0 / 2000</small>
+              </div>
+            </div>
+
+            <div class="text-end">
+              <button type="button" class="btn btn-outline-secondary rounded-pill px-3 me-2" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-edugt rounded-pill px-4" id="btn-submit-support">
+                <i class="bi bi-send-fill me-1"></i> Enviar Reporte
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Pestaña 2: Mis Tickets Enviados -->
+        <div id="support-tab-my" class="d-none">
+          <div id="support-my-list" class="d-flex flex-column gap-2.5">
+            <div class="text-center py-4 text-muted">
+              <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+              <div>Cargando tus reportes...</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/api.js?v=20261020_02"></script>
+<script src="assets/js/settings.js?v=20261020_02"></script>
+<script src="assets/js/support.js?v=20261020_02"></script>
+<script src="assets/js/docente.js?v=20261020_02"></script>
+</body>
+</html>

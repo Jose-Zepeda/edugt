@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EduGT — Lectura offline</title>
+<link rel="icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/logo-mark-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="assets/css/app.css?v=20261015_04" rel="stylesheet">
+</head>
+<body>
+
+<main class="container py-4" style="max-width: 800px;">
+  <a href="offline.html" class="btn btn-sm btn-google mb-3"><i class="bi bi-arrow-left"></i> Lecciones offline</a>
+
+  <div id="conn-note" class="pill-edugt pill-locked mb-3 d-none">
+    <i class="bi bi-wifi-off"></i> Leyendo sin conexión — el tiempo se sincroniza al reconectar
+  </div>
+
+  <section class="card-edugt p-4 p-md-5" id="offline-card">
+    <div class="text-center py-5" style="color:var(--edugt-muted)">Cargando lección offline...</div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/offline.js"></script>
+<script>
+'use strict';
+
+const lessonId = Number(new URLSearchParams(window.location.search).get('id'));
+let segundos = 0;
+setInterval(() => { segundos++; document.getElementById('crono').textContent = `${segundos} s`; }, 1000);
+
+// Al salir: encola la lectura (funciona con o sin conexión — RB-14)
+window.addEventListener('beforeunload', async () => {
+  if (segundos > 5 && lessonId) {
+    await queueLessonRead(lessonId, segundos);
+  }
+});
+
+(async function boot() {
+  const card = document.getElementById('offline-card');
+
+  if (!navigator.onLine) {
+    document.getElementById('conn-note').classList.remove('d-none');
+  }
+
+  const lessons = await offlineLessons();
+  const lesson = lessons.find((l) => l.id === lessonId);
+
+  if (!lesson) {
+    card.innerHTML = `
+      <div class="text-center py-5">
+        <i class="bi bi-cloud-slash" style="font-size:2.5rem;color:var(--edugt-muted)"></i>
+        <h2 class="h5 fw-bold mt-3">Lección no descargada</h2>
+        <p style="color:var(--edugt-muted)">Conéctate y descarga el paquete para leerla offline.</p>
+        <a href="offline.html" class="btn btn-edugt">Ir a descargas</a>
+      </div>`;
+    return;
+  }
+
+  const html = DOMPurify.sanitize(marked.parse(lesson.content_markdown ?? ''));
+  const pseudocode = lesson.pseudocode_json
+    ? `<section class="mt-4"><h2 class="h6 fw-bold mb-2">Pseudocódigo</h2>
+       <pre class="border rounded-4 p-3" style="background:#1E1B2E;color:#E4E1F5;font-family:ui-monospace,monospace;">${esc(JSON.stringify(lesson.pseudocode_json, null, 2).replace(/[{}"]/g, ''))}</pre></section>`
+    : '';
+
+  card.innerHTML = `
+    <small style="color:var(--edugt-muted)"><i class="bi bi-clock"></i> ${lesson.estimated_minutes} min · lectura offline — sin XP (RB-14)</small>
+    <h1 class="h4 fw-bold mt-2 mb-4">${esc(lesson.title)}</h1>
+    <article>${html}</article>
+    ${pseudocode}
+    <div class="text-center mt-4">
+      <small style="color:var(--edugt-muted)">Tiempo de esta lectura: <strong id="crono">0 s</strong></small>
+    </div>`;
+})();
+</script>
+</body>
+</html>
