@@ -31,6 +31,7 @@ const RANK_NAMES = {
 /* ---------------- Configuración Temática de Insignias ---------------- */
 const BADGE_CONFIG = {
   'novato-logica': {
+    title: 'Novato en Lógica',
     icon: 'bi-lightbulb-fill',
     color: '#D97706',
     bgColor: '#FEF3C7',
@@ -39,14 +40,16 @@ const BADGE_CONFIG = {
     shortCondition: 'Tu primer cuestionario con 70% o más.'
   },
   'maestro-pseudocodigo': {
+    title: 'Maestro del Pseudocódigo',
     icon: 'bi-code-square',
     color: '#6D4AEF',
     bgColor: '#EDE9FE',
     border: '#DDD6FE',
     category: 'Algoritmos',
-    shortCondition: 'Aprobar 5 cuestionarios con éxito.'
+    shortCondition: 'Aprobar los 3 cuestionarios de la ruta.'
   },
   'explorador-variables': {
+    title: 'Explorador de Variables',
     icon: 'bi-box-seam-fill',
     color: '#0284C7',
     bgColor: '#E0F2FE',
@@ -55,6 +58,7 @@ const BADGE_CONFIG = {
     shortCondition: 'El módulo de variables y tipos.'
   },
   'mago-del-control': {
+    title: 'Mago del Control',
     icon: 'bi-signpost-split-fill',
     color: '#DB2777',
     bgColor: '#FCE7F3',
@@ -63,6 +67,7 @@ const BADGE_CONFIG = {
     shortCondition: 'Estructuras de decisión if - else.'
   },
   'maestro-del-bucle': {
+    title: 'Maestro del Bucle',
     icon: 'bi-arrow-repeat',
     color: '#16A34A',
     bgColor: '#DCFCE7',
@@ -71,6 +76,7 @@ const BADGE_CONFIG = {
     shortCondition: 'Estructuras cíclicas y bucles.'
   },
   'depurador-elite': {
+    title: 'Depurador Élite',
     icon: 'bi-lightning-charge-fill',
     color: '#EA580C',
     bgColor: '#FFEDD5',
@@ -675,6 +681,8 @@ async function loadBadges() {
     const allSlugs = Object.keys(BADGE_CONFIG);
     allSlugs.forEach((slug, idx) => {
       const cfg = BADGE_CONFIG[slug];
+      const matchedBadge = obtained.find((b) => b.slug === slug) || locked.find((b) => b.slug === slug);
+      const badgeTitle = matchedBadge?.title || cfg.title || cfg.category;
       const isObtained = obtained.some((b) => b.slug === slug);
       const isCurrentInGame = !isObtained && (idx === obtained.length);
 
@@ -693,7 +701,7 @@ async function loadBadges() {
           </div>
           <div class="flex-grow-1" style="min-width:0;">
             <div class="d-flex justify-content-between align-items-center mb-0.5">
-              <h5 class="fw-bold mb-0 text-truncate mini-badge-title" style="font-size:.88rem;color:var(--edugt-text);">${esc(cfg.category)}</h5>
+              <h5 class="fw-bold mb-0 text-truncate mini-badge-title" style="font-size:.88rem;color:var(--edugt-text);">${esc(badgeTitle)}</h5>
               ${statusTag}
             </div>
             <small class="text-muted d-block text-truncate" style="font-size:.76rem;">${esc(cfg.shortCondition)}</small>
