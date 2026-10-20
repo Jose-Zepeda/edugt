@@ -794,10 +794,13 @@ async function loadBadges() {
   }
 }
 
-/* ---------------- Ranking (RF-18) — Global y Por Aula ---------------- */
+/* ---------------- Ranking (RF-18) — Global y Por Aula (Paginado de 10 en 10) ---------------- */
 let rankingScope = 'global';
 let selectedClassroomId = null;
 let enrolledClassrooms = [];
+let fullRankingList = [];
+let rankingCurrentPage = 1;
+const RANKING_PAGE_SIZE = 10;
 
 function updateRankingClassroomPicker() {
   const pickerWrap = $('#ranking-classroom-picker');
@@ -903,16 +906,51 @@ async function loadRankings(targetClassroomId = null) {
     podiumContainer.classList.add('d-none');
   }
 
-  const rows = list.map((r, i) => {
+  fullRankingList = list;
+  renderRankingPage(1);
+}
+
+window.changeRankingPage = function (page) {
+  renderRankingPage(page);
+};
+
+function renderRankingPage(page = 1) {
+  const rankingsContainer = $('#rankings');
+  if (!rankingsContainer) return;
+
+  const totalItems = fullRankingList.length;
+  if (totalItems === 0) {
+    rankingsContainer.innerHTML = rankingScope === 'classroom'
+      ? `<div class="text-center py-4">
+          <i class="bi bi-people text-muted fs-2 mb-2"></i>
+          <h5 class="h6 fw-bold mb-1" style="color:var(--edugt-text);">No hay estudiantes en esta aula</h5>
+          <p class="mb-0 text-muted" style="font-size:.85rem;">Aún no se han registrado compañeros en esta aula.</p>
+        </div>`
+      : `<div class="text-center py-4">
+          <i class="bi bi-people text-muted fs-2 mb-2"></i>
+          <p class="mb-0 text-muted">Aún no hay puntajes registrados en este ámbito.</p>
+        </div>`;
+    return;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / RANKING_PAGE_SIZE));
+  rankingCurrentPage = Math.min(totalPages, Math.max(1, page));
+
+  const startIndex = (rankingCurrentPage - 1) * RANKING_PAGE_SIZE;
+  const endIndex = Math.min(totalItems, startIndex + RANKING_PAGE_SIZE);
+  const pageItems = fullRankingList.slice(startIndex, endIndex);
+
+  const rowsHtml = pageItems.map((r) => {
+    const pos = r.position;
     let rankBadgeHtml = '';
-    if (i === 0) {
+    if (pos === 1) {
       rankBadgeHtml = `<div class="rank-pos-badge rank-gold" title="1° Lugar">1</div>`;
-    } else if (i === 1) {
+    } else if (pos === 2) {
       rankBadgeHtml = `<div class="rank-pos-badge rank-silver" title="2° Lugar">2</div>`;
-    } else if (i === 2) {
+    } else if (pos === 3) {
       rankBadgeHtml = `<div class="rank-pos-badge rank-bronze" title="3° Lugar">3</div>`;
     } else {
-      rankBadgeHtml = `<div class="rank-pos-badge rank-default">${r.position}</div>`;
+      rankBadgeHtml = `<div class="rank-pos-badge rank-default">${pos}</div>`;
     }
     const me = r.user_id === Auth.user.id;
     const rowAvatarUrl = r.avatar_url || (me ? Auth.user?.avatar_url : null);
@@ -933,18 +971,70 @@ async function loadRankings(targetClassroomId = null) {
           ${r.xp_total} XP
         </div>
       </div>`;
-  });
+  }).join('');
 
-  rankingsContainer.innerHTML = rows.join('') || (rankingScope === 'classroom'
-    ? `<div class="text-center py-4">
-        <i class="bi bi-people text-muted fs-2 mb-2"></i>
-        <h5 class="h6 fw-bold mb-1" style="color:var(--edugt-text);">No hay estudiantes en esta aula</h5>
-        <p class="mb-0 text-muted" style="font-size:.85rem;">Aún no se han registrado compañeros en esta aula.</p>
-      </div>`
-    : `<div class="text-center py-4">
-        <i class="bi bi-people text-muted fs-2 mb-2"></i>
-        <p class="mb-0 text-muted">Aún no hay puntajes registrados en este ámbito.</p>
-      </div>`);
+  // Calcular en qué página está el usuario actual
+  const myIndex = fullRankingList.findIndex((r) => r.user_id === Auth.user.id);
+  const myPage = myIndex >= 0 ? Math.floor(myIndex / RANKING_PAGE_SIZE) + 1 : null;
+  const myPos = myIndex >= 0 ? fullRankingList[myIndex].position : null;
+
+  let paginationHtml = '';
+  if (totalPages > 1) {
+    const pageButtons = [];
+    const maxVisible = 5;
+    let startPage = Math.max(1, rankingCurrentPage - 2);
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+    if (endPage - startPage + 1 < maxVisible) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    for (let p = startPage; p <= endPage; p++) {
+      pageButtons.push(`
+        <button type="button"
+                class="btn btn-sm ${p === rankingCurrentPage ? 'btn-edugt' : 'btn-google'} px-2.5 py-1 fw-bold"
+                style="border-radius:10px;min-width:34px;"
+                onclick="window.changeRankingPage(${p})">
+          ${p}
+        </button>`);
+    }
+
+    paginationHtml = `
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-3 mt-2 border-top" style="border-color:var(--edugt-border)!important;">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <small class="text-muted" style="font-size:.8rem;">
+            Mostrando <strong>${startIndex + 1}–${endIndex}</strong> de <strong>${totalItems}</strong> estudiantes
+          </small>
+          ${myPage && myPage !== rankingCurrentPage ? `
+            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-0.5 fw-bold" style="font-size:.74rem;" onclick="window.changeRankingPage(${myPage})">
+              <i class="bi bi-geo-alt-fill me-1"></i>Ir a mi posición (#${myPos})
+            </button>` : ''}
+        </div>
+        <div class="d-flex align-items-center gap-1">
+          <button type="button"
+                  class="btn btn-sm btn-google px-2.5 py-1"
+                  style="border-radius:10px;"
+                  ${rankingCurrentPage <= 1 ? 'disabled' : ''}
+                  onclick="window.changeRankingPage(${rankingCurrentPage - 1})">
+            <i class="bi bi-chevron-left"></i> Anterior
+          </button>
+          ${pageButtons.join('')}
+          <button type="button"
+                  class="btn btn-sm btn-google px-2.5 py-1"
+                  style="border-radius:10px;"
+                  ${rankingCurrentPage >= totalPages ? 'disabled' : ''}
+                  onclick="window.changeRankingPage(${rankingCurrentPage + 1})">
+            Siguiente <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      </div>`;
+  } else {
+    paginationHtml = `
+      <div class="d-flex justify-content-between align-items-center pt-2 mt-1">
+        <small class="text-muted" style="font-size:.78rem;">Mostrando ${totalItems} de ${totalItems} estudiantes (máx. 10 por página)</small>
+      </div>`;
+  }
+
+  rankingsContainer.innerHTML = rowsHtml + paginationHtml;
 }
 
 $('#rk-global')?.addEventListener('click', async () => {

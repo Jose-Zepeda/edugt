@@ -812,7 +812,16 @@ function renderClassroomStudentsKpis(students) {
     </div>`;
 }
 
-function renderClassroomStudentsList(students) {
+let currentFilteredStudents = [];
+let studentsCurrentPage = 1;
+const STUDENTS_PAGE_SIZE = 10;
+
+window.changeStudentsModalPage = function (page) {
+  renderClassroomStudentsList(currentFilteredStudents, page);
+};
+
+function renderClassroomStudentsList(students, page = 1) {
+  currentFilteredStudents = students;
   const tbody = $('#modal-estudiantes-tbody');
   if (!tbody) return;
 
@@ -825,13 +834,20 @@ function renderClassroomStudentsList(students) {
     return;
   }
 
+  const totalItems = students.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / STUDENTS_PAGE_SIZE));
+  studentsCurrentPage = Math.min(totalPages, Math.max(1, page));
+  const startIndex = (studentsCurrentPage - 1) * STUDENTS_PAGE_SIZE;
+  const endIndex = Math.min(totalItems, startIndex + STUDENTS_PAGE_SIZE);
+  const pageStudents = students.slice(startIndex, endIndex);
+
   const trackNames = {
     beginner: 'Básico',
     intermediate: 'Intermedio',
     advanced: 'Avanzado',
   };
 
-  tbody.innerHTML = students.map((s) => {
+  const cardsHtml = pageStudents.map((s) => {
     const initial = (s.name || 'E').trim().charAt(0).toUpperCase();
     const hasPretest = Boolean(s.pretest_completed || s.learning_track);
     const trackLabel = trackNames[s.learning_track] || null;
@@ -971,6 +987,37 @@ function renderClassroomStudentsList(students) {
         </div>
       </div>`;
   }).join('');
+
+  let paginationHtml = '';
+  if (totalPages > 1) {
+    const pageButtons = [];
+    for (let p = 1; p <= totalPages; p++) {
+      pageButtons.push(`
+        <button type="button"
+                class="btn btn-sm ${p === studentsCurrentPage ? 'btn-edugt' : 'btn-google'} px-2.5 py-1 fw-bold"
+                style="border-radius:10px;min-width:34px;"
+                onclick="window.changeStudentsModalPage(${p})">
+          ${p}
+        </button>`);
+    }
+    paginationHtml = `
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-3 mt-2 border-top" style="border-color:var(--edugt-border)!important;">
+        <small class="text-muted" style="font-size:.8rem;">
+          Mostrando <strong>${startIndex + 1}–${endIndex}</strong> de <strong>${totalItems}</strong> estudiantes
+        </small>
+        <div class="d-flex align-items-center gap-1">
+          <button type="button" class="btn btn-sm btn-google px-2.5 py-1" style="border-radius:10px;" ${studentsCurrentPage <= 1 ? 'disabled' : ''} onclick="window.changeStudentsModalPage(${studentsCurrentPage - 1})">
+            <i class="bi bi-chevron-left"></i> Anterior
+          </button>
+          ${pageButtons.join('')}
+          <button type="button" class="btn btn-sm btn-google px-2.5 py-1" style="border-radius:10px;" ${studentsCurrentPage >= totalPages ? 'disabled' : ''} onclick="window.changeStudentsModalPage(${studentsCurrentPage + 1})">
+            Siguiente <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      </div>`;
+  }
+
+  tbody.innerHTML = cardsHtml + paginationHtml;
 }
 
 $('#student-search-input')?.addEventListener('input', (e) => {
