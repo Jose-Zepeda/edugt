@@ -15,9 +15,9 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
 const TRACK_LABEL = {
-  beginner: 'Ruta básica',
-  intermediate: 'Ruta intermedia',
-  advanced: 'Ruta avanzada',
+  beginner: 'Diagnóstico: Básico',
+  intermediate: 'Diagnóstico: Intermedio',
+  advanced: 'Diagnóstico: Avanzado',
 };
 
 const RANK_NAMES = {
@@ -60,7 +60,7 @@ const BADGE_CONFIG = {
     bgColor: '#FCE7F3',
     border: '#FBCFE8',
     category: 'Condicionales',
-    shortCondition: 'Estructuras de decisión si-entonces.'
+    shortCondition: 'Estructuras de decisión if - else.'
   },
   'maestro-del-bucle': {
     icon: 'bi-arrow-repeat',
@@ -174,7 +174,9 @@ async function loadMissions() {
 
   let totalLessons = 0;
   let doneLessons = 0;
-  let currentActiveModule = 1;
+  let activeProgressInfo = null;
+  let lastModuleInfo = null;
+  let moduleOrdinal = 0;
 
   if (!data.data || data.data.length === 0) {
     container.innerHTML = `
@@ -190,6 +192,13 @@ async function loadMissions() {
 
   for (const mission of data.data) {
     for (const mod of mission.modules) {
+      moduleOrdinal++;
+      const cleanModTitle = mod.title.replace(/^Módulo\s*\d+\s*[:.-]?\s*/i, '').trim();
+      lastModuleInfo = {
+        moduleNumber: moduleOrdinal,
+        moduleTitle: cleanModTitle,
+      };
+
       // Filtrar lecciones para no duplicar si la última lección es la evaluación del quiz
       const standardLessons = mod.lessons.filter(l => !l.requires_quiz_pass && !l.title.toLowerCase().includes('evaluación'));
       const quizLesson = mod.lessons.find(l => l.requires_quiz_pass || l.title.toLowerCase().includes('evaluación'));
@@ -201,10 +210,10 @@ async function loadMissions() {
           quiz_id: mod.quiz_id,
           id: quizLesson ? quizLesson.id : null,
           title: 'Evaluación del Módulo',
-          completed: quizLesson ? quizLesson.completed : false,
+          completed: Boolean(mod.quiz_passed) || (quizLesson ? quizLesson.completed : false),
           locked: quizLesson ? quizLesson.locked : false,
           estimated_minutes: 10,
-          xp_reward: 100
+          xp_reward: 50
         });
       }
 
@@ -219,12 +228,19 @@ async function loadMissions() {
           modDone++;
         }
 
+        const hasPretest = Boolean(Auth.user.learning_track);
         const isCompleted = Boolean(step.completed);
-        const isLocked = Boolean(step.locked);
+        const isLocked = Boolean(step.locked) || !hasPretest;
         const isActive = !isCompleted && !isLocked;
 
-        if (isActive && !step.isQuiz) {
-          currentActiveModule = mod.id;
+        // Registrar el primer paso pendiente (tanto lección como evaluación del módulo)
+        if (!isCompleted && !activeProgressInfo) {
+          activeProgressInfo = {
+            moduleNumber: moduleOrdinal,
+            moduleTitle: cleanModTitle,
+            stepTitle: step.title,
+            isQuiz: Boolean(step.isQuiz),
+          };
         }
 
         const isRight = (idx % 2 === 1);
@@ -234,29 +250,30 @@ async function loadMissions() {
         let nodeClass = '';
         let nodeIcon = '';
         let statusLabel = '';
-        let actionBtn = '';
 
         if (step.isQuiz) {
           nodeClass = isCompleted ? 'completed milestone' : isActive ? 'active milestone' : 'milestone';
           nodeIcon = '<i class="bi bi-award-fill"></i>';
           statusLabel = isCompleted
-            ? '<span class="text-success fw-bold"><i class="bi bi-patch-check-fill"></i> aprobada</span>'
+            ? '<span class="text-success fw-bold"><i class="bi bi-patch-check-fill"></i> aprobado</span>'
             : isActive
-            ? '<span class="text-warning fw-bold"><i class="bi bi-star-fill"></i> listo para presentar</span>'
-            : '<span class="text-muted"><i class="bi bi-lock-fill"></i> bloqueada</span>';
+            ? '<span class="text-warning fw-bold"><i class="bi bi-star-fill"></i> comenzar</span>'
+            : '<span class="text-muted"><i class="bi bi-lock-fill"></i> bloqueado</span>';
         } else {
           nodeClass = isCompleted ? 'completed' : isActive ? 'active' : 'locked';
           nodeIcon = isCompleted
             ? '<i class="bi bi-check-lg"></i>'
             : isActive
-            ? '<i class="bi bi-play-fill"></i>'
+            ? '<i class="bi bi-play-fill snake-play-glyph"></i>'
             : '<i class="bi bi-lock-fill"></i>';
 
           statusLabel = isCompleted
-            ? '<span class="text-success fw-bold"><i class="bi bi-check2"></i> completada</span>'
+            ? '<span class="text-success fw-bold"><i class="bi bi-check2"></i> completado</span>'
             : isActive
-            ? '<span class="text-primary fw-bold"><i class="bi bi-lightning-charge-fill"></i> disponible ahora</span>'
-            : '<span class="text-muted"><i class="bi bi-lock-fill"></i> bloqueada</span>';
+            ? '<span class="snake-status-active fw-bold"><i class="bi bi-play-circle-fill me-1"></i> ¡Disponible para empezar!</span>'
+            : (!hasPretest && moduleOrdinal === 1 && idx === 0)
+            ? '<span class="text-warning fw-bold"><i class="bi bi-lock-fill me-1"></i> Requiere realizar el Pre-test diagnóstico</span>'
+            : '<span class="text-muted"><i class="bi bi-lock-fill"></i> bloqueado</span>';
         }
 
         const stepUrl = step.isQuiz ? `quiz.html?id=${step.quiz_id}` : `leccion.html?id=${step.id}`;
@@ -300,10 +317,10 @@ async function loadMissions() {
           <div class="module-header-banner ${bannerColorClass}">
             <div class="d-flex align-items-center gap-2">
               <i class="bi ${iconClass} fs-5"></i>
-              <span class="fs-6">${esc(mod.title)}</span>
+              <span class="fs-6">Módulo ${moduleOrdinal}: ${esc(cleanModTitle)}</span>
             </div>
             <span class="module-badge-pill">
-              ${modCompleted ? 'completa' : `${modDone} hechas · te queda ${modRemaining}`}
+              ${modCompleted ? 'completo' : `${modDone} hechas · te queda ${modRemaining}`}
             </span>
           </div>
 
@@ -314,13 +331,291 @@ async function loadMissions() {
     }
   }
 
-  // Actualizar cabecera principal unificada
+  // Hito Final del Roadmap + Tarjeta de Post-test / Graduación y Certificado
+  const diag = data.diagnostic_status || {};
+  const postUnlocked = Boolean(diag.post_unlocked || (doneLessons === totalLessons && totalLessons > 0 && Auth.user.learning_track));
+  const postCompleted = Boolean(diag.post_completed);
+
+  container.innerHTML += `
+    <div class="mt-2 pt-3 border-top" style="border-color:var(--edugt-border)!important;">
+      <div class="p-3 p-md-4 rounded-4 d-flex align-items-center justify-content-between flex-wrap gap-3"
+           style="background:var(--edugt-card-subtle);border:2px ${postCompleted ? 'solid var(--edugt-green)' : postUnlocked ? 'solid var(--edugt-primary)' : 'dashed var(--edugt-border)'};">
+        <div class="d-flex align-items-center gap-3">
+          <div class="stat-icon shadow-sm flex-shrink-0"
+               style="width:52px;height:52px;border-radius:16px;font-size:1.5rem;background:${postCompleted ? 'var(--edugt-green-soft)' : postUnlocked ? 'var(--edugt-primary-soft)' : 'var(--edugt-card)'};color:${postCompleted ? 'var(--edugt-green)' : postUnlocked ? 'var(--edugt-primary)' : 'var(--edugt-muted)'};">
+            <i class="bi ${postCompleted ? 'bi-mortarboard-fill' : postUnlocked ? 'bi-flag-fill' : 'bi-lock-fill'}"></i>
+          </div>
+          <div>
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+              <span class="badge rounded-pill px-2.5 py-1 fw-bold"
+                    style="font-size:.72rem;background:${postCompleted ? 'var(--edugt-green-soft)' : postUnlocked ? 'var(--edugt-primary-soft)' : 'var(--edugt-card)'};color:${postCompleted ? 'var(--edugt-green)' : postUnlocked ? 'var(--edugt-primary)' : 'var(--edugt-muted)'};border:1px solid var(--edugt-border);">
+                ${postCompleted ? '<i class="bi bi-patch-check-fill me-1"></i> HITO FINAL COMPLETADO' : postUnlocked ? '<i class="bi bi-unlock-fill me-1"></i> HITO FINAL DESBLOQUEADO' : '<i class="bi bi-lock-fill me-1"></i> HITO FINAL DE LA RUTA'}
+              </span>
+              <h3 class="h6 fw-bold mb-0" style="color:var(--edugt-text);">Evaluación Final (Post-test) y Certificación</h3>
+            </div>
+            <p class="mb-0 text-muted" style="font-size:.86rem;">
+              ${postCompleted
+                ? `¡Graduado con éxito! Obtuviste <strong>${diag.post_score ?? 0}%</strong> en tu Post-test${diag.gain !== null && diag.gain !== undefined ? ` (${diag.gain >= 0 ? '+' : ''}${diag.gain} pts vs. Pre-test)` : ''}.`
+                : postUnlocked
+                ? 'Has completado los 3 módulos. Realiza las 14 preguntas finales para medir tu evolución y desbloquear tu Certificado Oficial en PDF.'
+                : `Completa las ${totalLessons} etapas de los 3 módulos (llevas ${doneLessons}/${totalLessons}) para desbloquear la evaluación final y tu diploma PDF.`}
+            </p>
+          </div>
+        </div>
+        <div>
+          ${postCompleted ? `
+            <button type="button" class="btn btn-edugt px-4 shadow-sm" onclick="window.downloadStudentCertificate(this)">
+              <i class="bi bi-award-fill me-1"></i> Descargar Certificado PDF
+            </button>
+          ` : postUnlocked ? `
+            <a href="diagnostico.html?kind=post" class="btn btn-edugt px-4 shadow-sm">
+              <i class="bi bi-play-circle-fill me-1"></i> Realizar Post-test Final
+            </a>
+          ` : `
+            <span class="pill-edugt pill-locked"><i class="bi bi-lock-fill me-1"></i> Bloqueado (${doneLessons}/${totalLessons})</span>
+          `}
+        </div>
+      </div>
+    </div>`;
+
+  renderPosttestAndGraduationCard(diag, postUnlocked, postCompleted);
+
+  // Actualizar cabecera principal unificada con Módulo y Lección exacta
   const firstName = Auth.user.name ? Auth.user.name.split(' ')[0] : 'Estudiante';
-  $('#greeting').textContent = `¡Hola, ${firstName}! Vas por el Módulo ${currentActiveModule}`;
-  $('#greeting-sub').textContent = `Llevas ${doneLessons} de ${totalLessons} lecciones. ${totalLessons - doneLessons > 0 ? 'Completa una lección más para avanzar al siguiente hito.' : '¡Has completado todas las lecciones disponibles!'}`;
+  if (!Auth.user.learning_track) {
+    $('#greeting').textContent = `¡Hola, ${firstName}! Completa tu Pre-test Diagnóstico para comenzar`;
+    $('#greeting-sub').innerHTML = `<strong>Requisito inicial:</strong> Realiza primero la prueba diagnóstica de arriba para desbloquear el <strong>Módulo 1: Variables y Tipos de Datos</strong>.`;
+  } else if (activeProgressInfo) {
+    const stepPrefix = activeProgressInfo.isQuiz ? 'Evaluación actual' : 'Lección actual';
+    $('#greeting').textContent = `¡Hola, ${firstName}! Vas por el Módulo ${activeProgressInfo.moduleNumber}: ${activeProgressInfo.moduleTitle}`;
+    $('#greeting-sub').innerHTML = `<strong>${stepPrefix}:</strong> ${esc(activeProgressInfo.stepTitle)} · Llevas ${doneLessons} de ${totalLessons} etapas completadas.`;
+  } else if (lastModuleInfo && !postCompleted) {
+    $('#greeting').textContent = `¡Hola, ${firstName}! Completaste los ${lastModuleInfo.moduleNumber} módulos · Realiza tu Post-test Final`;
+    $('#greeting-sub').innerHTML = `Completaste las <strong>${doneLessons} de ${totalLessons} etapas</strong>. Da el último paso con la <strong>Evaluación Final (Post-test)</strong> arriba para obtener tu Certificado Oficial.`;
+  } else if (lastModuleInfo && postCompleted) {
+    $('#greeting').textContent = `¡Felicidades, ${firstName}! Has completado toda la Ruta de EduGT 🎓`;
+    $('#greeting-sub').innerHTML = `Programa finalizado al <strong>100%</strong> (${doneLessons}/${totalLessons} etapas + Post-test: <strong>${diag.post_score ?? 0}%</strong>). Ya puedes descargar tu Certificado Oficial en PDF.`;
+  }
 }
 
+/* ---------------- Tarjeta Superior de Post-test / Graduación y Certificado PDF ---------------- */
+function renderPosttestAndGraduationCard(diag, postUnlocked, postCompleted) {
+  const wrap = $('#posttest-graduation-wrap');
+  if (!wrap) return;
+
+  if (!postUnlocked && !postCompleted) {
+    wrap.innerHTML = '';
+    return;
+  }
+
+  if (postUnlocked && !postCompleted) {
+    wrap.innerHTML = `
+      <div class="card-edugt p-4 mb-4 animate-fade-in" style="border: 2px solid var(--edugt-primary);">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="stat-icon shadow-sm flex-shrink-0" style="width:54px;height:54px;background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:1.6rem;border-radius:16px;">
+              <i class="bi bi-flag-fill"></i>
+            </div>
+            <div>
+              <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <span class="badge bg-success text-white fw-bold px-2.5 py-1 rounded-pill" style="font-size:.72rem;">
+                  <i class="bi bi-unlock-fill me-1"></i> PASO FINAL DESBLOQUEADO
+                </span>
+                <h2 class="h5 fw-bold mb-0" style="color:var(--edugt-text);">Evaluación Diagnóstica Final (Post-test)</h2>
+              </div>
+              <p class="mb-0" style="color:var(--edugt-muted);font-size:.9rem;">
+                ¡Completaste los 3 módulos! Responde estas 14 preguntas finales para comparar tu avance respecto al Pre-test${diag.pre_score !== null && diag.pre_score !== undefined ? ` (obtuviste <strong>${diag.pre_score}%</strong> al inicio)` : ''} y habilitar tu <strong>Certificado Oficial en PDF</strong>.
+              </p>
+            </div>
+          </div>
+          <a href="diagnostico.html?kind=post" class="btn btn-edugt btn-lg px-4 shadow-sm">
+            <i class="bi bi-play-circle-fill me-1"></i> Realizar Post-test ahora
+          </a>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // Estado Graduado (postCompleted === true)
+  const preScore = diag.pre_score;
+  const postScore = diag.post_score ?? 0;
+  const gain = diag.gain;
+  const dims = Array.isArray(diag.dimensions) ? diag.dimensions : [];
+
+  const dimsRowsHtml = dims.map((d) => {
+    const preVal = d.pre_score ?? 0;
+    const postVal = d.post_score ?? 0;
+    const delta = d.delta;
+    const deltaBadge = delta !== null && delta !== undefined
+      ? `<span class="badge rounded-pill px-2 py-0.5" style="font-size:.72rem;background:${delta >= 0 ? 'var(--edugt-green-soft)' : '#FEE2E2'};color:${delta >= 0 ? 'var(--edugt-green)' : '#DC2626'};">${delta >= 0 ? '+' : ''}${delta}%</span>`
+      : '';
+    return `
+      <div class="col-12 col-md-6">
+        <div class="p-2.5 rounded-3 border" style="background:var(--edugt-card);border-color:var(--edugt-border)!important;">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <span class="fw-bold" style="font-size:.82rem;color:var(--edugt-text);">${esc(d.label)}</span>
+            <div class="d-flex align-items-center gap-1.5">
+              <small class="text-muted" style="font-size:.76rem;">Pre: ${d.pre_score !== null ? `${preVal}%` : '—'} → Post: <strong>${postVal}%</strong></small>
+              ${deltaBadge}
+            </div>
+          </div>
+          <div class="progress-edugt" style="height:7px;">
+            <div class="bar" style="width:${Math.max(0, Math.min(100, postVal))}%;"></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div class="card-edugt p-4 mb-4 animate-fade-in" style="border: 2px solid var(--edugt-green);">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="stat-icon shadow-sm flex-shrink-0" style="width:56px;height:56px;background:var(--edugt-green-soft);color:var(--edugt-green);font-size:1.75rem;border-radius:18px;">
+            <i class="bi bi-mortarboard-fill"></i>
+          </div>
+          <div>
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+              <span class="badge rounded-pill px-2.5 py-1 fw-bold" style="font-size:.72rem;background:var(--edugt-green-soft);color:var(--edugt-green);border:1px solid var(--edugt-green);">
+                <i class="bi bi-patch-check-fill me-1"></i> PROGRAMA COMPLETADO · FOLIO ${esc(diag.certificate_folio || 'EDUGT')}
+              </span>
+              <h2 class="h5 fw-bold mb-0" style="color:var(--edugt-text);">Tu Evolución Diagnóstica y Certificado Oficial</h2>
+            </div>
+            <p class="mb-0" style="color:var(--edugt-muted);font-size:.88rem;">
+              Has culminado los 3 módulos y la evaluación final. Descarga tu diploma oficial en PDF o revisa tu crecimiento por dimensión.
+            </p>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <button type="button" class="btn btn-google btn-sm px-3" onclick="document.getElementById('student-dims-collapse')?.classList.toggle('d-none')">
+            <i class="bi bi-bar-chart-line me-1"></i> Ver mis 7 dimensiones
+          </button>
+          <button type="button" class="btn btn-edugt px-4 shadow-sm" onclick="window.downloadStudentCertificate(this)">
+            <i class="bi bi-file-earmark-pdf-fill me-1"></i> Descargar Certificado (PDF)
+          </button>
+        </div>
+      </div>
+
+      <!-- KPIs Comparativos Pre-test vs Post-test -->
+      <div class="row g-3">
+        <div class="col-4">
+          <div class="p-3 rounded-4 border text-center h-100" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+            <small class="text-muted text-uppercase fw-bold d-block" style="font-size:.7rem;letter-spacing:.04em;">Pre-test Inicial</small>
+            <div class="h4 fw-bold mb-0 mt-1" style="color:var(--edugt-text);">${preScore !== null && preScore !== undefined ? `${preScore}%` : '—'}</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="p-3 rounded-4 border text-center h-100" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+            <small class="text-muted text-uppercase fw-bold d-block" style="font-size:.7rem;letter-spacing:.04em;">Post-test Final</small>
+            <div class="h4 fw-bold mb-0 mt-1" style="color:var(--edugt-primary);">${postScore}%</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="p-3 rounded-4 border text-center h-100" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+            <small class="text-muted text-uppercase fw-bold d-block" style="font-size:.7rem;letter-spacing:.04em;">Mejora Alcanzada</small>
+            <div class="h4 fw-bold mb-0 mt-1" style="color:${gain !== null && gain >= 0 ? 'var(--edugt-green)' : 'var(--edugt-text)'};">
+              ${gain !== null && gain !== undefined ? `${gain >= 0 ? '+' : ''}${gain} pts` : 'Completado'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desglose en las 7 dimensiones (desplegable) -->
+      <div id="student-dims-collapse" class="mt-3 pt-3 border-top d-none" style="border-color:var(--edugt-border)!important;">
+        <h3 class="h6 fw-bold mb-2" style="font-size:.88rem;color:var(--edugt-text);">
+          <i class="bi bi-diagram-3-fill text-primary me-1"></i> Comparativa Pre-test vs. Post-test en las 7 Dimensiones
+        </h3>
+        <div class="row g-2">
+          ${dimsRowsHtml}
+        </div>
+      </div>
+    </div>`;
+}
+
+window.downloadStudentCertificate = async function (btnEl) {
+  const origHtml = btnEl ? btnEl.innerHTML : '';
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Generando diploma...';
+  }
+  try {
+    const res = await fetch(`${API_BASE}/me/certificate`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${Auth.token}`,
+        Accept: 'application/pdf',
+      },
+    });
+    if (!res.ok) {
+      throw new Error('No fue posible generar tu certificado en este momento.');
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `certificado-edugt-${(Auth.user?.name || 'estudiante').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert(err.message || 'Error al descargar el certificado PDF');
+  } finally {
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.innerHTML = origHtml;
+    }
+  }
+};
+
 /* ---------------- Insignias Temáticas (RF-17) ---------------- */
+function getLocallyDismissedBadgeIds() {
+  try {
+    return JSON.parse(localStorage.getItem('edugt_dismissed_badges') || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function markBadgeDismissedLocally(badgeId) {
+  try {
+    const list = getLocallyDismissedBadgeIds();
+    if (!list.includes(badgeId)) {
+      list.push(badgeId);
+      localStorage.setItem('edugt_dismissed_badges', JSON.stringify(list));
+    }
+  } catch (e) {
+    console.warn('Error guardando en localStorage:', e);
+  }
+}
+
+window.dismissBadgeCelebration = async function(badgeId) {
+  const celebrationWrap = $('#celebration-banner-wrap');
+  if (celebrationWrap) {
+    celebrationWrap.innerHTML = '';
+  }
+
+  const idsToDismiss = window._pendingUnnotifiedBadgeIds && window._pendingUnnotifiedBadgeIds.length > 0
+    ? window._pendingUnnotifiedBadgeIds
+    : (badgeId ? [badgeId] : []);
+
+  idsToDismiss.forEach(markBadgeDismissedLocally);
+  window._pendingUnnotifiedBadgeIds = [];
+
+  try {
+    await api('/me/badges/dismiss', {
+      method: 'POST',
+      body: JSON.stringify({ badge_ids: idsToDismiss }),
+    });
+  } catch (err) {
+    console.warn('Error al descartar notificación de insignia en servidor:', err);
+  }
+};
+
+window.viewAndDismissBadge = async function(badgeId) {
+  await window.dismissBadgeCelebration(badgeId);
+  window.switchStudentTab('insignias');
+};
+
 async function loadBadges() {
   const { data } = await api('/me/badges');
 
@@ -330,11 +625,17 @@ async function loadBadges() {
 
   $('#top-badges-count').textContent = `${obtained.length} de ${totalBadges} insignias`;
 
-  // Banner superior de celebración
+  // Banner superior de celebración:
+  // Solo se muestra UNA VEZ cuando una insignia es RECIÉN conseguida (unnotified)
+  // y al cerrarse, no vuelve a mostrarse jamás.
   const celebrationWrap = $('#celebration-banner-wrap');
   if (celebrationWrap) {
-    if (obtained.length > 0) {
-      const latest = obtained[obtained.length - 1];
+    const dismissedLocally = getLocallyDismissedBadgeIds();
+    const freshBadges = (data.unnotified || []).filter(b => !dismissedLocally.includes(b.id));
+
+    if (freshBadges.length > 0) {
+      window._pendingUnnotifiedBadgeIds = freshBadges.map(b => b.id);
+      const latest = freshBadges[freshBadges.length - 1];
       const config = BADGE_CONFIG[latest.slug] || {
         icon: 'bi-award-fill',
         color: '#D97706',
@@ -342,26 +643,27 @@ async function loadBadges() {
       };
 
       celebrationWrap.innerHTML = `
-        <div class="celebration-banner p-3 p-md-4 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="celebration-banner p-3 p-md-4 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3" data-badge-id="${latest.id}">
           <div class="d-flex align-items-center gap-3">
             <div class="celebration-icon shadow-sm">
               <i class="bi ${config.icon}"></i>
             </div>
             <div>
-              <small class="text-uppercase fw-bold celebration-kicker" style="letter-spacing:.05em;font-size:.75rem;">Insignia Conseguida</small>
+              <small class="text-uppercase fw-bold celebration-kicker" style="letter-spacing:.05em;font-size:.75rem;">¡Nueva Insignia Conseguida!</small>
               <h3 class="fw-bold mb-0 celebration-title" style="font-size:1.1rem;">${esc(latest.title)}</h3>
               <p class="mb-0 celebration-desc text-muted" style="font-size:.85rem;">${esc(latest.description)}</p>
             </div>
           </div>
           <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-sm btn-celebration fw-bold" onclick="window.switchStudentTab('insignias')">
+            <button type="button" class="btn btn-sm btn-celebration fw-bold" onclick="window.viewAndDismissBadge(${latest.id})">
               Ver mi insignia
             </button>
-            <button type="button" class="btn-close" aria-label="Cerrar" onclick="this.closest('.celebration-banner').remove()"></button>
+            <button type="button" class="btn-close" aria-label="Cerrar" title="Cerrar notificación" onclick="window.dismissBadgeCelebration(${latest.id})"></button>
           </div>
         </div>`;
     } else {
       celebrationWrap.innerHTML = '';
+      window._pendingUnnotifiedBadgeIds = [];
     }
   }
 
@@ -440,7 +742,7 @@ async function loadBadges() {
             </div>
             <div class="text-center pt-2 border-top" style="border-color:var(--edugt-border)!important;">
               <small class="text-success fw-bold" style="font-size:.78rem;">
-                <i class="bi bi-stars"></i> ¡Completada con éxito!
+                <i class="bi bi-stars"></i> ¡Completado con éxito!
               </small>
             </div>
           </div>
@@ -486,15 +788,61 @@ async function loadBadges() {
 
 /* ---------------- Ranking (RF-18) — Global y Por Aula ---------------- */
 let rankingScope = 'global';
+let selectedClassroomId = null;
+let enrolledClassrooms = [];
 
-async function loadRankings() {
-  const { data } = await api(`/rankings?scope=${rankingScope}`);
+function updateRankingClassroomPicker() {
+  const pickerWrap = $('#ranking-classroom-picker');
+  const select = $('#ranking-classroom-select');
+  if (!pickerWrap || !select) return;
+
+  if (rankingScope === 'classroom' && enrolledClassrooms.length > 0) {
+    pickerWrap.classList.remove('d-none');
+    select.innerHTML = enrolledClassrooms.map(c => 
+      `<option value="${c.id}" ${selectedClassroomId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`
+    ).join('');
+    if (!selectedClassroomId && enrolledClassrooms.length > 0) {
+      selectedClassroomId = enrolledClassrooms[0].id;
+    }
+    if (selectedClassroomId) {
+      select.value = selectedClassroomId;
+    }
+  } else {
+    pickerWrap.classList.add('d-none');
+  }
+}
+
+async function loadRankings(targetClassroomId = null) {
+  if (targetClassroomId) {
+    selectedClassroomId = targetClassroomId;
+  }
+
+  let url = `/rankings?scope=${rankingScope}`;
+  if (rankingScope === 'classroom' && selectedClassroomId) {
+    url += `&classroom_id=${selectedClassroomId}`;
+  }
+
+  const { data } = await api(url);
   const list = data.data || [];
+
+  if (data.classrooms && data.classrooms.length > 0) {
+    enrolledClassrooms = data.classrooms;
+  }
+
+  if (rankingScope === 'classroom') {
+    if (data.classroom_id) {
+      selectedClassroomId = data.classroom_id;
+    }
+    updateRankingClassroomPicker();
+    const classroomName = data.classroom_name || enrolledClassrooms.find(c => c.id === selectedClassroomId)?.name || 'Mi Aula';
+    $('#ranking-scope-label').textContent = `Aula: ${classroomName}`;
+  } else {
+    updateRankingClassroomPicker();
+    $('#ranking-scope-label').textContent = 'Ámbito Global';
+  }
 
   const podiumContainer = $('#podium-container');
   const rankingsContainer = $('#rankings');
-
-  $('#ranking-scope-label').textContent = rankingScope === 'global' ? 'Ámbito Global' : 'Mi Aula';
 
   if (list.length > 0) {
     podiumContainer.classList.remove('d-none');
@@ -504,17 +852,19 @@ async function loadRankings() {
     const top2 = list[1] || null;
     const top3 = list[2] || null;
 
-    const renderPodiumItem = (student, rankClass, medal, rankNum, colSize) => {
+    const renderPodiumItem = (student, rankClass, rankBadgeClass, vectorIconClass, rankLabel, iconName, rankNum, colSize) => {
       if (!student) return '';
       const isMe = student.user_id === Auth.user.id;
       return `
         <div class="col-md-${colSize}">
           <div class="podium-card ${rankClass} h-100 shadow-sm">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="badge rounded-pill podium-rank-badge fw-bold px-2.5 py-1" style="font-size:.75rem;">
-                Puesto #${rankNum}
+              <span class="badge rounded-pill podium-rank-badge ${rankBadgeClass} fw-bold px-2.5 py-1" style="font-size:.75rem;">
+                <i class="bi ${iconName} me-1"></i> ${rankLabel}
               </span>
-              <span style="font-size:1.4rem;">${medal}</span>
+              <span class="podium-vector-icon ${vectorIconClass}">
+                <i class="bi ${iconName}"></i>
+              </span>
             </div>
             <div class="podium-avatar shadow-sm">
               <span class="fw-bold" style="font-size:1.2rem;">${student.name.charAt(0).toUpperCase()}</span>
@@ -532,9 +882,9 @@ async function loadRankings() {
     };
 
     let podiumHtml = '';
-    if (top2) podiumHtml += renderPodiumItem(top2, 'podium-2', '🥈', 2, 4);
-    if (top1) podiumHtml += renderPodiumItem(top1, 'podium-1', '🥇', 1, 4);
-    if (top3) podiumHtml += renderPodiumItem(top3, 'podium-3', '🥉', 3, 4);
+    if (top2) podiumHtml += renderPodiumItem(top2, 'podium-2', 'rank-2-badge', 'silver-icon', '2° Lugar', 'bi-award-fill', 2, 4);
+    if (top1) podiumHtml += renderPodiumItem(top1, 'podium-1', 'rank-1-badge', 'gold-icon', '1° Lugar', 'bi-award-fill', 1, 4);
+    if (top3) podiumHtml += renderPodiumItem(top3, 'podium-3', 'rank-3-badge', 'bronze-icon', '3° Lugar', 'bi-award-fill', 3, 4);
 
     podiumContainer.innerHTML = podiumHtml;
   } else {
@@ -542,14 +892,23 @@ async function loadRankings() {
   }
 
   const rows = list.map((r, i) => {
-    const medal = ['🥇', '🥈', '🥉'][i] ?? `<span class="text-muted fw-bold">#${r.position}</span>`;
+    let rankBadgeHtml = '';
+    if (i === 0) {
+      rankBadgeHtml = `<div class="rank-pos-badge rank-gold" title="1° Lugar">1</div>`;
+    } else if (i === 1) {
+      rankBadgeHtml = `<div class="rank-pos-badge rank-silver" title="2° Lugar">2</div>`;
+    } else if (i === 2) {
+      rankBadgeHtml = `<div class="rank-pos-badge rank-bronze" title="3° Lugar">3</div>`;
+    } else {
+      rankBadgeHtml = `<div class="rank-pos-badge rank-default">${r.position}</div>`;
+    }
     const me = r.user_id === Auth.user.id;
 
     return `
       <div class="ranking-row d-flex align-items-center gap-3 border rounded-4 px-3 py-2.5 ${me ? 'is-me' : ''}">
-        <div style="width:36px;text-align:center;font-size:1.15rem;">${medal}</div>
+        <div style="width:36px;display:flex;align-items:center;justify-content:center;">${rankBadgeHtml}</div>
         <div class="flex-grow-1">
-          <span style="font-size:.95rem;color:var(--edugt-text);">${esc(r.name)}</span>
+          <span style="font-size:.95rem;color:var(--edugt-text);font-weight:600;">${esc(r.name)}</span>
           ${me ? '<span class="badge bg-primary ms-2" style="font-size:.7rem;">Tú</span>' : ''}
         </div>
         <div class="text-muted" style="font-size:.85rem;">Nivel ${r.xp_level}</div>
@@ -559,17 +918,23 @@ async function loadRankings() {
       </div>`;
   });
 
-  rankingsContainer.innerHTML = rows.join('') || `
-    <div class="text-center py-4">
-      <i class="bi bi-people text-muted fs-2 mb-2"></i>
-      <p class="mb-0 text-muted">Aún no hay puntajes registrados en este ámbito.</p>
-    </div>`;
+  rankingsContainer.innerHTML = rows.join('') || (rankingScope === 'classroom'
+    ? `<div class="text-center py-4">
+        <i class="bi bi-people text-muted fs-2 mb-2"></i>
+        <h5 class="h6 fw-bold mb-1" style="color:var(--edugt-text);">No hay estudiantes en esta aula</h5>
+        <p class="mb-0 text-muted" style="font-size:.85rem;">Aún no se han registrado compañeros en esta aula.</p>
+      </div>`
+    : `<div class="text-center py-4">
+        <i class="bi bi-people text-muted fs-2 mb-2"></i>
+        <p class="mb-0 text-muted">Aún no hay puntajes registrados en este ámbito.</p>
+      </div>`);
 }
 
 $('#rk-global')?.addEventListener('click', async () => {
   rankingScope = 'global';
   $('#rk-global').className = 'btn btn-edugt';
   $('#rk-classroom').className = 'btn btn-google';
+  updateRankingClassroomPicker();
   await loadRankings();
 });
 
@@ -577,7 +942,16 @@ $('#rk-classroom')?.addEventListener('click', async () => {
   rankingScope = 'classroom';
   $('#rk-classroom').className = 'btn btn-edugt';
   $('#rk-global').className = 'btn btn-google';
-  await loadRankings();
+  if (!selectedClassroomId && enrolledClassrooms.length > 0) {
+    selectedClassroomId = enrolledClassrooms[0].id;
+  }
+  updateRankingClassroomPicker();
+  await loadRankings(selectedClassroomId);
+});
+
+$('#ranking-classroom-select')?.addEventListener('change', async (e) => {
+  selectedClassroomId = parseInt(e.target.value, 10);
+  await loadRankings(selectedClassroomId);
 });
 
 /* ---------------- Aulas del Estudiante (RF-19) ---------------- */
@@ -589,18 +963,21 @@ async function loadStudentClassrooms() {
   try {
     const { data } = await api('/classrooms');
     const classrooms = data.data || [];
+    enrolledClassrooms = classrooms;
 
     if (countBadge) {
       countBadge.textContent = `${classrooms.length} ${classrooms.length === 1 ? 'aula' : 'aulas'}`;
     }
 
+    updateRankingClassroomPicker();
+
     if (classrooms.length === 0) {
       container.innerHTML = `
-        <div class="text-center py-4 px-3" style="background:#FAF8FF;border-radius:16px;border:1px dashed var(--edugt-border);">
+        <div class="student-empty-classroom-box text-center py-4 px-3">
           <div class="stat-icon mx-auto mb-2" style="width:48px;height:48px;background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:1.3rem;border-radius:14px;">
             <i class="bi bi-people"></i>
           </div>
-          <h4 class="h6 fw-bold mb-1">Aún no estás inscrito en ningún aula</h4>
+          <h4 class="h6 fw-bold mb-1" style="color:var(--edugt-text);">Aún no estás inscrito en ningún aula</h4>
           <p class="text-muted mb-0" style="font-size:.84rem;max-width:340px;margin:0 auto;">
             Pídele a tu docente el código de inscripción de 8 caracteres e ingrésalo en el formulario de la izquierda.
           </p>
@@ -609,14 +986,14 @@ async function loadStudentClassrooms() {
     }
 
     container.innerHTML = classrooms.map(c => `
-      <div class="card-edugt p-3 border" style="border-color:var(--edugt-border)!important;background:#FFFFFF;">
+      <div class="card-edugt student-classroom-card p-3 border">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
           <div class="d-flex align-items-center gap-2.5">
             <div class="stat-icon" style="width:42px;height:42px;background:var(--edugt-green-soft);color:var(--edugt-green);font-size:1.2rem;border-radius:12px;">
               <i class="bi bi-mortarboard-fill"></i>
             </div>
             <div>
-              <h4 class="h6 fw-bold mb-0 text-dark">${esc(c.name)}</h4>
+              <h4 class="h6 fw-bold mb-0" style="color:var(--edugt-text);">${esc(c.name)}</h4>
               <small class="text-muted"><i class="bi bi-person-fill text-primary"></i> ${esc(c.teacher_name ? `Prof. ${c.teacher_name}` : 'Docente asignado')}</small>
             </div>
           </div>
@@ -631,8 +1008,8 @@ async function loadStudentClassrooms() {
           <span><i class="bi bi-calendar3 me-1"></i> Ciclo ${esc(c.academic_year)}</span>
         </div>
 
-        <button type="button" class="btn btn-sm btn-outline-primary w-100 fw-bold" onclick="window.viewClassroomRanking()">
-          <i class="bi bi-trophy me-1"></i> Ver ranking de mi aula
+        <button type="button" class="btn btn-sm btn-outline-primary w-100 fw-bold" onclick="window.viewClassroomRanking(${c.id})">
+          <i class="bi bi-trophy-fill me-1 text-warning"></i> Ver ranking de ${esc(c.name)}
         </button>
       </div>
     `).join('');
@@ -642,9 +1019,20 @@ async function loadStudentClassrooms() {
   }
 }
 
-window.viewClassroomRanking = function () {
+window.viewClassroomRanking = function (classroomId) {
+  rankingScope = 'classroom';
+  if (classroomId) {
+    selectedClassroomId = classroomId;
+  }
   window.switchStudentTab('ranking');
-  $('#rk-classroom')?.click();
+  $('#rk-classroom').className = 'btn btn-edugt';
+  $('#rk-global').className = 'btn btn-google';
+  updateRankingClassroomPicker();
+  const select = $('#ranking-classroom-select');
+  if (select && selectedClassroomId) {
+    select.value = selectedClassroomId;
+  }
+  loadRankings(selectedClassroomId);
 };
 
 $('#form-join-classroom')?.addEventListener('submit', async (e) => {
@@ -684,6 +1072,19 @@ $('#form-join-classroom')?.addEventListener('submit', async (e) => {
     btn.innerHTML = '<i class="bi bi-door-open-fill me-1"></i> Unirme al aula';
   }
 });
+
+const codeInput = $('#input-classroom-code');
+if (codeInput) {
+  const origPlaceholder = codeInput.placeholder || 'EJ: ABC12345';
+  codeInput.addEventListener('focus', () => {
+    codeInput.placeholder = '';
+  });
+  codeInput.addEventListener('blur', () => {
+    if (!codeInput.value.trim()) {
+      codeInput.placeholder = origPlaceholder;
+    }
+  });
+}
 
 /* ---------------- Logout ---------------- */
 async function logout() {

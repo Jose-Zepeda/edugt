@@ -4,7 +4,19 @@
    ========================================================================== */
 'use strict';
 
-const API_BASE = 'http://localhost:8080/api/v1';
+// 1. Inicializar tema inmediatamente en todas las páginas para evitar parpadeos
+(function initGlobalTheme() {
+  const savedTheme = localStorage.getItem('edugt_theme') || localStorage.getItem('edugt-theme') || 'light';
+  if (savedTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+})();
+
+const API_BASE = ['5500', '5501', '3000', '5173'].includes(window.location.port)
+  ? `http://${window.location.hostname || 'localhost'}:8080/api/v1`
+  : '/api/v1';
 
 /** Token Sanctum en memoria + respaldo sessionStorage (no localStorage: seguridad tesis). */
 const Auth = {
