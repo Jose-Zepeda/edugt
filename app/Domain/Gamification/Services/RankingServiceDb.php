@@ -19,11 +19,12 @@ final class RankingServiceDb implements RankingService
             ->orderByDesc('p.xp_total')
             ->orderBy('p.user_id')
             ->offset($offset)->limit($limit)
-            ->get(['p.user_id', 'u.name', 'p.xp_total', 'p.xp_level']);
+            ->get(['p.user_id', 'u.name', 'u.avatar_url', 'p.xp_total', 'p.xp_level']);
 
         return $rows->map(fn ($r, $i) => [
             'user_id' => $r->user_id,
             'name' => $r->name,
+            'avatar_url' => $r->avatar_url,
             'xp_total' => (int) $r->xp_total,
             'xp_level' => (int) $r->xp_level,
             'position' => $offset + $i + 1,
@@ -44,6 +45,7 @@ final class RankingServiceDb implements RankingService
             ->get([
                 'cs.student_id as user_id',
                 'u.name',
+                'u.avatar_url',
                 DB::raw('COALESCE(p.xp_total, 0) as xp_total'),
                 DB::raw('COALESCE(p.xp_level, 1) as xp_level'),
             ]);
@@ -51,6 +53,7 @@ final class RankingServiceDb implements RankingService
         return $rows->map(fn ($r, $i) => [
             'user_id' => (int) $r->user_id,
             'name' => $r->name,
+            'avatar_url' => $r->avatar_url,
             'xp_total' => (int) $r->xp_total,
             'xp_level' => (int) $r->xp_level,
             'position' => $offset + $i + 1,

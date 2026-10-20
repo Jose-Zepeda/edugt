@@ -290,6 +290,7 @@ final class ClassroomController extends Controller
                 'student_id' => $sid,
                 'name' => $m->student->name,
                 'email' => $m->student->email,
+                'avatar_url' => $m->student->avatar_url,
                 'learning_track' => $m->student->learning_track,
                 'joined_at' => $m->joined_at?->toIso8601String(),
                 'state' => $m->state,
