@@ -134,3 +134,33 @@ it('RF-28: comparación pre/post refleja ganancia media', function () {
     expect($prePost['paired_students'])->toBe(0);
     expect($prePost['post_avg'])->toBeNull();
 });
+
+it('RF-22/RF-28: estudiante graduado puede descargar su Certificado Oficial en PDF tras completar el Post-test', function () {
+    $student = User::query()->where('role', 'student')->first();
+    $studentToken = $student->createToken('spa')->plainTextToken;
+
+    // Sin Post-test completado → 403
+    postJson('/api/v1/me/certificate', [], ['Authorization' => "Bearer {$studentToken}"])
+        ->assertStatus(403);
+
+    $preTest = \App\Domain\Diagnostic\Models\DiagnosticTest::query()->create([
+        'kind' => 'pre', 'version' => 1, 'question_count' => 14, 'is_active' => true,
+    ]);
+    $postTest = \App\Domain\Diagnostic\Models\DiagnosticTest::query()->create([
+        'kind' => 'post', 'version' => 1, 'question_count' => 14, 'is_active' => true,
+    ]);
+
+    \App\Domain\Diagnostic\Models\DiagnosticAttempt::query()->create([
+        'user_id' => $student->id, 'diagnostic_test_id' => $preTest->id, 'kind' => 'pre',
+        'score_total' => 50, 'started_at' => now(), 'submitted_at' => now(), 'status' => 'completed',
+    ]);
+    \App\Domain\Diagnostic\Models\DiagnosticAttempt::query()->create([
+        'user_id' => $student->id, 'diagnostic_test_id' => $postTest->id, 'kind' => 'post',
+        'score_total' => 93, 'started_at' => now(), 'submitted_at' => now(), 'status' => 'completed',
+    ]);
+
+    $res = postJson('/api/v1/me/certificate', [], ['Authorization' => "Bearer {$studentToken}"])
+        ->assertStatus(200);
+
+    expect(str_starts_with($res->getContent(), '%PDF-'))->toBeTrue();
+});

@@ -17,11 +17,14 @@ final class DompdfReportExporter implements ReportExporter
             'classroom_performance' => 'reports.classroom_performance',
             'student_detail' => 'reports.student_detail',
             'pre_post_comparison' => 'reports.pre_post_comparison',
+            'student_certificate' => 'reports.student_certificate',
             default => abort(422, 'Tipo de reporte inválido.'),
         };
 
+        $orientation = $kind === 'student_certificate' ? 'landscape' : 'portrait';
+
         return PdfFacade::loadView($view, ['payload' => $payload])
-            ->setPaper('letter')
+            ->setPaper('letter', $orientation)
             ->output();
     }
 }

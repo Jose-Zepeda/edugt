@@ -52,6 +52,8 @@ Route::prefix('v1')->group(function (): void {
     // ---- Autenticado (Sanctum) ----
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/me', [AuthController::class, 'me'])->name('auth.me');
+        Route::put('/me/profile', [AuthController::class, 'updateProfile'])->name('auth.profile.update');
+        Route::put('/me/password', [AuthController::class, 'updatePassword'])->name('auth.password.update');
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
         // ---- Curriculum (RF-8, RF-9, RF-10) ----
@@ -64,6 +66,8 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/me/xp', [GamificationController::class, 'xp'])->name('gamification.xp');
         Route::get('/me/streak', [GamificationController::class, 'streak'])->name('gamification.streak');
         Route::get('/me/badges', [GamificationController::class, 'badges'])->name('gamification.badges');
+        Route::post('/me/badges/dismiss', [GamificationController::class, 'dismissBadgeNotification'])->name('gamification.badges.dismiss');
+        Route::post('/me/badges/{id}/dismiss', [GamificationController::class, 'dismissBadgeNotification'])->name('gamification.badges.dismiss.one');
         Route::get('/rankings', [GamificationController::class, 'rankings'])->name('gamification.rankings');
 
         // ---- Diagnostic (RF-6, RF-7, RF-28) ----
@@ -97,9 +101,11 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/classrooms/{id}/analytics', [ReportController::class, 'classroomAnalytics'])
             ->name('reports.analytics');
         Route::post('/reports', [ReportController::class, 'generate'])->name('reports.generate');
+        Route::post('/me/certificate', [ReportController::class, 'studentCertificate'])->name('reports.student.certificate');
 
         // ---- Soporte (RF-24) ----
         Route::post('/support/tickets', [SupportAuditController::class, 'createTicket'])->name('support.tickets.store');
+        Route::get('/support/tickets/my', [SupportAuditController::class, 'myTickets'])->name('support.tickets.my');
 
         // ---- Offline (RF-25..27) ----
         Route::get('/offline/bundle', [OfflineSyncController::class, 'bundle'])->name('offline.bundle');
@@ -107,6 +113,8 @@ Route::prefix('v1')->group(function (): void {
 
         // ---- Admin (RF-4, RB-02, RB-09) ----
         Route::prefix('admin')->group(function (): void {
+            Route::get('/metrics', [AdminController::class, 'metrics'])
+                ->name('admin.metrics');
             Route::get('/teachers', [AdminController::class, 'pendingTeachers'])
                 ->name('admin.teachers.pending');
             Route::post('/teachers/{id}/approve', [AdminController::class, 'approveTeacher'])

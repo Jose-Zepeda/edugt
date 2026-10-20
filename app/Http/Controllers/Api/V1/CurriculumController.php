@@ -50,12 +50,15 @@ final class CurriculumController extends Controller
                 'description' => $mission->description,
                 'xp_reward' => $mission->xp_reward,
                 'modules' => $mission->modules->map(function ($module) use ($progressMap, $lessonsIndex, $user) {
+                    $quizPassed = $this->unlockEvaluator->hasPassedModuleQuiz($user, $module);
+
                     return [
                         'id' => $module->id,
                         'title' => $module->title,
                         'required_level' => $module->required_level,
                         'status' => $module->status,
-                        'lessons' => $module->lessons->map(function (Lesson $lesson) use ($progressMap, $lessonsIndex, $user) {
+                        'quiz_passed' => $quizPassed,
+                        'lessons' => $module->lessons->map(function (Lesson $lesson) use ($progressMap, $lessonsIndex, $user, $quizPassed) {
                             $progress = $progressMap->get($lesson->id);
                             $lessonModel = $lessonsIndex[$lesson->id];
                             $fullLesson = $lessonModel ?? $lesson;
@@ -64,7 +67,8 @@ final class CurriculumController extends Controller
                                 'id' => $lesson->id,
                                 'title' => $fullLesson->title,
                                 'locked' => ! $this->unlockEvaluator->canAccess($user, $fullLesson),
-                                'completed' => $progress?->completed ?? false,
+                                'completed' => ($progress?->completed ?? false)
+                                    || ($fullLesson->requires_quiz_pass && $quizPassed),
                                 'time_spent_seconds' => $progress?->time_spent_seconds ?? 0,
                                 'estimated_minutes' => $fullLesson->estimated_minutes,
                                 'xp_reward' => $fullLesson->xp_reward,
@@ -81,7 +85,76 @@ final class CurriculumController extends Controller
             ];
         });
 
-        return response()->json(['data' => $data]);
+        $allModules = $data->flatMap(fn ($m) => $m['modules']);
+        $allModulesCompleted = $allModules->isNotEmpty() && $allModules->every(function ($mod) {
+            $lessonsAllDone = collect($mod['lessons'])->every(fn ($l) => (bool) $l['completed']);
+            $quizDone = $mod['quiz_id'] ? (bool) $mod['quiz_passed'] : true;
+            return $lessonsAllDone && $quizDone;
+        });
+
+        $diagAttempts = \App\Domain\Diagnostic\Models\DiagnosticAttempt::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'completed')
+            ->get()
+            ->keyBy('kind');
+
+        $preAttempt = $diagAttempts->get('pre');
+        $postAttempt = $diagAttempts->get('post');
+        $preCompleted = $preAttempt !== null || $user->learning_track !== null;
+        $postCompleted = $postAttempt !== null;
+
+        $dimensionLabels = [
+            'abstraction' => 'Abstracción',
+            'decomposition' => 'Descomposición',
+            'pattern_recognition' => 'Reconocimiento de Patrones',
+            'algorithms' => 'Algoritmos',
+            'variables' => 'Variables',
+            'conditionals' => 'Condicionales',
+            'loops' => 'Ciclos / Bucles',
+        ];
+
+        $dimensionsComparison = [];
+        foreach ($dimensionLabels as $dimKey => $dimLabel) {
+            $preDim = $preAttempt?->dimension_scores[$dimKey] ?? null;
+            $postDim = $postAttempt?->dimension_scores[$dimKey] ?? null;
+
+            $prePct = ($preDim && ($preDim['total'] ?? 0) > 0)
+                ? (int) round((($preDim['correct'] ?? 0) * 100) / $preDim['total'])
+                : null;
+            $postPct = ($postDim && ($postDim['total'] ?? 0) > 0)
+                ? (int) round((($postDim['correct'] ?? 0) * 100) / $postDim['total'])
+                : null;
+
+            $dimensionsComparison[] = [
+                'key' => $dimKey,
+                'label' => $dimLabel,
+                'pre_score' => $prePct,
+                'post_score' => $postPct,
+                'delta' => ($prePct !== null && $postPct !== null) ? ($postPct - $prePct) : null,
+            ];
+        }
+
+        $preScore = $preAttempt !== null ? (int) $preAttempt->score_total : null;
+        $postScore = $postAttempt !== null ? (int) $postAttempt->score_total : null;
+
+        return response()->json([
+            'data' => $data,
+            'diagnostic_status' => [
+                'pre_completed' => $preCompleted,
+                'pre_score' => $preScore,
+                'all_modules_completed' => $allModulesCompleted,
+                'post_unlocked' => $preCompleted && $allModulesCompleted,
+                'post_completed' => $postCompleted,
+                'post_score' => $postScore,
+                'post_submitted_at' => $postAttempt?->submitted_at?->timezone('America/Guatemala')->format('d/m/Y'),
+                'gain' => ($preScore !== null && $postScore !== null) ? ($postScore - $preScore) : null,
+                'certificate_available' => $allModulesCompleted && $postCompleted,
+                'certificate_folio' => ($allModulesCompleted && $postCompleted)
+                    ? sprintf('EDUGT-%s-%05d', ($postAttempt->submitted_at ?? now())->format('Y'), $user->id)
+                    : null,
+                'dimensions' => $dimensionsComparison,
+            ],
+        ]);
     }
 
     /** GET /api/v1/lessons/{id} */
