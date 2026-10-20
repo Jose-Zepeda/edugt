@@ -20,6 +20,11 @@ $badgesCount = $payload['badges_count'] ?? 0;
 $modules = $payload['modules'] ?? [];
 $issuedDate = $payload['issued_date'] ?? date('d/m/Y');
 $folio = $payload['folio'] ?? 'EDUGT-00000';
+
+$logoPath = public_path('img/logo-mark.jpg');
+$logoDataUri = is_file($logoPath)
+    ? 'data:image/jpeg;base64,'.base64_encode((string) file_get_contents($logoPath))
+    : null;
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -28,7 +33,7 @@ $folio = $payload['folio'] ?? 'EDUGT-00000';
 <title>Certificado Oficial EduGT — {{ $studentName }}</title>
 <style>
     @page {
-        margin: 22px 26px;
+        margin: 18px 24px;
     }
     body {
         font-family: DejaVu Sans, sans-serif;
@@ -45,54 +50,62 @@ $folio = $payload['folio'] ?? 'EDUGT-00000';
     .inner-frame {
         border: 1.5px solid #7c3aed;
         background-color: #ffffff;
-        padding: 24px 34px 20px 34px;
+        padding: 18px 32px 16px 32px;
         text-align: center;
     }
+    .logo-wrap {
+        margin: 0 auto 6px auto;
+    }
+    .logo-img {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+    }
     .top-kicker {
-        font-size: 10px;
+        font-size: 9.5px;
         font-weight: bold;
         letter-spacing: 2px;
         text-transform: uppercase;
         color: #6d28d9;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
     }
     .institution-title {
-        font-size: 13px;
+        font-size: 12.5px;
         font-weight: bold;
         color: #334155;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
     }
     .cert-main-title {
-        font-size: 25px;
+        font-size: 24px;
         font-weight: bold;
         color: #1e1b4b;
         text-transform: uppercase;
         letter-spacing: 1px;
-        margin: 0 0 6px 0;
+        margin: 0 0 5px 0;
     }
     .cert-subtitle {
         font-size: 11px;
         color: #475569;
-        margin: 0 0 12px 0;
+        margin: 0 0 10px 0;
     }
     .student-name {
-        font-size: 24px;
+        font-size: 23px;
         font-weight: bold;
         color: #5b21b6;
         border-bottom: 2px solid #ddd6fe;
         display: inline-block;
-        padding: 0 28px 5px 28px;
-        margin: 2px 0 12px 0;
+        padding: 0 28px 4px 28px;
+        margin: 2px 0 10px 0;
     }
     .cert-body-text {
-        font-size: 11px;
+        font-size: 10.8px;
         color: #334155;
-        line-height: 1.55;
+        line-height: 1.5;
         width: 88%;
-        margin: 0 auto 14px auto;
+        margin: 0 auto 12px auto;
     }
     .modules-pill-wrap {
-        margin: 0 auto 16px auto;
+        margin: 0 auto 14px auto;
     }
     .module-pill {
         display: inline-block;
@@ -107,18 +120,18 @@ $folio = $payload['folio'] ?? 'EDUGT-00000';
     }
     .stats-table {
         width: 92%;
-        margin: 0 auto 18px auto;
+        margin: 0 auto 14px auto;
         border-collapse: collapse;
     }
     .stats-cell {
         width: 25%;
         border: 1px solid #e2e8f0;
         background-color: #f8fafc;
-        padding: 8px 6px;
+        padding: 7px 6px;
         text-align: center;
     }
     .stats-val {
-        font-size: 14px;
+        font-size: 13.5px;
         font-weight: bold;
         color: #4c1d95;
         display: block;
@@ -132,7 +145,7 @@ $folio = $payload['folio'] ?? 'EDUGT-00000';
     }
     .signatures-table {
         width: 92%;
-        margin: 22px auto 8px auto;
+        margin: 18px auto 4px auto;
         border-collapse: collapse;
     }
     .signatures-table td {
@@ -176,6 +189,11 @@ $folio = $payload['folio'] ?? 'EDUGT-00000';
 <body>
 <div class="outer-frame">
     <div class="inner-frame">
+        @if ($logoDataUri)
+            <div class="logo-wrap">
+                <img src="{{ $logoDataUri }}" alt="Logo EduGT" class="logo-img">
+            </div>
+        @endif
         <div class="top-kicker">Plataforma Educativa Gamificada · EduGT Guatemala</div>
         <div class="institution-title">{{ $institution }} — {{ $classroomName }} (Ciclo {{ $academicYear }})</div>
 
