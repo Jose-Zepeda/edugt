@@ -15,6 +15,13 @@ class DevUsersSeeder extends Seeder
 {
     public function run(): void
     {
+        // Limpiar usuario temporal de diagnóstico OAuth si existiera
+        $tempOAuth = User::query()->where('email', 'test_oauth_check@edugt.test')->first();
+        if ($tempOAuth !== null) {
+            $tempOAuth->tokens()->delete();
+            $tempOAuth->delete();
+        }
+
         $admin = User::query()->firstOrCreate(
             ['email' => 'admin@edugt.test'],
             [

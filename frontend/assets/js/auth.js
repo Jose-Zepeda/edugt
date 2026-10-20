@@ -238,8 +238,24 @@ $('#link-to-login')?.addEventListener('click', (e) => {
   renderTurnstile();
 });
 
-/* ---------------- Sesión activa → panel directamente ---------------- */
+/* ---------------- Sesión activa → verificar token antes de redirigir al panel ---------------- */
 if (Auth.token && Auth.user) {
-  goPanel(Auth.user);
+  fetch(`${API_BASE}/me`, {
+    headers: { Authorization: `Bearer ${Auth.token}`, Accept: 'application/json' },
+  })
+    .then(async (res) => {
+      if (res.ok) {
+        const payload = await res.json();
+        if (payload?.user) {
+          Auth.save(Auth.token, payload.user);
+          goPanel(payload.user);
+        }
+      } else {
+        Auth.clear();
+      }
+    })
+    .catch(() => {
+      // Si no hay red o falla la verificación, no redirigir a ciegas
+    });
 }
 

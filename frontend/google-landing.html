@@ -69,7 +69,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="assets/js/api.js"></script>
+<script src="assets/js/api.js?v=20261020_03"></script>
 <script>
 'use strict';
 
@@ -94,6 +94,7 @@ async function boot() {
       const res = await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${TOKEN}`, Accept: 'application/json' } });
       if (res.ok) {
         const payload = await res.json();
+        Auth.clear();
         Auth.save(TOKEN, payload.user);
 
         const target = payload.user.role === 'teacher' ? 'docente.html'
@@ -155,6 +156,7 @@ document.getElementById('form-rol')?.addEventListener('submit', async (e) => {
       return;
     }
 
+    Auth.clear();
     Auth.save(payload.token, payload.user);
     window.location.href = payload.user.role === 'teacher' ? 'docente.html' : 'estudiante.html';
   } catch (err) {

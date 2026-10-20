@@ -104,8 +104,12 @@ final class AuthController extends Controller
             }
 
             $token = $user->createToken('google-oauth')->plainTextToken;
+            $loginParams = http_build_query([
+                'token' => $token,
+                'user_id' => $user->id,
+            ]);
 
-            return redirect()->away($this->feUrl('/google-landing.html?token='.$token.'&user_id='.$user->id));
+            return redirect()->away($this->feUrl('/google-landing.html?'.$loginParams));
         }
 
         /** @var \App\Domain\Auth\Data\RequireRoleChoice $outcome */
