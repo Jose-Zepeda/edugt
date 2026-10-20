@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class RankingServiceDb implements RankingService
 {
-    public function global(int $limit = 50, int $offset = 0): array
+    public function global(int $limit = 500, int $offset = 0): array
     {
         $rows = DB::table('users as u')
             ->leftJoin('user_xp_profiles as p', 'p.user_id', '=', 'u.id')
@@ -38,7 +38,7 @@ final class RankingServiceDb implements RankingService
         ])->all();
     }
 
-    public function forClassroom(int $classroomId, int $limit = 50, int $offset = 0): array
+    public function forClassroom(int $classroomId, int $limit = 500, int $offset = 0): array
     {
         $rows = DB::table('classroom_students as cs')
             ->join('users as u', 'u.id', '=', 'cs.student_id')
