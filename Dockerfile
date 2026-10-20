@@ -1,4 +1,4 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 # Instalar Nginx y extensiones PHP requeridas por Laravel 11 + Dompdf
 RUN apk add --no-cache \
@@ -21,6 +21,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 # 1. Instalar dependencias de Composer en capa cacheable
+ENV COMPOSER_ALLOW_SUPERUSER=1
 COPY backend/composer.json backend/composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 
