@@ -75,6 +75,10 @@ function switchTab(tabId) {
   } catch {
     // Ignorar si el navegador restringe el historial
   }
+
+  if (target === 'reportes' && Auth.user?.status !== 'pending_approval') {
+    loadLiveAnalytics($('#reporte-aula')?.value || '');
+  }
 }
 
 // Exponer globalmente para onclick inline
@@ -256,8 +260,376 @@ async function loadClassrooms() {
 function fillSelect(classrooms) {
   const sel = $('#reporte-aula');
   if (!sel) return;
-  sel.innerHTML = '<option value="">Todas mis aulas</option>' +
+  const prevVal = sel.value || '';
+  sel.innerHTML = '<option value="">Todas mis aulas (Consolidado)</option>' +
     classrooms.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  if (prevVal && classrooms.some((c) => String(c.id) === String(prevVal))) {
+    sel.value = prevVal;
+  }
+}
+
+$('#reporte-aula')?.addEventListener('change', (e) => {
+  loadLiveAnalytics(e.target.value || '');
+});
+
+async function loadLiveAnalytics(classroomId = '') {
+  const box = $('#live-analytics-dashboard');
+  if (!box) return;
+
+  box.innerHTML = `
+    <div class="card-edugt p-5 text-center mb-4">
+      <div class="spinner-border text-primary mb-3" role="status"></div>
+      <div class="fw-bold" style="color:var(--edugt-text);">Calculando analíticas e indicadores pedagógicos en tiempo real...</div>
+      <small class="text-muted">Consultando telemetría de lecciones, evaluaciones y diagnósticos Pre-test / Post-test</small>
+    </div>`;
+
+  try {
+    const query = classroomId ? `?classroom_id=${encodeURIComponent(classroomId)}` : '';
+    const { data } = await api(`/analytics/overview${query}`);
+    renderLiveAnalyticsDashboard(data.data, classroomId);
+  } catch (err) {
+    box.innerHTML = `
+      <div class="alert alert-warning rounded-4 border-0 shadow-sm">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        No se pudieron cargar las analíticas en vivo: ${esc(err.message || 'Error de conexión')}
+      </div>`;
+  }
+}
+
+function renderLiveAnalyticsDashboard(payload, selectedClassroomId = '') {
+  const box = $('#live-analytics-dashboard');
+  if (!box || !payload) return;
+
+  const meta = payload.meta || {};
+  const metrics = payload.metrics || {};
+  const prePost = payload.pre_post || {};
+  const dimensions = Array.isArray(payload.dimensions) ? payload.dimensions : [];
+  const modulesSummary = Array.isArray(payload.modules_summary) ? payload.modules_summary : [];
+  const atRisk = Array.isArray(payload.at_risk) ? payload.at_risk : [];
+  const topFailed = Array.isArray(payload.top_failed_questions) ? payload.top_failed_questions : [];
+
+  const studentsCount = meta.students_count ?? 0;
+  const avgProgress = meta.avg_course_progress ?? 0;
+  const passRate = metrics.pass_rate ?? 0;
+  const retentionRate = metrics.retention_rate ?? 0;
+
+  const preAvg = prePost.overall_pre_avg ?? prePost.pre_avg ?? null;
+  const postAvg = prePost.overall_post_avg ?? prePost.post_avg ?? null;
+  const meanGain = prePost.mean_gain !== null && prePost.mean_gain !== undefined
+    ? prePost.mean_gain
+    : (preAvg !== null && postAvg !== null ? Number((postAvg - preAvg).toFixed(1)) : null);
+  const hakeG = prePost.hake_g;
+  const hakeLevel = prePost.hake_level || 'Datos insuficientes';
+
+  let hakeBadgeClass = 'bg-secondary bg-opacity-10 text-muted border-secondary';
+  if (hakeG !== null && hakeG !== undefined) {
+    if (hakeG >= 0.7) hakeBadgeClass = 'bg-success bg-opacity-10 text-success border-success';
+    else if (hakeG >= 0.3) hakeBadgeClass = 'bg-primary bg-opacity-10 text-primary border-primary';
+    else hakeBadgeClass = 'bg-warning bg-opacity-10 text-warning border-warning';
+  }
+
+  const hakeBarPct = hakeG !== null && hakeG !== undefined
+    ? Math.min(100, Math.max(0, Math.round(hakeG * 100)))
+    : 0;
+
+  const dimsHtml = dimensions.map((d) => {
+    const pPre = d.pre_avg !== null && d.pre_avg !== undefined ? Math.round(d.pre_avg) : null;
+    const pPost = d.post_avg !== null && d.post_avg !== undefined ? Math.round(d.post_avg) : null;
+    const delta = (pPre !== null && pPost !== null) ? (pPost - pPre) : null;
+    const deltaBadge = delta !== null
+      ? `<span class="badge rounded-pill ${delta >= 0 ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger'} px-2 py-0.5" style="font-size:.7rem;">${delta >= 0 ? `+${delta}%` : `${delta}%`}</span>`
+      : `<span class="badge rounded-pill bg-secondary bg-opacity-10 text-muted px-2 py-0.5" style="font-size:.7rem;">Sin Post-test</span>`;
+
+    return `
+      <div class="p-2.5 rounded-3 border mb-2" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="fw-bold small" style="color:var(--edugt-text);font-size:.8rem;">${esc(d.label)}</span>
+          <div class="d-flex align-items-center gap-2">
+            <small class="text-muted" style="font-size:.73rem;">
+              Pre: <strong>${pPre !== null ? `${pPre}%` : '—'}</strong> · Post: <strong class="text-success">${pPost !== null ? `${pPost}%` : '—'}</strong>
+            </small>
+            ${deltaBadge}
+          </div>
+        </div>
+        <div class="d-flex flex-column gap-1">
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-muted" style="font-size:.66rem;width:28px;">Pre</span>
+            <div class="flex-grow-1 rounded-pill overflow-hidden" style="height:6px;background:rgba(148,163,184,0.2);">
+              <div style="width:${pPre ?? 0}%;height:100%;background:#6366f1;border-radius:999px;"></div>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-muted" style="font-size:.66rem;width:28px;">Post</span>
+            <div class="flex-grow-1 rounded-pill overflow-hidden" style="height:6px;background:rgba(148,163,184,0.2);">
+              <div style="width:${pPost ?? 0}%;height:100%;background:#10b981;border-radius:999px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const modulesHtml = modulesSummary.map((m) => {
+    const passPct = Math.min(100, Math.max(0, Math.round(m.pass_rate ?? 0)));
+    return `
+      <div class="col-12 col-md-4">
+        <div class="p-3.5 rounded-4 border h-100 d-flex flex-column justify-content-between" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+          <div>
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="badge rounded-pill px-2.5 py-1 fw-bold" style="background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:.73rem;">
+                Módulo ${m.number}
+              </span>
+              <span class="small text-muted fw-semibold" style="font-size:.75rem;">
+                <i class="bi bi-journal-text me-1"></i>${m.lessons_count} lecciones
+              </span>
+            </div>
+            <h5 class="h6 fw-bold mb-3" style="color:var(--edugt-text);">${esc(m.title)}</h5>
+            <div class="row g-2 mb-3 text-center">
+              <div class="col-4">
+                <div class="p-2 rounded-3 border" style="background:var(--edugt-card);border-color:var(--edugt-border)!important;">
+                  <div class="fw-bold" style="color:var(--edugt-text);font-size:.95rem;">${m.students_completed_lessons}/${studentsCount}</div>
+                  <div class="text-muted" style="font-size:.68rem;">Lecciones 100%</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-2 rounded-3 border" style="background:var(--edugt-card);border-color:var(--edugt-border)!important;">
+                  <div class="fw-bold text-primary" style="font-size:.95rem;">${m.avg_quiz_score !== null ? `${m.avg_quiz_score}%` : '—'}</div>
+                  <div class="text-muted" style="font-size:.68rem;">Nota Media Quiz</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-2 rounded-3 border" style="background:var(--edugt-card);border-color:var(--edugt-border)!important;">
+                  <div class="fw-bold text-success" style="font-size:.95rem;">${m.students_passed_quiz}/${studentsCount}</div>
+                  <div class="text-muted" style="font-size:.68rem;">Quiz Aprobado</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="d-flex justify-content-between small mb-1" style="font-size:.75rem;">
+              <span class="text-muted">Tasa de aprobación (${m.quiz_attempts} int.)</span>
+              <strong style="color:var(--edugt-text);">${passPct}%</strong>
+            </div>
+            <div class="teacher-progress-track" style="height:7px;">
+              <div class="teacher-progress-fill ${passPct >= 70 ? 'is-complete' : ''}" style="width:${passPct}%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const atRiskHtml = atRisk.length > 0
+    ? atRisk.map((r) => `
+      <div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 border mb-2" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+        <div class="min-w-0 pe-2">
+          <div class="fw-bold text-truncate small" style="color:var(--edugt-text);">${esc(r.name)}</div>
+          <div class="text-muted text-truncate" style="font-size:.74rem;">${esc(r.email)} · ${r.attempts} intentos fallidos</div>
+        </div>
+        <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2.5 py-1 fw-bold flex-shrink-0">
+          Prom: ${r.avg_score}%
+        </span>
+      </div>`).join('')
+    : `
+      <div class="p-4 text-center rounded-4 border" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+        <i class="bi bi-shield-check text-success fs-3 d-block mb-1"></i>
+        <div class="fw-bold small" style="color:var(--edugt-text);">Sin estudiantes en riesgo crítico</div>
+        <small class="text-muted" style="font-size:.78rem;">Ningún estudiante acumula ≥2 intentos reprobados con promedio &lt;60 pts.</small>
+      </div>`;
+
+  const topFailedHtml = topFailed.length > 0
+    ? topFailed.map((q) => `
+      <div class="p-2.5 rounded-3 border mb-2" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+        <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+          <span class="badge rounded-pill px-2 py-0.5" style="background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:.68rem;">
+            ${esc(q.module_title)}
+          </span>
+          <span class="badge rounded-pill bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-0.5 fw-bold" style="font-size:.72rem;">
+            ${q.error_rate}% error (${q.total} resp.)
+          </span>
+        </div>
+        <div class="small" style="color:var(--edugt-text);font-size:.8rem;line-height:1.35;">${esc(q.statement)}</div>
+      </div>`).join('')
+    : `
+      <div class="p-4 text-center rounded-4 border" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+        <i class="bi bi-check2-all text-primary fs-3 d-block mb-1"></i>
+        <div class="fw-bold small" style="color:var(--edugt-text);">Sin reactivos críticos</div>
+        <small class="text-muted" style="font-size:.78rem;">Aún no se registran respuestas suficientes para estimar tasas de error.</small>
+      </div>`;
+
+  box.innerHTML = `
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-1.5 fw-bold" style="font-size:.76rem;">
+          <i class="bi bi-broadcast me-1"></i> Analítica en Vivo
+        </span>
+        <h3 class="h6 fw-bold mb-0" style="color:var(--edugt-text);">${esc(meta.title || 'Consolidado de Aulas')}</h3>
+        <small class="text-muted d-none d-sm-inline" style="font-size:.78rem;">· Actualizado: ${esc(meta.generated_at || 'Ahora')}</small>
+      </div>
+      <button type="button" class="btn btn-sm btn-google px-3 py-1.5" id="btn-refresh-analytics">
+        <i class="bi bi-arrow-clockwise me-1"></i> Actualizar métricas
+      </button>
+    </div>
+
+    <!-- 4 KPIs Principales -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-xl-3">
+        <div class="card-edugt p-3.5 h-100">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <span class="small text-muted fw-bold text-uppercase" style="font-size:.7rem;letter-spacing:.04em;">Población</span>
+            <i class="bi bi-people-fill text-primary fs-5"></i>
+          </div>
+          <div class="h3 fw-bold mb-0" style="color:var(--edugt-text);">${studentsCount}</div>
+          <small class="text-muted" style="font-size:.78rem;">Estudiantes activos en nómina</small>
+        </div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="card-edugt p-3.5 h-100">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <span class="small text-muted fw-bold text-uppercase" style="font-size:.7rem;letter-spacing:.04em;">Avance Curricular</span>
+            <i class="bi bi-Map-fill bi-compass-fill text-info fs-5"></i>
+          </div>
+          <div class="h3 fw-bold mb-1" style="color:var(--edugt-primary);">${avgProgress}%</div>
+          <div class="teacher-progress-track" style="height:6px;">
+            <div class="teacher-progress-fill ${avgProgress >= 100 ? 'is-complete' : ''}" style="width:${Math.min(100, avgProgress)}%;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="card-edugt p-3.5 h-100">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <span class="small text-muted fw-bold text-uppercase" style="font-size:.7rem;letter-spacing:.04em;">Aprobación Quizzes</span>
+            <i class="bi bi-patch-check-fill text-success fs-5"></i>
+          </div>
+          <div class="h3 fw-bold mb-0 text-success">${passRate}%</div>
+          <small class="text-muted" style="font-size:.78rem;">${metrics.passed_attempts ?? 0} de ${metrics.total_attempts ?? 0} intentos (Prom: ${metrics.avg_score ?? 0}%)</small>
+        </div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="card-edugt p-3.5 h-100">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <span class="small text-muted fw-bold text-uppercase" style="font-size:.7rem;letter-spacing:.04em;">Retención (14d)</span>
+            <i class="bi bi-activity text-warning fs-5"></i>
+          </div>
+          <div class="h3 fw-bold mb-0" style="color:var(--edugt-text);">${retentionRate}%</div>
+          <small class="text-muted" style="font-size:.78rem;">${metrics.active_students_14d ?? 0} estudiantes con actividad reciente</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Eficacia Pedagógica (Pre-test vs Post-test + Hake) y 7 Dimensiones -->
+    <div class="card-edugt p-4 mb-4">
+      <div class="row g-4 align-items-start">
+        <div class="col-12 col-lg-5">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-graph-up-arrow text-primary fs-5"></i>
+            <h4 class="h6 fw-bold mb-0" style="color:var(--edugt-text);">Impacto Pedagógico y Ganancia de Hake</h4>
+          </div>
+          <p class="small text-muted mb-3">
+            Evaluación experimental del aprendizaje comparando el Diagnóstico Inicial (Pre-test) frente a la Evaluación Final (Post-test).
+          </p>
+
+          <div class="row g-2 mb-3 text-center">
+            <div class="col-4">
+              <div class="p-3 rounded-4 border" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+                <div class="small text-muted fw-bold text-uppercase" style="font-size:.68rem;">Pre-test (${prePost.pre_students ?? 0})</div>
+                <div class="h4 fw-bold mb-0 mt-1" style="color:#6366f1;">${preAvg !== null ? `${preAvg}%` : '—'}</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-3 rounded-4 border" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+                <div class="small text-muted fw-bold text-uppercase" style="font-size:.68rem;">Post-test (${prePost.post_students ?? 0})</div>
+                <div class="h4 fw-bold mb-0 mt-1 text-success">${postAvg !== null ? `${postAvg}%` : '—'}</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="p-3 rounded-4 border" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+                <div class="small text-muted fw-bold text-uppercase" style="font-size:.68rem;">Ganancia Δ</div>
+                <div class="h4 fw-bold mb-0 mt-1 ${meanGain !== null && meanGain >= 0 ? 'text-success' : 'text-muted'}">
+                  ${meanGain !== null ? (meanGain >= 0 ? `+${meanGain}` : `${meanGain}`) : '—'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-4 border" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+              <div>
+                <div class="small fw-bold" style="color:var(--edugt-text);">Índice de Ganancia Normalizada (Hake <em>g</em>)</div>
+                <small class="text-muted" style="font-size:.74rem;">Muestra emparejada: ${prePost.paired_students ?? 0} estudiantes con Pre y Post</small>
+              </div>
+              <span class="badge rounded-pill border px-2.5 py-1 fw-bold ${hakeBadgeClass}" style="font-size:.78rem;">
+                g = ${hakeG !== null && hakeG !== undefined ? hakeG : 'N/A'}
+              </span>
+            </div>
+            <div class="teacher-progress-track mb-2" style="height:8px;">
+              <div class="teacher-progress-fill ${hakeBarPct >= 70 ? 'is-complete' : ''}" style="width:${hakeBarPct}%;"></div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="small fw-semibold" style="color:var(--edugt-text);font-size:.78rem;">${esc(hakeLevel)}</span>
+              <span class="text-muted" style="font-size:.7rem;">Baja &lt;0.30 · Media 0.30–0.69 · Alta ≥0.70</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-7">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h4 class="h6 fw-bold mb-0" style="color:var(--edugt-text);">
+              <i class="bi bi-diagram-3-fill text-primary me-1"></i> Desempeño por Dimensión del Pensamiento Computacional
+            </h4>
+            <span class="small text-muted" style="font-size:.75rem;">7 ejes evaluados</span>
+          </div>
+          <div>
+            ${dimsHtml}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rendimiento por Módulo Curricular -->
+    <div class="card-edugt p-4 mb-4">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+          <h4 class="h6 fw-bold mb-0" style="color:var(--edugt-text);">
+            <i class="bi bi-layers-fill text-primary me-1"></i> Avance y Aprobación por Módulo Curricular
+          </h4>
+          <small class="text-muted">Desglose de lecciones completadas y evaluaciones sumativas por cada módulo</small>
+        </div>
+      </div>
+      <div class="row g-3">
+        ${modulesHtml}
+      </div>
+    </div>
+
+    <!-- Alertas Tempranas y Reactivos con Mayor Error -->
+    <div class="row g-4 mb-2">
+      <div class="col-12 col-lg-6">
+        <div class="card-edugt p-4 h-100">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h4 class="h6 fw-bold mb-0" style="color:var(--edugt-text);">
+              <i class="bi bi-exclamation-octagon-fill text-danger me-1"></i> Detección Temprana: Estudiantes en Riesgo
+            </h4>
+            <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger px-2.5 py-1 fw-bold" style="font-size:.74rem;">
+              ${atRisk.length} detectados
+            </span>
+          </div>
+          ${atRiskHtml}
+        </div>
+      </div>
+      <div class="col-12 col-lg-6">
+        <div class="card-edugt p-4 h-100">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h4 class="h6 fw-bold mb-0" style="color:var(--edugt-text);">
+              <i class="bi bi-patch-question-fill text-warning me-1"></i> Top 5 Reactivos con Mayor Tasa de Error
+            </h4>
+            <span class="small text-muted" style="font-size:.75rem;">Foco de refuerzo en clase</span>
+          </div>
+          ${topFailedHtml}
+        </div>
+      </div>
+    </div>`;
+
+  $('#btn-refresh-analytics')?.addEventListener('click', () => {
+    loadLiveAnalytics(selectedClassroomId);
+  });
 }
 
 /* ---------------- Modal Editar Aula ---------------- */
