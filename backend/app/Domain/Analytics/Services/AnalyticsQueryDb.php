@@ -74,7 +74,7 @@ final class AnalyticsQueryDb implements AnalyticsQuery
             ->whereIn('qa.user_id', $studentIds)
             ->groupBy('aa.question_id')
             ->selectRaw('aa.question_id, COUNT(*) as total, SUM(CASE WHEN aa.is_correct = 1 THEN 1 ELSE 0 END) as correct')
-            ->orderByRaw('(total - correct) / total DESC')
+            ->orderByRaw('1.0 * (total - correct) / total DESC')
             ->limit($limit)
             ->get()
             ->map(fn ($r) => [
