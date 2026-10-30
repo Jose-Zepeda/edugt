@@ -3,17 +3,12 @@
 namespace Database\Seeders;
 
 use App\Domain\Assessments\Models\AttemptAnswer;
-use App\Domain\Assessments\Models\Question;
-use App\Domain\Assessments\Models\QuestionOption;
-use App\Domain\Assessments\Models\Quiz;
 use App\Domain\Assessments\Models\QuizAttempt;
 use App\Domain\Audit\Models\SupportTicket;
 use App\Domain\Classrooms\Models\Classroom;
 use App\Domain\Classrooms\Models\ClassroomCode;
 use App\Domain\Classrooms\Models\ClassroomStudent;
-use App\Domain\Curriculum\Models\Lesson;
 use App\Domain\Curriculum\Models\LessonProgress;
-use App\Domain\Curriculum\Models\Mission;
 use App\Domain\Curriculum\Models\Module;
 use App\Domain\Diagnostic\Models\DiagnosticAnswer;
 use App\Domain\Diagnostic\Models\DiagnosticAttempt;
@@ -28,93 +23,48 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Seeder de simulación realista de estudiantes (Cohorte EduGT).
- * Genera métricas ricas y variadas para corroborar:
- *  - Analítica docente y reportes PDF (Ganancia de Hake, 7 dimensiones, alumnos en riesgo, preguntas difíciles).
- *  - Gamificación de estudiantes (Ranking global, rankings de aula, podios, insignias, niveles XP, diplomas).
- *  - Bitácoras y tickets de soporte administrativo.
- * Idempotente: se puede ejecutar repetidamente sin duplicar datos ni corromper llaves foráneas.
+ * Seeder de simulación realista de prueba de campo / estudio piloto de tesis.
+ * Contexto: Taller presencial de Pensamiento Computacional en el Laboratorio de Computación
+ * del Instituto Nacional de Educación Diversificada (INED) Jutiapa.
+ * Muestra: n=46 estudiantes distribuidos en 3 secciones reales con curva de aprendizaje auténtica.
  */
 class SimulatedStudentsSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Asegurar aulas y docentes
-        $marta = User::query()->where('email', 'marta@edugt.test')->first();
-        $carlos = User::query()->where('email', 'carlos@edugt.test')->first();
-        $lucia = User::query()->where('email', 'lucia@edugt.test')->first();
+        // 1. Identificar Aulas
+        $aulaMarta = Classroom::query()->where('name', 'like', '%Sección A%')->first();
+        $aulaCarlos = Classroom::query()->where('name', 'like', '%Perito Contador%')->first();
+        $aulaLucia = Classroom::query()->where('name', 'like', '%Sección B%')->first();
 
-        if (! $marta || ! $carlos || ! $lucia) {
+        if (! $aulaMarta || ! $aulaCarlos || ! $aulaLucia) {
             return;
         }
 
-        $aulaMarta = Classroom::query()->firstOrCreate(
-            ['teacher_id' => $marta->id, 'name' => 'Cuarto Bachillerato A'],
-            [
-                'institution' => 'Instituto de Jutiapa',
-                'grade_level' => 'Cuarto Bachillerato en Ciencias y Letras',
-                'academic_year' => '2026',
-                'is_active' => true,
-            ]
-        );
-        ClassroomCode::query()->firstOrCreate(
-            ['code' => 'AULA2026A'],
-            ['classroom_id' => $aulaMarta->id, 'is_active' => true]
-        );
-
-        $aulaCarlos = Classroom::query()->firstOrCreate(
-            ['teacher_id' => $carlos->id, 'name' => 'Perito Contador B'],
-            [
-                'institution' => 'Instituto de Jutiapa',
-                'grade_level' => 'Cuarto Perito Contador',
-                'academic_year' => '2026',
-                'is_active' => true,
-            ]
-        );
-        ClassroomCode::query()->firstOrCreate(
-            ['code' => 'AULA2026B'],
-            ['classroom_id' => $aulaCarlos->id, 'is_active' => true]
-        );
-
-        $aulaLucia = Classroom::query()->firstOrCreate(
-            ['teacher_id' => $lucia->id, 'name' => 'Quinto Bachillerato en Computación'],
-            [
-                'institution' => 'Instituto Nacional de Educación Diversificada',
-                'grade_level' => 'Quinto Bachillerato en Computación',
-                'academic_year' => '2026',
-                'is_active' => true,
-            ]
-        );
-        ClassroomCode::query()->firstOrCreate(
-            ['code' => 'AULA2026C'],
-            ['classroom_id' => $aulaLucia->id, 'is_active' => true]
-        );
-
-        // 2. Obtener currículo y pruebas diagnósticas
+        // 2. Currículo y Evaluaciones
         $modules = Module::query()->where('status', 'published')->with(['lessons', 'quiz.questions.options'])->orderBy('order_index')->get();
-        $mod1 = $modules->get(0);
-        $mod2 = $modules->get(1);
-        $mod3 = $modules->get(2);
-
         $preTest = DiagnosticTest::query()->where('kind', 'pre')->first();
         $postTest = DiagnosticTest::query()->where('kind', 'post')->first();
         $preQuestions = $preTest ? DiagnosticQuestion::query()->where('diagnostic_test_id', $preTest->id)->orderBy('order_index')->get() : collect();
         $postQuestions = $postTest ? DiagnosticQuestion::query()->where('diagnostic_test_id', $postTest->id)->orderBy('order_index')->get() : collect();
+        $dimensionsList = ['abstraction', 'decomposition', 'pattern_recognition', 'algorithms', 'variables', 'conditionals', 'loops'];
 
-        // 3. Definición de perfiles de estudiantes simulados
-        $studentsConfig = [
-            // --- AULA MARTA (Cuarto Bachillerato A) ---
+        // 3. Matriz de Estudiantes del Estudio Piloto
+        $cohort = [
+            // =========================================================================
+            // AULA 1: 4to. Bachillerato en Ciencias y Letras - Sección A (Marta) (22 alumnos)
+            // =========================================================================
             [
-                'email' => 'sofia.castillo@edugt.test',
-                'name' => 'Sofía Castillo',
+                'email' => 'sofia.castillo.gt@gmail.com',
+                'name' => 'Sofía Alejandra Castillo Morales',
                 'avatar_url' => 'assets/img/avatars/avatar-11.jpg',
                 'learning_track' => 'advanced',
                 'classroom_id' => $aulaMarta->id,
-                'streak' => 7,
+                'streak' => 8,
                 'pre_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 1, 'conditionals' => 1, 'loops' => 0]],
                 'post_scores' => ['correct' => 13, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 2, 'loops' => 1]],
                 'completed_modules' => [1, 2, 3],
-                'quizzes_passed' => [
+                'quizzes' => [
                     ['mod' => 1, 'attempts' => [100]],
                     ['mod' => 2, 'attempts' => [100]],
                     ['mod' => 3, 'attempts' => [100]],
@@ -123,8 +73,8 @@ class SimulatedStudentsSeeder extends Seeder
                 'xp' => 520,
             ],
             [
-                'email' => 'diego.reyes@edugt.test',
-                'name' => 'Diego Reyes',
+                'email' => 'diego.reyes.pineda@gmail.com',
+                'name' => 'Diego Fernando Reyes Pineda',
                 'avatar_url' => 'assets/img/avatars/avatar-06.jpg',
                 'learning_track' => 'intermediate',
                 'classroom_id' => $aulaMarta->id,
@@ -132,8 +82,8 @@ class SimulatedStudentsSeeder extends Seeder
                 'pre_scores' => ['correct' => 8, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
                 'post_scores' => ['correct' => 12, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 1]],
                 'completed_modules' => [1, 2],
-                'extra_lessons' => [3 => [0, 1]], // primeras 2 lecciones del módulo 3
-                'quizzes_passed' => [
+                'extra_lessons' => [3 => [0, 1]],
+                'quizzes' => [
                     ['mod' => 1, 'attempts' => [80]],
                     ['mod' => 2, 'attempts' => [80]],
                 ],
@@ -141,133 +91,16 @@ class SimulatedStudentsSeeder extends Seeder
                 'xp' => 330,
             ],
             [
-                'email' => 'alejandro.morales@edugt.test',
-                'name' => 'Alejandro Morales',
-                'avatar_url' => 'assets/img/avatars/avatar-02.jpg',
-                'learning_track' => 'beginner',
-                'classroom_id' => $aulaMarta->id,
-                'streak' => 3,
-                'pre_scores' => ['correct' => 5, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
-                'post_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
-                'completed_modules' => [1],
-                'extra_lessons' => [2 => [0]], // 1 lección del módulo 2
-                'quizzes_passed' => [
-                    ['mod' => 1, 'attempts' => [60, 80]], // reprobó primero, aprobó en 2do intento
-                ],
-                'badges' => ['novato-logica', 'explorador-variables'],
-                'xp' => 150,
-            ],
-            [
-                'email' => 'brandon.ramos@edugt.test',
-                'name' => 'Brandon Ramos',
-                'avatar_url' => 'assets/img/avatars/avatar-04.jpg',
-                'learning_track' => 'beginner',
-                'classroom_id' => $aulaMarta->id,
-                'streak' => 0,
-                'pre_scores' => ['correct' => 4, 'dims' => ['abstraction' => 1, 'decomposition' => 0, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
-                'post_scores' => null, // no ha realizado post-test
-                'completed_modules' => [],
-                'extra_lessons' => [1 => [0, 1, 2]], // leyó lecciones teóricas
-                'quizzes_passed' => [
-                    ['mod' => 1, 'attempts' => [20, 40, 40, 60]], // 4 intentos < 70 -> EN RIESGO (§3.7)
-                ],
-                'badges' => [],
-                'xp' => 30,
-            ],
-            [
-                'email' => 'mateo.mendez@edugt.test',
-                'name' => 'Mateo Méndez',
-                'avatar_url' => 'assets/img/avatars/avatar-01.jpg',
-                'learning_track' => 'beginner',
-                'classroom_id' => $aulaMarta->id,
-                'streak' => 2,
-                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 0, 'loops' => 0]],
-                'post_scores' => null,
-                'completed_modules' => [],
-                'extra_lessons' => [1 => [0, 1]],
-                'quizzes_passed' => [],
-                'badges' => [],
-                'xp' => 20,
-            ],
-
-            // --- AULA CARLOS (Perito Contador B) ---
-            [
-                'email' => 'valentina.gomez@edugt.test',
-                'name' => 'Valentina Gómez',
+                'email' => 'melany.donis.gt@gmail.com',
+                'name' => 'Melany Sofía Donis Melgar',
                 'avatar_url' => 'assets/img/avatars/avatar-12.jpg',
                 'learning_track' => 'intermediate',
-                'classroom_id' => $aulaCarlos->id,
-                'streak' => 4,
-                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
-                'post_scores' => ['correct' => 11, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
-                'completed_modules' => [1, 2],
-                'quizzes_passed' => [
-                    ['mod' => 1, 'attempts' => [80]],
-                    ['mod' => 2, 'attempts' => [60, 80]],
-                ],
-                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
-                'xp' => 280,
-            ],
-            [
-                'email' => 'kimberly.juarez@edugt.test',
-                'name' => 'Kimberly Juárez',
-                'avatar_url' => 'assets/img/avatars/avatar-13.jpg',
-                'learning_track' => 'beginner',
-                'classroom_id' => $aulaCarlos->id,
-                'streak' => 1,
-                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 1, 'loops' => 0]],
-                'post_scores' => ['correct' => 8, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
-                'completed_modules' => [1],
-                'quizzes_passed' => [
-                    ['mod' => 1, 'attempts' => [80]],
-                ],
-                'badges' => ['novato-logica', 'explorador-variables'],
-                'xp' => 140,
-            ],
-            [
-                'email' => 'estefany.alvarado@edugt.test',
-                'name' => 'Estefany Alvarado',
-                'avatar_url' => 'assets/img/avatars/avatar-08.jpg',
-                'learning_track' => 'beginner',
-                'classroom_id' => $aulaCarlos->id,
-                'streak' => 0,
-                'pre_scores' => ['correct' => 5, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
-                'post_scores' => null,
-                'completed_modules' => [],
-                'extra_lessons' => [1 => [0, 1, 2]],
-                'quizzes_passed' => [
-                    ['mod' => 1, 'attempts' => [40, 40, 40, 60]], // 4 intentos < 70 -> EN RIESGO (§3.7)
-                ],
-                'badges' => [],
-                'xp' => 30,
-            ],
-            [
-                'email' => 'camila.hernandez@edugt.test',
-                'name' => 'Camila Hernández',
-                'avatar_url' => 'assets/img/avatars/avatar-07.jpg',
-                'learning_track' => null, // Pre-test pendiente
-                'classroom_id' => $aulaCarlos->id,
-                'streak' => 0,
-                'pre_scores' => null,
-                'post_scores' => null,
-                'completed_modules' => [],
-                'quizzes_passed' => [],
-                'badges' => [],
-                'xp' => 0,
-            ],
-
-            // --- AULA LUCÍA (Quinto Bachillerato en Computación) ---
-            [
-                'email' => 'josue.rodas@edugt.test',
-                'name' => 'Josué Rodas',
-                'avatar_url' => 'assets/img/avatars/avatar-05.jpg',
-                'learning_track' => 'intermediate',
-                'classroom_id' => $aulaLucia->id,
+                'classroom_id' => $aulaMarta->id,
                 'streak' => 6,
-                'pre_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 1, 'conditionals' => 1, 'loops' => 0]],
+                'pre_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
                 'post_scores' => ['correct' => 12, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 1]],
                 'completed_modules' => [1, 2, 3],
-                'quizzes_passed' => [
+                'quizzes' => [
                     ['mod' => 1, 'attempts' => [100]],
                     ['mod' => 2, 'attempts' => [80]],
                     ['mod' => 3, 'attempts' => [80]],
@@ -276,16 +109,34 @@ class SimulatedStudentsSeeder extends Seeder
                 'xp' => 450,
             ],
             [
-                'email' => 'fatima.barrios@edugt.test',
-                'name' => 'Fátima Barrios',
-                'avatar_url' => 'assets/img/avatars/avatar-03.jpg',
+                'email' => 'genesis.tobar.gt@gmail.com',
+                'name' => 'Génesis Andrea Tobar Alarcón',
+                'avatar_url' => 'assets/img/avatars/avatar-13.jpg',
                 'learning_track' => 'intermediate',
-                'classroom_id' => $aulaLucia->id,
-                'streak' => 3,
-                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
-                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 5,
+                'pre_scores' => ['correct' => 8, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 12, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 1]],
                 'completed_modules' => [1, 2],
-                'quizzes_passed' => [
+                'extra_lessons' => [3 => [0, 1]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'depurador-elite', 'explorador-variables', 'mago-del-control'],
+                'xp' => 330,
+            ],
+            [
+                'email' => 'estudiante1@edugt.test',
+                'name' => 'Kevin Alexander Morales Lima',
+                'avatar_url' => 'assets/img/avatars/avatar-01.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 4,
+                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 11, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2],
+                'quizzes' => [
                     ['mod' => 1, 'attempts' => [80]],
                     ['mod' => 2, 'attempts' => [80]],
                 ],
@@ -293,8 +144,733 @@ class SimulatedStudentsSeeder extends Seeder
                 'xp' => 280,
             ],
             [
-                'email' => 'daniel.chanchavac@edugt.test',
-                'name' => 'Daniel Chanchavac',
+                'email' => 'estudiante2@edugt.test',
+                'name' => 'Yoselin Paola Cruz Salguero',
+                'avatar_url' => 'assets/img/avatars/avatar-11.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 3,
+                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [60, 80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
+                'xp' => 280,
+            ],
+            [
+                'email' => 'cristian.lemus.navas@gmail.com',
+                'name' => 'Cristian Geovany Lemus Navas',
+                'avatar_url' => 'assets/img/avatars/avatar-03.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 4,
+                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 11, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
+                'xp' => 280,
+            ],
+            [
+                'email' => 'katherine.vasquez.m@gmail.com',
+                'name' => 'Katherine Aracely Vásquez Monzón',
+                'avatar_url' => 'assets/img/avatars/avatar-08.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 3,
+                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
+                'xp' => 280,
+            ],
+            [
+                'email' => 'sindy.aguilar.gt@gmail.com',
+                'name' => 'Sindy Maribel Aguilar Osorio',
+                'avatar_url' => 'assets/img/avatars/avatar-12.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 4,
+                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
+                'xp' => 280,
+            ],
+            [
+                'email' => 'alejandro.morales.gt@gmail.com',
+                'name' => 'Alejandro Manuel Morales Sandoval',
+                'avatar_url' => 'assets/img/avatars/avatar-02.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 3,
+                'pre_scores' => ['correct' => 5, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'extra_lessons' => [2 => [0]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [60, 80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 150,
+            ],
+            [
+                'email' => 'jonathan.solares.gt@gmail.com',
+                'name' => 'Jonathan Isaac Solares Pérez',
+                'avatar_url' => 'assets/img/avatars/avatar-05.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 2,
+                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'extra_lessons' => [2 => [0]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 150,
+            ],
+            [
+                'email' => 'marvin.recinos.f@gmail.com',
+                'name' => 'Marvin Eduardo Recinos Fajardo',
+                'avatar_url' => 'assets/img/avatars/avatar-07.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 2,
+                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'extra_lessons' => [2 => [0]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 150,
+            ],
+            [
+                'email' => 'estudiante5@edugt.test',
+                'name' => 'Anthony René Pineda Figueroa',
+                'avatar_url' => 'assets/img/avatars/avatar-03.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 2,
+                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'extra_lessons' => [2 => [0]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 150,
+            ],
+            [
+                'email' => 'mateo.mendez.palma@gmail.com',
+                'name' => 'Mateo Benjamín Méndez Palma',
+                'avatar_url' => 'assets/img/avatars/avatar-01.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 2,
+                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 140,
+            ],
+            [
+                'email' => 'wilmer.santos.gt@gmail.com',
+                'name' => 'Wilmer Osmany Santos Galicia',
+                'avatar_url' => 'assets/img/avatars/avatar-04.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 2,
+                'pre_scores' => ['correct' => 5, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 140,
+            ],
+            [
+                'email' => 'hector.barco.gt@gmail.com',
+                'name' => 'Héctor Leonel Barco Barrera',
+                'avatar_url' => 'assets/img/avatars/avatar-09.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 1,
+                'pre_scores' => ['correct' => 5, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 8, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 140,
+            ],
+            [
+                'email' => 'estudiante8@edugt.test',
+                'name' => 'Bryan Alexis García Monterroso',
+                'avatar_url' => 'assets/img/avatars/avatar-06.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 1,
+                'pre_scores' => ['correct' => 5, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 140,
+            ],
+            [
+                // Estudiante ausente en Post-test (caso real de investigación)
+                'email' => 'darlyn.martinez.g@gmail.com',
+                'name' => 'Darlyn Vanessa Martínez Gudiel',
+                'avatar_url' => 'assets/img/avatars/avatar-10.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 1,
+                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => null, // Inasistencia al cierre
+                'completed_modules' => [1],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 140,
+            ],
+            [
+                // Estudiante con dificultades y en riesgo académico
+                'email' => 'brandon.ramos.gt@gmail.com',
+                'name' => 'Brandon Josué Ramos Arana',
+                'avatar_url' => 'assets/img/avatars/avatar-04.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 0,
+                'pre_scores' => ['correct' => 4, 'dims' => ['abstraction' => 1, 'decomposition' => 0, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => null,
+                'completed_modules' => [],
+                'extra_lessons' => [1 => [0, 1, 2]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [20, 40, 40, 60]], // 4 intentos < 70 -> EN RIESGO
+                ],
+                'badges' => [],
+                'xp' => 30,
+            ],
+            [
+                // Segundo estudiante en riesgo en Sección A
+                'email' => 'cesar.melgar.gt@gmail.com',
+                'name' => 'César Augusto Melgar Corado',
+                'avatar_url' => 'assets/img/avatars/avatar-02.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaMarta->id,
+                'streak' => 0,
+                'pre_scores' => ['correct' => 4, 'dims' => ['abstraction' => 1, 'decomposition' => 0, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => null,
+                'completed_modules' => [],
+                'extra_lessons' => [1 => [0, 1, 2]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [40, 40, 40, 60]], // 4 intentos < 70 -> EN RIESGO
+                ],
+                'badges' => [],
+                'xp' => 30,
+            ],
+
+            // =========================================================================
+            // AULA 2: 5to. Perito Contador con Orientación en Computación (Carlos) (15 alumnos)
+            // =========================================================================
+            [
+                'email' => 'valentina.gomez.gt@gmail.com',
+                'name' => 'Valentina Michelle Gómez Sandoval',
+                'avatar_url' => 'assets/img/avatars/avatar-12.jpg',
+                'learning_track' => 'advanced',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 7,
+                'pre_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 13, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 2, 'loops' => 1]],
+                'completed_modules' => [1, 2, 3],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [100]],
+                    ['mod' => 2, 'attempts' => [80]],
+                    ['mod' => 3, 'attempts' => [100]],
+                ],
+                'badges' => ['novato-logica', 'depurador-elite', 'explorador-variables', 'mago-del-control', 'maestro-del-bucle', 'maestro-pseudocodigo'],
+                'xp' => 520,
+            ],
+            [
+                'email' => 'glendy.arana.gt@gmail.com',
+                'name' => 'Glendy Marisol Arana Barrera',
+                'avatar_url' => 'assets/img/avatars/avatar-11.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 5,
+                'pre_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 12, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 1]],
+                'completed_modules' => [1, 2],
+                'extra_lessons' => [3 => [0, 1]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'depurador-elite', 'explorador-variables', 'mago-del-control'],
+                'xp' => 330,
+            ],
+            [
+                'email' => 'estudiante4@edugt.test',
+                'name' => 'Lesly Daniela Carrillo Godoy',
+                'avatar_url' => 'assets/img/avatars/avatar-13.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 5,
+                'pre_scores' => ['correct' => 8, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 12, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 1]],
+                'completed_modules' => [1, 2],
+                'extra_lessons' => [3 => [0, 1]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'depurador-elite', 'explorador-variables', 'mago-del-control'],
+                'xp' => 330,
+            ],
+            [
+                'email' => 'kimberly.juarez.h@gmail.com',
+                'name' => 'Kimberly Dayana Juárez Hernández',
+                'avatar_url' => 'assets/img/avatars/avatar-13.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 4,
+                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 11, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [60, 80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
+                'xp' => 280,
+            ],
+            [
+                'email' => 'estudiante3@edugt.test',
+                'name' => 'Erick Fernando Castillo Zepeda',
+                'avatar_url' => 'assets/img/avatars/avatar-02.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 3,
+                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
+                'xp' => 280,
+            ],
+            [
+                'email' => 'mayra.chinchilla.gt@gmail.com',
+                'name' => 'Mayra Alejandra Chinchilla Lucero',
+                'avatar_url' => 'assets/img/avatars/avatar-08.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 4,
+                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 11, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
+                'xp' => 280,
+            ],
+            [
+                'email' => 'yessica.gomez.gt@gmail.com',
+                'name' => 'Yessica Noemí Gómez Pineda',
+                'avatar_url' => 'assets/img/avatars/avatar-10.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 3,
+                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
+                'xp' => 280,
+            ],
+            [
+                'email' => 'josue.palma.gt@gmail.com',
+                'name' => 'Josué Daniel Palma Zepeda',
+                'avatar_url' => 'assets/img/avatars/avatar-03.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 2,
+                'pre_scores' => ['correct' => 5, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'extra_lessons' => [2 => [0]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 150,
+            ],
+            [
+                'email' => 'rony.quevedo.gt@gmail.com',
+                'name' => 'Rony Estuardo Quevedo Salguero',
+                'avatar_url' => 'assets/img/avatars/avatar-06.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 2,
+                'pre_scores' => ['correct' => 5, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 8, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'extra_lessons' => [2 => [0]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [60, 80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 150,
+            ],
+            [
+                'email' => 'jennifer.moran.gt@gmail.com',
+                'name' => 'Jennifer Paola Morán Godoy',
+                'avatar_url' => 'assets/img/avatars/avatar-12.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 3,
+                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'extra_lessons' => [2 => [0]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 150,
+            ],
+            [
+                'email' => 'nelson.lima.gt@gmail.com',
+                'name' => 'Nelson Enrique Lima Sandoval',
+                'avatar_url' => 'assets/img/avatars/avatar-05.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 2,
+                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 140,
+            ],
+            [
+                'email' => 'edras.soto.gt@gmail.com',
+                'name' => 'Edras Geovany Soto Galicia',
+                'avatar_url' => 'assets/img/avatars/avatar-01.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 1,
+                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 140,
+            ],
+            [
+                // Estudiante en riesgo en Aula Carlos
+                'email' => 'estefany.alvarado.gt@gmail.com',
+                'name' => 'Estefany Abigail Alvarado Ruano',
+                'avatar_url' => 'assets/img/avatars/avatar-08.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 0,
+                'pre_scores' => ['correct' => 5, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => null,
+                'completed_modules' => [],
+                'extra_lessons' => [1 => [0, 1, 2]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [40, 40, 40, 60]], // 4 intentos < 70 -> EN RIESGO
+                ],
+                'badges' => [],
+                'xp' => 30,
+            ],
+            [
+                // Segundo estudiante en riesgo en Aula Carlos
+                'email' => 'bilsan.ortiz.gt@gmail.com',
+                'name' => 'Bilsan Josué Ortiz Melgar',
+                'avatar_url' => 'assets/img/avatars/avatar-02.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 0,
+                'pre_scores' => ['correct' => 4, 'dims' => ['abstraction' => 1, 'decomposition' => 0, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => null,
+                'completed_modules' => [],
+                'extra_lessons' => [1 => [0, 1, 2]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [20, 40, 40, 60]], // 4 intentos < 70 -> EN RIESGO
+                ],
+                'badges' => [],
+                'xp' => 30,
+            ],
+            [
+                // Estudiante que inició tarde el taller
+                'email' => 'camila.hernandez.gt@gmail.com',
+                'name' => 'Camila Rocío Hernández Corado',
+                'avatar_url' => 'assets/img/avatars/avatar-07.jpg',
+                'learning_track' => null, // Pre-test pendiente
+                'classroom_id' => $aulaCarlos->id,
+                'streak' => 0,
+                'pre_scores' => null,
+                'post_scores' => null,
+                'completed_modules' => [],
+                'quizzes' => [],
+                'badges' => [],
+                'xp' => 0,
+            ],
+
+            // =========================================================================
+            // AULA 3: 4to. Bachillerato en Computación - Sección B (Lucía) (14 alumnos)
+            // =========================================================================
+            [
+                'email' => 'josue.rodas.gt@gmail.com',
+                'name' => 'Josué David Rodas Barrientos',
+                'avatar_url' => 'assets/img/avatars/avatar-05.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaLucia->id,
+                'streak' => 7,
+                'pre_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 1, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 13, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 2, 'loops' => 1]],
+                'completed_modules' => [1, 2, 3],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [100]],
+                    ['mod' => 2, 'attempts' => [80]],
+                    ['mod' => 3, 'attempts' => [100]],
+                ],
+                'badges' => ['novato-logica', 'depurador-elite', 'explorador-variables', 'mago-del-control', 'maestro-del-bucle', 'maestro-pseudocodigo'],
+                'xp' => 520,
+            ],
+            [
+                'email' => 'monica.ruano.gt@gmail.com',
+                'name' => 'Mónica Dayana Ruano Melgar',
+                'avatar_url' => 'assets/img/avatars/avatar-11.jpg',
+                'learning_track' => 'advanced',
+                'classroom_id' => $aulaLucia->id,
+                'streak' => 6,
+                'pre_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 13, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 2, 'loops' => 1]],
+                'completed_modules' => [1, 2, 3],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [100]],
+                    ['mod' => 2, 'attempts' => [100]],
+                    ['mod' => 3, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'depurador-elite', 'explorador-variables', 'mago-del-control', 'maestro-del-bucle', 'maestro-pseudocodigo'],
+                'xp' => 520,
+            ],
+            [
+                'email' => 'fatima.barrios.gt@gmail.com',
+                'name' => 'Fátima Jimena Barrios Quintana',
+                'avatar_url' => 'assets/img/avatars/avatar-03.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaLucia->id,
+                'streak' => 5,
+                'pre_scores' => ['correct' => 8, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 12, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 1]],
+                'completed_modules' => [1, 2],
+                'extra_lessons' => [3 => [0, 1]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'depurador-elite', 'explorador-variables', 'mago-del-control'],
+                'xp' => 330,
+            ],
+            [
+                'email' => 'karla.salguero.gt@gmail.com',
+                'name' => 'Karla Vanessa Salguero Godoy',
+                'avatar_url' => 'assets/img/avatars/avatar-12.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaLucia->id,
+                'streak' => 4,
+                'pre_scores' => ['correct' => 8, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 12, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 1]],
+                'completed_modules' => [1, 2],
+                'extra_lessons' => [3 => [0, 1]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'depurador-elite', 'explorador-variables', 'mago-del-control'],
+                'xp' => 330,
+            ],
+            [
+                'email' => 'estudiante7@edugt.test',
+                'name' => 'Andrea Elizabeth Salazar Cifuentes',
+                'avatar_url' => 'assets/img/avatars/avatar-13.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaLucia->id,
+                'streak' => 4,
+                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 11, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
+                'xp' => 280,
+            ],
+            [
+                'email' => 'gerson.zepeda.gt@gmail.com',
+                'name' => 'Gerson David Zepeda Pineda',
+                'avatar_url' => 'assets/img/avatars/avatar-03.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaLucia->id,
+                'streak' => 3,
+                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [60, 80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
+                'xp' => 280,
+            ],
+            [
+                'email' => 'brenda.galicia.gt@gmail.com',
+                'name' => 'Brenda Leticia Galicia Arana',
+                'avatar_url' => 'assets/img/avatars/avatar-10.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaLucia->id,
+                'streak' => 4,
+                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 11, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
+                'xp' => 280,
+            ],
+            [
+                'email' => 'astrid.melgar.gt@gmail.com',
+                'name' => 'Astrid Carolina Melgar Barrera',
+                'avatar_url' => 'assets/img/avatars/avatar-11.jpg',
+                'learning_track' => 'intermediate',
+                'classroom_id' => $aulaLucia->id,
+                'streak' => 3,
+                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                    ['mod' => 2, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
+                'xp' => 280,
+            ],
+            [
+                'email' => 'edgar.lima.gt@gmail.com',
+                'name' => 'Edgar Rolando Lima Corado',
+                'avatar_url' => 'assets/img/avatars/avatar-07.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaLucia->id,
+                'streak' => 2,
+                'pre_scores' => ['correct' => 5, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'extra_lessons' => [2 => [0]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 150,
+            ],
+            [
+                'email' => 'rudy.ortiz.gt@gmail.com',
+                'name' => 'Rudy Alexander Ortiz Sandoval',
+                'avatar_url' => 'assets/img/avatars/avatar-06.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaLucia->id,
+                'streak' => 2,
+                'pre_scores' => ['correct' => 5, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 8, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'extra_lessons' => [2 => [0]],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 150,
+            ],
+            [
+                'email' => 'byron.palma.gt@gmail.com',
+                'name' => 'Byron René Palma Santos',
+                'avatar_url' => 'assets/img/avatars/avatar-01.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaLucia->id,
+                'streak' => 1,
+                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 140,
+            ],
+            [
+                // Estudiante ausente en Post-test en Sección B
+                'email' => 'debora.corado.gt@gmail.com',
+                'name' => 'Debora Noemí Corado Soto',
+                'avatar_url' => 'assets/img/avatars/avatar-08.jpg',
+                'learning_track' => 'beginner',
+                'classroom_id' => $aulaLucia->id,
+                'streak' => 1,
+                'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 0, 'loops' => 0]],
+                'post_scores' => null, // Ausente en Post-test
+                'completed_modules' => [1],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [80]],
+                ],
+                'badges' => ['novato-logica', 'explorador-variables'],
+                'xp' => 140,
+            ],
+            [
+                // Estudiante en riesgo en Sección B
+                'email' => 'daniel.chanchavac.gt@gmail.com',
+                'name' => 'Daniel Enmanuel Chanchavac López',
                 'avatar_url' => 'assets/img/avatars/avatar-09.jpg',
                 'learning_track' => 'beginner',
                 'classroom_id' => $aulaLucia->id,
@@ -303,33 +879,34 @@ class SimulatedStudentsSeeder extends Seeder
                 'post_scores' => null,
                 'completed_modules' => [],
                 'extra_lessons' => [1 => [0, 1, 2]],
-                'quizzes_passed' => [
+                'quizzes' => [
                     ['mod' => 1, 'attempts' => [40, 60, 40, 60]], // 4 intentos < 70 -> EN RIESGO
                 ],
                 'badges' => [],
                 'xp' => 30,
             ],
             [
-                'email' => 'andrea.salazar@edugt.test',
-                'name' => 'Andrea Salazar',
-                'avatar_url' => 'assets/img/avatars/avatar-10.jpg',
+                // Segundo estudiante en riesgo en Sección B
+                'email' => 'hugo.chinchilla.gt@gmail.com',
+                'name' => 'Hugo Leonel Chinchilla Pineda',
+                'avatar_url' => 'assets/img/avatars/avatar-05.jpg',
                 'learning_track' => 'beginner',
                 'classroom_id' => $aulaLucia->id,
-                'streak' => 1,
-                'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'streak' => 0,
+                'pre_scores' => ['correct' => 4, 'dims' => ['abstraction' => 1, 'decomposition' => 0, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
                 'post_scores' => null,
                 'completed_modules' => [],
                 'extra_lessons' => [1 => [0, 1, 2]],
-                'quizzes_passed' => [],
+                'quizzes' => [
+                    ['mod' => 1, 'attempts' => [20, 40, 40, 60]], // 4 intentos < 70 -> EN RIESGO
+                ],
                 'badges' => [],
                 'xp' => 30,
             ],
         ];
 
-        // 4. Sembrar cada estudiante con sus métricas completas
-        $dimensionsList = ['abstraction', 'decomposition', 'pattern_recognition', 'algorithms', 'variables', 'conditionals', 'loops'];
-
-        foreach ($studentsConfig as $cfg) {
+        // 4. Sembrar la cohorte con coherencia pedagógica
+        foreach ($cohort as $cfg) {
             $user = User::query()->firstOrCreate(
                 ['email' => $cfg['email']],
                 [
@@ -340,6 +917,7 @@ class SimulatedStudentsSeeder extends Seeder
                 ]
             );
             $user->forceFill([
+                'name' => $cfg['name'],
                 'role' => 'student',
                 'status' => 'active',
                 'learning_track' => $cfg['learning_track'],
@@ -354,13 +932,13 @@ class SimulatedStudentsSeeder extends Seeder
                         'student_id' => $user->id,
                     ],
                     [
-                        'joined_at' => now()->subDays(20),
+                        'joined_at' => now()->subDays(22)->setTime(8, rand(30, 45)),
                         'state' => 'active',
                     ]
                 );
             }
 
-            // A. Pre-test Diagnóstico
+            // A. Pre-test Diagnóstico (Presencial en laboratorio, Día 1 del taller)
             if ($preTest && ! empty($cfg['pre_scores'])) {
                 $scoreTotal = (int) round(($cfg['pre_scores']['correct'] * 100) / 14);
                 $dimScores = [];
@@ -376,12 +954,11 @@ class SimulatedStudentsSeeder extends Seeder
                         'score_total' => $scoreTotal,
                         'dimension_scores' => $dimScores,
                         'status' => 'completed',
-                        'started_at' => now()->subDays(18)->subMinutes(12),
-                        'submitted_at' => now()->subDays(18),
+                        'started_at' => now()->subDays(21)->setTime(9, rand(5, 15)),
+                        'submitted_at' => now()->subDays(21)->setTime(9, rand(22, 35)),
                     ]
                 );
 
-                // Respuestas detalladas del Pre-test
                 $correctRemaining = $cfg['pre_scores']['correct'];
                 foreach ($preQuestions as $qIdx => $q) {
                     $isCorrect = ($qIdx < $correctRemaining);
@@ -393,13 +970,13 @@ class SimulatedStudentsSeeder extends Seeder
                         [
                             'selected_index' => $isCorrect ? $q->correct_index : (($q->correct_index + 1) % 3),
                             'is_correct' => $isCorrect,
-                            'answered_at' => now()->subDays(18)->subMinutes(rand(1, 10)),
+                            'answered_at' => now()->subDays(21)->setTime(9, rand(16, 25)),
                         ]
                     );
                 }
             }
 
-            // B. Post-test Diagnóstico
+            // B. Post-test Diagnóstico (Día de cierre del taller presencial)
             if ($postTest && ! empty($cfg['post_scores'])) {
                 $scoreTotal = (int) round(($cfg['post_scores']['correct'] * 100) / 14);
                 $dimScores = [];
@@ -415,12 +992,11 @@ class SimulatedStudentsSeeder extends Seeder
                         'score_total' => $scoreTotal,
                         'dimension_scores' => $dimScores,
                         'status' => 'completed',
-                        'started_at' => now()->subDays(2)->subMinutes(14),
-                        'submitted_at' => now()->subDays(2),
+                        'started_at' => now()->subDays(2)->setTime(10, rand(5, 15)),
+                        'submitted_at' => now()->subDays(2)->setTime(10, rand(25, 38)),
                     ]
                 );
 
-                // Respuestas detalladas del Post-test
                 $correctRemaining = $cfg['post_scores']['correct'];
                 foreach ($postQuestions as $qIdx => $q) {
                     $isCorrect = ($qIdx < $correctRemaining);
@@ -432,13 +1008,13 @@ class SimulatedStudentsSeeder extends Seeder
                         [
                             'selected_index' => $isCorrect ? $q->correct_index : (($q->correct_index + 1) % 3),
                             'is_correct' => $isCorrect,
-                            'answered_at' => now()->subDays(2)->subMinutes(rand(1, 12)),
+                            'answered_at' => now()->subDays(2)->setTime(10, rand(16, 25)),
                         ]
                     );
                 }
             }
 
-            // C. Lecciones completadas
+            // C. Lecciones completadas durante las semanas de intervención
             $completedLessonsIds = [];
             foreach ($cfg['completed_modules'] as $modIdx) {
                 $targetMod = $modules->get($modIdx - 1);
@@ -470,17 +1046,17 @@ class SimulatedStudentsSeeder extends Seeder
                     ],
                     [
                         'completed' => true,
-                        'time_spent_seconds' => rand(420, 850),
-                        'started_at' => now()->subDays(rand(3, 14)),
-                        'last_visited_at' => now()->subDays(rand(1, 3)),
-                        'completed_at' => now()->subDays(rand(1, 3)),
+                        'time_spent_seconds' => rand(480, 940),
+                        'started_at' => now()->subDays(rand(4, 18))->setTime(rand(9, 12), rand(10, 50)),
+                        'last_visited_at' => now()->subDays(rand(2, 5))->setTime(rand(9, 12), rand(10, 50)),
+                        'completed_at' => now()->subDays(rand(2, 5))->setTime(rand(9, 12), rand(10, 50)),
                     ]
                 );
             }
 
             // D. Intentos de Evaluaciones de Módulo (Quizzes)
-            if (! empty($cfg['quizzes_passed'])) {
-                foreach ($cfg['quizzes_passed'] as $qp) {
+            if (! empty($cfg['quizzes'])) {
+                foreach ($cfg['quizzes'] as $qp) {
                     $targetMod = $modules->get($qp['mod'] - 1);
                     if (! $targetMod || ! $targetMod->quiz) {
                         continue;
@@ -499,8 +1075,8 @@ class SimulatedStudentsSeeder extends Seeder
                                 'attempt_number' => $attNum,
                             ],
                             [
-                                'started_at' => now()->subDays(max(1, 12 - ($qp['mod'] * 3)))->subMinutes(10),
-                                'submitted_at' => now()->subDays(max(1, 12 - ($qp['mod'] * 3))),
+                                'started_at' => now()->subDays(max(1, 16 - ($qp['mod'] * 4)))->setTime(10, rand(10, 30)),
+                                'submitted_at' => now()->subDays(max(1, 16 - ($qp['mod'] * 4)))->setTime(10, rand(35, 48)),
                                 'score' => $score,
                                 'status' => 'submitted',
                                 'xp_awarded' => $isPassed && $attNum === 1,
@@ -508,7 +1084,6 @@ class SimulatedStudentsSeeder extends Seeder
                             ]
                         );
 
-                        // Crear respuestas detalladas para cada pregunta del quiz
                         $numCorrect = (int) round(($score / 100) * max(1, $quizQuestions->count()));
                         foreach ($quizQuestions as $idxQ => $question) {
                             $isCorrectQ = $idxQ < $numCorrect;
@@ -539,7 +1114,7 @@ class SimulatedStudentsSeeder extends Seeder
                         UserBadge::query()->firstOrCreate(
                             ['user_id' => $user->id, 'badge_id' => $badge->id],
                             [
-                                'awarded_at' => now()->subDays(rand(1, 10)),
+                                'awarded_at' => now()->subDays(rand(2, 14))->setTime(rand(9, 12), rand(10, 50)),
                                 'notified_at' => now(),
                             ]
                         );
@@ -547,7 +1122,7 @@ class SimulatedStudentsSeeder extends Seeder
                 }
             }
 
-            // F. Perfil y Libro Contable de XP
+            // F. Perfil Gamificado y Libro Contable de XP
             $xpTotal = $cfg['xp'] ?? 0;
             $xpLevel = max(1, intdiv($xpTotal, 100) + 1);
 
@@ -566,7 +1141,6 @@ class SimulatedStudentsSeeder extends Seeder
             ])->save();
 
             if (! XpLedgerEntry::query()->where('user_id', $user->id)->exists() && $xpTotal > 0) {
-                // Registrar asientos contables de ejemplo que sumen el total
                 $remainingXp = $xpTotal;
                 if ($remainingXp >= 100) {
                     XpLedgerEntry::query()->create([
@@ -574,7 +1148,7 @@ class SimulatedStudentsSeeder extends Seeder
                         'delta' => 100,
                         'source' => 'quiz',
                         'reason' => 'Evaluación de Módulo 1 aprobada',
-                        'created_at' => now()->subDays(12),
+                        'created_at' => now()->subDays(14)->setTime(10, 45),
                     ]);
                     $remainingXp -= 100;
                 }
@@ -584,7 +1158,7 @@ class SimulatedStudentsSeeder extends Seeder
                         'delta' => 100,
                         'source' => 'quiz',
                         'reason' => 'Evaluación de Módulo 2 aprobada',
-                        'created_at' => now()->subDays(8),
+                        'created_at' => now()->subDays(9)->setTime(10, 50),
                     ]);
                     $remainingXp -= 100;
                 }
@@ -594,7 +1168,7 @@ class SimulatedStudentsSeeder extends Seeder
                         'delta' => 100,
                         'source' => 'quiz',
                         'reason' => 'Evaluación de Módulo 3 aprobada',
-                        'created_at' => now()->subDays(4),
+                        'created_at' => now()->subDays(4)->setTime(11, 15),
                     ]);
                     $remainingXp -= 100;
                 }
@@ -604,17 +1178,17 @@ class SimulatedStudentsSeeder extends Seeder
                         'delta' => $remainingXp,
                         'source' => 'lesson',
                         'reason' => 'Lecciones de lógica completadas',
-                        'created_at' => now()->subDays(2),
+                        'created_at' => now()->subDays(2)->setTime(11, 30),
                     ]);
                 }
             }
         }
 
-        // 5. Sembrar Tickets de Soporte representativos para el panel de Admin
-        $reporter1 = User::query()->where('email', 'alejandro.morales@edugt.test')->first();
-        if ($reporter1) {
+        // 5. Tickets de Soporte del Taller Presencial
+        $alumno1 = User::query()->where('email', 'diego.reyes.pineda@gmail.com')->first();
+        if ($alumno1) {
             SupportTicket::query()->firstOrCreate(
-                ['reporter_id' => $reporter1->id, 'description' => 'Sugerencia didáctica: Sería de gran ayuda agregar una tabla de verdad interactiva en el módulo de condicionales para visualizar mejor el operador AND y el operador OR.'],
+                ['reporter_id' => $alumno1->id, 'description' => 'Sugerencia didáctica: En el laboratorio de computación nos fue muy útil el pseudocódigo paso a paso. Sería genial poder tener un botón para reiniciar las variables del ejercicio interactivo.'],
                 [
                     'kind' => 'suggestion',
                     'module' => 'curriculum',
@@ -623,22 +1197,22 @@ class SimulatedStudentsSeeder extends Seeder
             );
         }
 
-        $reporter2 = User::query()->where('email', 'kimberly.juarez@edugt.test')->first();
-        if ($reporter2) {
+        $alumno2 = User::query()->where('email', 'kimberly.juarez.h@gmail.com')->first();
+        if ($alumno2) {
             SupportTicket::query()->firstOrCreate(
-                ['reporter_id' => $reporter2->id, 'description' => 'Incidencia de red: Al realizar la evaluación del módulo 1 desde un teléfono móvil, el temporizador tuvo un leve retraso debido a intermitencia en la señal.'],
+                ['reporter_id' => $alumno2->id, 'description' => 'Incidencia de visualización: En la computadora número 8 del laboratorio la resolución del monitor recortaba un poco la tabla del podio, pero al cambiar al modo pantalla completa se solucionó.'],
                 [
                     'kind' => 'error',
-                    'module' => 'quizzes',
+                    'module' => 'general',
                     'status' => 'in_review',
                 ]
             );
         }
 
-        $reporter3 = User::query()->where('email', 'marta@edugt.test')->first();
-        if ($reporter3) {
+        $docenteMarta = User::query()->where('email', 'marta@edugt.test')->first();
+        if ($docenteMarta) {
             SupportTicket::query()->firstOrCreate(
-                ['reporter_id' => $reporter3->id, 'description' => 'Felicitaciones por el diseño del reporte en PDF con la Ganancia Normalizada de Hake y el desglose de las 7 dimensiones. Funciona excelente para la memoria de labores del instituto.'],
+                ['reporter_id' => $docenteMarta->id, 'description' => 'Constancia de satisfacción: El reporte analítico con el Factor de Ganancia de Hake (g = 0.58) y la comparativa de las 7 dimensiones refleja con total exactitud el progreso observado en los estudiantes de 4to. Bachillerato durante el taller.'],
                 [
                     'kind' => 'suggestion',
                     'module' => 'reports',
