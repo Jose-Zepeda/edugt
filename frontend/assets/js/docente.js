@@ -302,6 +302,7 @@ function renderLiveAnalyticsDashboard(payload, selectedClassroomId = '') {
 
   const meta = payload.meta || {};
   const metrics = payload.metrics || {};
+  const labSummary = payload.lab_summary || {};
   const prePost = payload.pre_post || {};
   const dimensions = Array.isArray(payload.dimensions) ? payload.dimensions : [];
   const modulesSummary = Array.isArray(payload.modules_summary) ? payload.modules_summary : [];
@@ -506,11 +507,11 @@ function renderLiveAnalyticsDashboard(payload, selectedClassroomId = '') {
       <div class="col-6 col-xl-3">
         <div class="card-edugt p-3.5 h-100">
           <div class="d-flex align-items-center justify-content-between mb-1">
-            <span class="small text-muted fw-bold text-uppercase" style="font-size:.7rem;letter-spacing:.04em;">Retención (14d)</span>
-            <i class="bi bi-activity text-warning fs-5"></i>
+            <span class="small text-muted fw-bold text-uppercase" style="font-size:.7rem;letter-spacing:.04em;">Laboratorio Algorítmico</span>
+            <i class="bi bi-terminal-split text-warning fs-5"></i>
           </div>
-          <div class="h3 fw-bold mb-0" style="color:var(--edugt-text);">${retentionRate}%</div>
-          <small class="text-muted" style="font-size:.78rem;">${metrics.active_students_14d ?? 0} estudiantes con actividad reciente</small>
+          <div class="h3 fw-bold mb-0" style="color:var(--edugt-text);">${labSummary.completion_rate ?? 0}%</div>
+          <small class="text-muted" style="font-size:.78rem;">${labSummary.total_completions ?? 0} prácticas resueltas (Prom: ${labSummary.avg_per_student ?? 0}/6)</small>
         </div>
       </div>
     </div>

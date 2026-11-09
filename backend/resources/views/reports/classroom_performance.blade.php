@@ -367,7 +367,8 @@ $topFailed = $payload['top_failed_questions'] ?? [];
                 </td>
                 <td class="text-center">
                     <div class="font-bold">{{ $st['xp_total'] }} XP</div>
-                    <div class="muted">Niv. {{ $st['xp_level'] }} · {{ $st['badges_count'] }}/6 med.</div>
+                    <div class="muted">Niv. {{ $st['xp_level'] }} · {{ $st['badges_count'] }}/7 med.</div>
+                    <div class="muted">Lab: {{ $st['lab_completed_count'] ?? 0 }}/{{ $st['lab_total_count'] ?? 6 }}</div>
                 </td>
             </tr>
         @empty

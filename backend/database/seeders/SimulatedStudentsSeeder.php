@@ -18,9 +18,12 @@ use App\Domain\Gamification\Models\Badge;
 use App\Domain\Gamification\Models\UserBadge;
 use App\Domain\Gamification\Models\UserXpProfile;
 use App\Domain\Gamification\Models\XpLedgerEntry;
+use App\Domain\Lab\Models\LabAttempt;
+use App\Domain\Lab\Models\LabChallenge;
 use App\Domain\Users\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Seeder de simulación realista de prueba de campo / estudio piloto de tesis.
@@ -1118,6 +1121,73 @@ class SimulatedStudentsSeeder extends Seeder
                                 'notified_at' => now(),
                             ]
                         );
+                    }
+                }
+            }
+
+            // E.2. Prácticas del Laboratorio Algorítmico y Prueba de Escritorio
+            if (Schema::hasTable('lab_challenges') && Schema::hasTable('lab_attempts')) {
+                $labChallenges = LabChallenge::query()->orderBy('order_index')->get();
+                if ($labChallenges->isNotEmpty()) {
+                    $lessonsCompleted = count($completedLessonsIds);
+                    $labsDoneCount = match (true) {
+                        $lessonsCompleted >= 12 => 6,
+                        $lessonsCompleted >= 9 => 5,
+                        $lessonsCompleted >= 7 => 4,
+                        $lessonsCompleted >= 5 => 3,
+                        $lessonsCompleted >= 4 => 2,
+                        $lessonsCompleted >= 2 => 1,
+                        default => 0,
+                    };
+
+                    foreach ($labChallenges->take($labsDoneCount) as $idxLab => $labCh) {
+                        $attCount = ($idxLab >= 2 && $lessonsCompleted < 10) ? 2 : 1;
+                        $xpLab = $attCount === 1 ? 40 : 32;
+                        LabAttempt::query()->updateOrCreate(
+                            [
+                                'user_id' => $user->id,
+                                'lab_challenge_id' => $labCh->id,
+                            ],
+                            [
+                                'completed' => true,
+                                'attempts_count' => $attCount,
+                                'best_score' => 100,
+                                'xp_awarded' => $xpLab,
+                                'completed_at' => now()->subDays(max(1, 14 - ($idxLab * 2)))->setTime(rand(9, 11), rand(15, 50)),
+                            ]
+                        );
+                    }
+
+                    // Si el estudiante está en el grupo de rezago (lessons_done == 3), agregar un intento parcial en el reto 2
+                    if ($lessonsCompleted === 3 && $labChallenges->count() >= 2) {
+                        $secondLab = $labChallenges->get(1);
+                        LabAttempt::query()->updateOrCreate(
+                            [
+                                'user_id' => $user->id,
+                                'lab_challenge_id' => $secondLab->id,
+                            ],
+                            [
+                                'completed' => false,
+                                'attempts_count' => 3,
+                                'best_score' => 50,
+                                'xp_awarded' => 0,
+                                'completed_at' => null,
+                            ]
+                        );
+                    }
+
+                    // Otorgar insignia "Arquitecto de Algoritmos" si completó >= 3 prácticas
+                    if ($labsDoneCount >= 3) {
+                        $archBadge = Badge::query()->where('slug', 'arquitecto-algoritmos')->first();
+                        if ($archBadge) {
+                            UserBadge::query()->firstOrCreate(
+                                ['user_id' => $user->id, 'badge_id' => $archBadge->id],
+                                [
+                                    'awarded_at' => now()->subDays(rand(1, 7))->setTime(rand(9, 12), rand(10, 50)),
+                                    'notified_at' => now(),
+                                ]
+                            );
+                        }
                     }
                 }
             }

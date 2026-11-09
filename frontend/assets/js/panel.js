@@ -83,11 +83,20 @@ const BADGE_CONFIG = {
     border: '#FED7AA',
     category: 'Precisión 100%',
     shortCondition: 'Aprobar cuestionario en 1er intento.'
+  },
+  'arquitecto-algoritmos': {
+    title: 'Arquitecto de Algoritmos',
+    icon: 'bi-cpu-fill',
+    color: '#0D9488',
+    bgColor: '#CCFBF1',
+    border: '#99F6E4',
+    category: 'Laboratorio',
+    shortCondition: 'Superar 3 prácticas de laboratorio.'
   }
 };
 
 /* ---------------- Gestión de Pestañas (Tabs) ---------------- */
-const VALID_TABS = ['ruta', 'aula', 'insignias', 'ranking'];
+const VALID_TABS = ['ruta', 'laboratorio', 'aula', 'insignias', 'ranking'];
 
 window.switchStudentTab = function (tabId) {
   if (!VALID_TABS.includes(tabId)) {
@@ -107,6 +116,10 @@ window.switchStudentTab = function (tabId) {
     const isTarget = btn.getAttribute('data-tab-target') === tabId;
     btn.classList.toggle('active', isTarget);
   });
+
+  if (tabId === 'laboratorio' && !window._labLoadedOnce) {
+    loadLabChallenges();
+  }
 
   // Sincronizar hash en la URL
   if (window.location.hash.replace('#', '') !== tabId) {
@@ -1234,6 +1247,488 @@ async function syncCurrentUser() {
   }
 }
 
+/* ---------------- Laboratorio Algorítmico y Prueba de Escritorio ---------------- */
+let _labChallenges = [];
+let _activeLabId = null;
+let _simStepIndex = -1;
+let _currentBlocksOrder = [];
+let _selectedTraceOption = '';
+
+async function loadLabChallenges() {
+  const listEl = $('#lab-challenges-list');
+  if (!listEl) return;
+
+  try {
+    const { data } = await api('/lab/challenges');
+    window._labLoadedOnce = true;
+
+    const summary = data.summary || {};
+    _labChallenges = Array.isArray(data.data) ? data.data : [];
+
+    const total = summary.total_challenges ?? _labChallenges.length;
+    const completed = summary.completed_challenges ?? 0;
+    const xpEarned = summary.total_xp_earned ?? 0;
+    const pct = summary.progress_percent ?? 0;
+
+    const compPill = $('#lab-completed-pill');
+    if (compPill) {
+      compPill.innerHTML = `<i class="bi bi-check2-circle text-success"></i> <span>${completed} / ${total} prácticas</span>`;
+    }
+    const xpPill = $('#lab-xp-pill');
+    if (xpPill) {
+      xpPill.innerHTML = `<i class="bi bi-lightning-charge-fill" style="color:var(--edugt-primary);"></i> <span>+${xpEarned} XP ganados</span>`;
+    }
+    const progText = $('#lab-progress-text');
+    if (progText) progText.textContent = `${pct}% completado`;
+    const progBar = $('#lab-progress-bar');
+    if (progBar) progBar.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+
+    if (_labChallenges.length === 0) {
+      listEl.innerHTML = '<div class="text-center py-4 text-muted small">No hay prácticas de laboratorio publicadas.</div>';
+      return;
+    }
+
+    if (!_activeLabId || !_labChallenges.some((c) => c.id === _activeLabId)) {
+      const firstPending = _labChallenges.find((c) => !c.completed);
+      _activeLabId = firstPending ? firstPending.id : _labChallenges[0].id;
+    }
+
+    renderLabList();
+    selectLabChallenge(_activeLabId);
+  } catch (err) {
+    console.error('Error cargando Laboratorio:', err);
+    listEl.innerHTML = `
+      <div class="alert alert-danger py-2 px-3 small mb-0">
+        No se pudieron cargar las prácticas del laboratorio.
+      </div>`;
+  }
+}
+
+function renderLabList() {
+  const listEl = $('#lab-challenges-list');
+  if (!listEl) return;
+
+  let currentModNum = null;
+  let html = '';
+
+  _labChallenges.forEach((ch) => {
+    if (ch.module_number !== currentModNum) {
+      currentModNum = ch.module_number;
+      html += `
+        <div class="small fw-bold text-uppercase mt-2 mb-1 px-1" style="font-size:.72rem;letter-spacing:.05em;color:var(--edugt-muted);">
+          Módulo ${ch.module_number}: ${esc(ch.module_title)}
+        </div>`;
+    }
+
+    const isSelected = ch.id === _activeLabId;
+    const statusBadge = ch.completed
+      ? `<span class="badge rounded-pill px-2 py-0.5" style="background:var(--edugt-green-soft);color:var(--edugt-green);font-size:.7rem;"><i class="bi bi-check-circle-fill me-1"></i>Superada (+${ch.xp_awarded || ch.xp_reward} XP)</span>`
+      : `<span class="badge rounded-pill px-2 py-0.5" style="background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:.7rem;">+${ch.xp_reward} XP</span>`;
+
+    html += `
+      <button type="button"
+              class="text-start p-3 rounded-4 border w-100 transition-all"
+              style="background:${isSelected ? 'var(--edugt-primary-soft)' : 'var(--edugt-card-subtle)'};border-color:${isSelected ? 'var(--edugt-primary)' : 'var(--edugt-border)'}!important;cursor:pointer;"
+              onclick="window.selectLabChallenge(${ch.id})">
+        <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+          <span class="fw-bold small" style="color:var(--edugt-text);font-size:.86rem;">${esc(ch.title)}</span>
+          ${statusBadge}
+        </div>
+        <div class="text-muted text-truncate" style="font-size:.76rem;">
+          ${esc(ch.description)}
+        </div>
+      </button>`;
+  });
+
+  listEl.innerHTML = html;
+}
+
+window.selectLabChallenge = function (challengeId) {
+  const ch = _labChallenges.find((c) => c.id === challengeId);
+  if (!ch) return;
+
+  _activeLabId = ch.id;
+  _simStepIndex = 0;
+  _currentBlocksOrder = (ch.challenge?.blocks || []).map((b) => ({ ...b }));
+  _selectedTraceOption = '';
+
+  renderLabList();
+  renderLabWorkbench(ch);
+};
+
+function renderLabWorkbench(ch) {
+  const wb = $('#lab-workbench');
+  if (!wb) return;
+
+  const diffLabels = {
+    beginner: 'Nivel Básico',
+    intermediate: 'Nivel Intermedio',
+    advanced: 'Nivel Avanzado',
+  };
+
+  wb.innerHTML = `
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 pb-3 mb-3 border-bottom" style="border-color:var(--edugt-border)!important;">
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+          <span class="badge rounded-pill px-2.5 py-1 fw-bold" style="background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:.72rem;">
+            Módulo ${ch.module_number} · ${esc(diffLabels[ch.difficulty] || 'Práctica')}
+          </span>
+          ${ch.completed ? `<span class="badge rounded-pill px-2.5 py-1 fw-bold" style="background:var(--edugt-green-soft);color:var(--edugt-green);font-size:.72rem;"><i class="bi bi-patch-check-fill me-1"></i>Práctica Completada</span>` : ''}
+        </div>
+        <h3 class="h5 fw-bold mb-1" style="color:var(--edugt-text);">${esc(ch.title)}</h3>
+        <p class="mb-0 text-muted" style="font-size:.86rem;">${esc(ch.description)}</p>
+      </div>
+    </div>
+
+    <!-- PARTE 1: SIMULADOR DE PRUEBA DE ESCRITORIO PASO A PASO -->
+    <div class="p-3 p-md-3.5 rounded-4 border mb-4" style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+          <h4 class="h6 fw-bold mb-0" style="color:var(--edugt-text);">
+            <i class="bi bi-play-btn-fill text-primary me-1"></i> 1. Simulador de Ejecución y Memoria RAM (Prueba de Escritorio)
+          </h4>
+          <small class="text-muted" style="font-size:.78rem;">Avanza línea por línea para inspeccionar cómo cambian las variables en memoria.</small>
+        </div>
+        <div class="btn-group btn-group-sm shadow-2xs" role="group" aria-label="Controles del simulador de pseudocódigo">
+          <button type="button" class="btn btn-google fw-semibold" onclick="window.stepLabSimulator('reset')" title="Reiniciar al paso 1">
+            <i class="bi bi-skip-backward-fill"></i> Reiniciar
+          </button>
+          <button type="button" class="btn btn-google fw-semibold" onclick="window.stepLabSimulator('prev')" id="btn-sim-prev">
+            <i class="bi bi-caret-left-fill"></i> Anterior
+          </button>
+          <button type="button" class="btn btn-edugt fw-bold" onclick="window.stepLabSimulator('next')" id="btn-sim-next">
+            Siguiente línea <i class="bi bi-caret-right-fill"></i>
+          </button>
+          <button type="button" class="btn btn-google fw-semibold" onclick="window.stepLabSimulator('end')" title="Ir al paso final">
+            <i class="bi bi-skip-forward-fill"></i> Final
+          </button>
+        </div>
+      </div>
+
+      <div class="row g-3 align-items-stretch">
+        <!-- Visor de Pseudocódigo Numerado -->
+        <div class="col-12 col-lg-6">
+          <div class="rounded-3 p-3 h-100" style="background:#0F172A;color:#F8FAFC;font-family:'Courier New',monospace;font-size:.86rem;">
+            <div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom border-secondary border-opacity-25">
+              <span class="small fw-bold text-info" style="font-size:.74rem;"><i class="bi bi-code-slash me-1"></i>ALGORITMO EN EJECUCIÓN</span>
+              <span class="badge bg-secondary bg-opacity-25 text-light" id="sim-step-badge" style="font-size:.7rem;">Paso 1</span>
+            </div>
+            <div id="sim-code-lines" class="d-flex flex-column gap-1"></div>
+          </div>
+        </div>
+
+        <!-- Tabla de Memoria RAM y Salida en Vivo -->
+        <div class="col-12 col-lg-6 d-flex flex-column justify-content-between">
+          <div class="rounded-3 border p-3 mb-2" style="background:var(--edugt-card);border-color:var(--edugt-border)!important;">
+            <div class="small fw-bold text-uppercase mb-2" style="font-size:.72rem;letter-spacing:.04em;color:var(--edugt-primary);">
+              <i class="bi bi-memory me-1"></i> Estado de Variables en Memoria (RAM)
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0" aria-label="Estado de variables en memoria RAM">
+                <thead>
+                  <tr>
+                    <th scope="col" class="small text-muted" style="font-size:.74rem;">Variable / Expresión</th>
+                    <th scope="col" class="small text-muted text-center" style="font-size:.74rem;">Valor Actual</th>
+                    <th scope="col" class="small text-muted text-end" style="font-size:.74rem;">Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="sim-memory-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="rounded-3 border p-2.5" style="background:var(--edugt-card);border-color:var(--edugt-border)!important;" aria-live="polite">
+            <div class="d-flex align-items-center gap-1.5 mb-1">
+              <i class="bi bi-lightbulb-fill text-warning"></i>
+              <strong class="small" style="font-size:.78rem;color:var(--edugt-text);">Explicación del paso actual:</strong>
+            </div>
+            <div id="sim-step-explanation" class="small text-muted mb-2" style="font-size:.81rem;line-height:1.4;"></div>
+            <div id="sim-console-box" class="rounded-2 px-2.5 py-1.5 d-none" style="background:#0F172A;color:#4ADE80;font-family:monospace;font-size:.8rem;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARTE 2: RETO PRÁCTICO EVALUABLE -->
+    <form id="form-lab-challenge" class="p-3 p-md-3.5 rounded-4 border" style="background:var(--edugt-card);border-color:var(--edugt-border)!important;">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+        <h4 class="h6 fw-bold mb-0" style="color:var(--edugt-text);">
+          <i class="bi bi-puzzle-fill text-primary me-1"></i> 2. Reto Práctico: Construcción Lógica y Prueba de Escritorio
+        </h4>
+        <span class="badge rounded-pill px-2.5 py-1" style="background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:.74rem;">
+          Recompensa: +${ch.xp_reward} XP
+        </span>
+      </div>
+      <p class="small text-muted mb-3">${esc(ch.challenge?.prompt || '')}</p>
+
+      <!-- Ordenamiento de Bloques de Pseudocódigo -->
+      <div class="mb-3">
+        <div class="small fw-bold mb-2" style="color:var(--edugt-text);font-size:.84rem;">
+          A) Ordena las líneas del algoritmo usando los botones <kbd>▲</kbd> y <kbd>▼</kbd>:
+        </div>
+        <div id="lab-blocks-container" class="d-flex flex-column gap-2"></div>
+      </div>
+
+      <!-- Pregunta de Prueba de Escritorio (Radio buttons accesibles) -->
+      <fieldset class="mb-3">
+        <legend class="small fw-bold mb-2" style="color:var(--edugt-text);font-size:.84rem;float:none;width:auto;">
+          B) ${esc(ch.challenge?.trace_question || 'Selecciona el resultado final de la prueba de escritorio:')}
+        </legend>
+        <div id="lab-trace-options" class="d-flex flex-column gap-2"></div>
+      </fieldset>
+
+      <div id="lab-submit-feedback" class="alert d-none py-2.5 px-3 mb-3" style="font-size:.85rem;" aria-live="polite"></div>
+
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <small class="text-muted" style="font-size:.78rem;">
+          <i class="bi bi-shield-check me-1"></i> Validación en servidor · Intentos realizados: <strong id="lab-attempts-counter">${ch.attempts_count || 0}</strong>
+        </small>
+        <button type="submit" class="btn btn-edugt px-4 py-2 fw-bold shadow-sm" id="btn-submit-lab">
+          <i class="bi bi-check2-circle me-1"></i> Verificar Algoritmo
+        </button>
+      </div>
+    </form>
+  `;
+
+  updateSimulatorView(ch);
+  renderChallengeBlocks(ch);
+  renderTraceOptions(ch);
+
+  $('#form-lab-challenge')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    submitLabChallenge(ch.id);
+  });
+}
+
+window.stepLabSimulator = function (action) {
+  const ch = _labChallenges.find((c) => c.id === _activeLabId);
+  if (!ch) return;
+  const steps = ch.simulator?.steps || [];
+  if (steps.length === 0) return;
+
+  if (action === 'reset') {
+    _simStepIndex = 0;
+  } else if (action === 'prev') {
+    _simStepIndex = Math.max(0, _simStepIndex - 1);
+  } else if (action === 'next') {
+    _simStepIndex = Math.min(steps.length - 1, _simStepIndex + 1);
+  } else if (action === 'end') {
+    _simStepIndex = steps.length - 1;
+  }
+
+  updateSimulatorView(ch);
+};
+
+function updateSimulatorView(ch) {
+  const sim = ch.simulator || {};
+  const lines = sim.code_lines || [];
+  const varNames = sim.variables_names || [];
+  const steps = sim.steps || [];
+  const currentStep = steps[_simStepIndex] || steps[0] || { line: 1, vars: {}, explanation: '' };
+
+  const badgeEl = $('#sim-step-badge');
+  if (badgeEl) {
+    badgeEl.textContent = `Paso ${_simStepIndex + 1} de ${steps.length}`;
+  }
+
+  const prevBtn = $('#btn-sim-prev');
+  if (prevBtn) prevBtn.disabled = _simStepIndex <= 0;
+  const nextBtn = $('#btn-sim-next');
+  if (nextBtn) nextBtn.disabled = _simStepIndex >= steps.length - 1;
+
+  // 1. Líneas de código
+  const linesEl = $('#sim-code-lines');
+  if (linesEl) {
+    linesEl.innerHTML = lines.map((codeLine, idx) => {
+      const lineNum = idx + 1;
+      const isCurrent = currentStep.line === lineNum;
+      return `
+        <div class="d-flex align-items-center px-2 py-1 rounded-2"
+             style="background:${isCurrent ? 'rgba(56, 189, 248, 0.22)' : 'transparent'};border-left:3px solid ${isCurrent ? '#38BDF8' : 'transparent'};">
+          <span class="me-2 text-secondary select-none" style="width:24px;font-size:.75rem;">${lineNum}</span>
+          <span class="me-2" style="width:14px;color:#38BDF8;font-weight:bold;">${isCurrent ? '▶' : ''}</span>
+          <code style="color:${isCurrent ? '#FFFFFF' : '#CBD5E1'};font-weight:${isCurrent ? '700' : '400'};white-space:pre;">${esc(codeLine)}</code>
+        </div>`;
+    }).join('');
+  }
+
+  // 2. Tabla de Memoria RAM
+  const tbody = $('#sim-memory-tbody');
+  if (tbody) {
+    tbody.innerHTML = varNames.map((vName) => {
+      const val = currentStep.vars?.[vName] ?? '—';
+      const isChanged = currentStep.changed === vName;
+      return `
+        <tr style="${isChanged ? 'background:var(--edugt-primary-soft);' : ''}">
+          <th scope="row" class="font-monospace small fw-bold" style="color:var(--edugt-text);font-size:.82rem;">${esc(vName)}</th>
+          <td class="text-center font-monospace fw-bold" style="color:${isChanged ? 'var(--edugt-primary)' : 'var(--edugt-text)'};font-size:.86rem;">
+            ${esc(String(val))}
+          </td>
+          <td class="text-end">
+            ${isChanged
+              ? '<span class="badge rounded-pill px-2 py-0.5" style="background:var(--edugt-primary);color:#fff;font-size:.66rem;">ACTUALIZADA</span>'
+              : '<span class="text-muted" style="font-size:.7rem;">En memoria</span>'}
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  // 3. Explicación y Consola
+  const expEl = $('#sim-step-explanation');
+  if (expEl) {
+    expEl.textContent = currentStep.explanation || '';
+  }
+
+  const consoleEl = $('#sim-console-box');
+  if (consoleEl) {
+    if (currentStep.output) {
+      consoleEl.classList.remove('d-none');
+      consoleEl.innerHTML = `<i class="bi bi-terminal me-1"></i> Consola: <strong>${esc(currentStep.output)}</strong>`;
+    } else {
+      consoleEl.classList.add('d-none');
+      consoleEl.innerHTML = '';
+    }
+  }
+}
+
+function renderChallengeBlocks() {
+  const container = $('#lab-blocks-container');
+  if (!container) return;
+
+  container.innerHTML = _currentBlocksOrder.map((block, idx) => `
+    <div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 border"
+         style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+      <div class="d-flex align-items-center gap-2 min-w-0">
+        <span class="badge rounded-pill bg-secondary bg-opacity-10 text-muted fw-bold" style="font-size:.75rem;min-width:26px;">
+          ${idx + 1}
+        </span>
+        <code class="fw-bold" style="color:var(--edugt-text);font-size:.86rem;white-space:pre-wrap;">${esc(block.code)}</code>
+      </div>
+      <div class="d-flex align-items-center gap-1 flex-shrink-0 ms-2">
+        <button type="button"
+                class="btn btn-sm btn-google px-2 py-1"
+                onclick="window.moveLabBlock(${idx}, -1)"
+                aria-label="Mover bloque ${esc(block.code)} hacia arriba"
+                ${idx === 0 ? 'disabled' : ''}>
+          <i class="bi bi-arrow-up"></i>
+        </button>
+        <button type="button"
+                class="btn btn-sm btn-google px-2 py-1"
+                onclick="window.moveLabBlock(${idx}, 1)"
+                aria-label="Mover bloque ${esc(block.code)} hacia abajo"
+                ${idx === _currentBlocksOrder.length - 1 ? 'disabled' : ''}>
+          <i class="bi bi-arrow-down"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.moveLabBlock = function (index, direction) {
+  const targetIndex = index + direction;
+  if (targetIndex < 0 || targetIndex >= _currentBlocksOrder.length) return;
+
+  const temp = _currentBlocksOrder[index];
+  _currentBlocksOrder[index] = _currentBlocksOrder[targetIndex];
+  _currentBlocksOrder[targetIndex] = temp;
+
+  renderChallengeBlocks();
+};
+
+function renderTraceOptions(ch) {
+  const container = $('#lab-trace-options');
+  if (!container) return;
+
+  const options = ch.challenge?.trace_options || [];
+  container.innerHTML = options.map((opt) => {
+    const inputId = `lab-trace-${ch.id}-${opt.id}`;
+    const isChecked = _selectedTraceOption === opt.id;
+    return `
+      <div class="p-2.5 rounded-3 border d-flex align-items-center gap-2"
+           style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
+        <input class="form-check-input mt-0"
+               type="radio"
+               name="lab_trace_option"
+               id="${esc(inputId)}"
+               value="${esc(opt.id)}"
+               ${isChecked ? 'checked' : ''}
+               required>
+        <label class="form-check-label font-monospace small fw-semibold w-100"
+               for="${esc(inputId)}"
+               style="color:var(--edugt-text);cursor:pointer;font-size:.83rem;">
+          ${esc(opt.label)}
+        </label>
+      </div>`;
+  }).join('');
+
+  container.querySelectorAll('input[name="lab_trace_option"]').forEach((radio) => {
+    radio.addEventListener('change', (e) => {
+      _selectedTraceOption = e.target.value;
+    });
+  });
+}
+
+async function submitLabChallenge(challengeId) {
+  const btn = $('#btn-submit-lab');
+  const feedbackEl = $('#lab-submit-feedback');
+  if (!btn || !feedbackEl) return;
+
+  const selectedRadio = document.querySelector('input[name="lab_trace_option"]:checked');
+  const traceVal = selectedRadio ? selectedRadio.value : _selectedTraceOption;
+
+  if (!traceVal) {
+    feedbackEl.className = 'alert alert-warning py-2.5 px-3 mb-3';
+    feedbackEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i> Selecciona una opción en la prueba de escritorio antes de verificar.';
+    feedbackEl.classList.remove('d-none');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Calificando en servidor...';
+
+  try {
+    const { data } = await api(`/lab/challenges/${challengeId}/submit`, {
+      method: 'POST',
+      body: {
+        block_order: _currentBlocksOrder.map((b) => b.id),
+        trace_option: traceVal,
+      },
+    });
+
+    const counterEl = $('#lab-attempts-counter');
+    if (counterEl && data.attempts_count !== undefined) {
+      counterEl.textContent = data.attempts_count;
+    }
+
+    if (data.passed) {
+      const xpMsg = data.xp_awarded_now > 0
+        ? ` Has ganado <strong>+${data.xp_awarded_now} XP</strong>.`
+        : ' (Práctica ya acreditada anteriormente).';
+      feedbackEl.className = 'alert alert-success py-2.5 px-3 mb-3';
+      feedbackEl.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> <strong>¡Algoritmo Verificado (100/100)!</strong> ${esc(data.feedback)}${xpMsg}`;
+      feedbackEl.classList.remove('d-none');
+
+      await Promise.all([loadLabChallenges(), loadXp(), loadStreak(), loadBadges(), loadRankings()]);
+    } else {
+      feedbackEl.className = 'alert alert-danger py-2.5 px-3 mb-3';
+      feedbackEl.innerHTML = `
+        <div class="fw-bold mb-1">
+          <i class="bi bi-x-circle-fill me-1"></i> Puntaje parcial: ${data.score}/100
+          (${data.order_ok ? 'Bloques: Correcto' : 'Bloques: Incorrecto'} · ${data.trace_ok ? 'Prueba de Escritorio: Correcta' : 'Prueba de Escritorio: Incorrecta'})
+        </div>
+        <div>${esc(data.feedback)}</div>`;
+      feedbackEl.classList.remove('d-none');
+    }
+  } catch (err) {
+    feedbackEl.className = 'alert alert-danger py-2.5 px-3 mb-3';
+    feedbackEl.innerHTML = `<i class="bi bi-exclamation-octagon-fill me-1"></i> ${esc(err.message || 'No se pudo calificar la práctica.')}`;
+    feedbackEl.classList.remove('d-none');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Verificar Algoritmo';
+  }
+}
+
 /* ---------------- Boot ---------------- */
 (async function boot() {
   renderGreeting();
@@ -1244,7 +1739,7 @@ async function syncCurrentUser() {
 
   try {
     await Promise.all([syncCurrentUser(), loadXp(), loadStreak()]);
-    await Promise.all([loadMissions(), loadBadges(), loadRankings(), loadStudentClassrooms()]);
+    await Promise.all([loadMissions(), loadLabChallenges(), loadBadges(), loadRankings(), loadStudentClassrooms()]);
   } catch (err) {
     if (err.status === 401) {
       Auth.clear();

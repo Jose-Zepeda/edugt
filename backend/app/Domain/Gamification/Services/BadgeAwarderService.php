@@ -9,8 +9,10 @@ use App\Domain\Gamification\Contracts\BadgeAwarder;
 use App\Domain\Gamification\Models\Badge;
 use App\Domain\Gamification\Models\BadgeRule;
 use App\Domain\Gamification\Models\UserBadge;
+use App\Domain\Lab\Models\LabAttempt;
 use App\Domain\Users\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Evalúa y otorga insignias del sistema (RF-17).
@@ -59,6 +61,14 @@ final class BadgeAwarderService implements BadgeAwarder
             ->where('user_id', $user->id)
             ->where('completed', true)
             ->pluck('lesson_id');
+
+        // 3. Retos de laboratorio completados por el usuario
+        $completedLabsCount = Schema::hasTable('lab_attempts')
+            ? LabAttempt::query()
+                ->where('user_id', $user->id)
+                ->where('completed', true)
+                ->count()
+            : 0;
 
         foreach ($allBadges as $badge) {
             $shouldAward = false;
@@ -166,6 +176,13 @@ final class BadgeAwarderService implements BadgeAwarder
                     }
                     break;
 
+                case 'arquitecto-algoritmos':
+                    // Superó al menos 3 retos en el Laboratorio Algorítmico
+                    if ($completedLabsCount >= 3) {
+                        $shouldAward = true;
+                    }
+                    break;
+
                 default:
                     // Reglas dinámicas adicionales en base de datos
                     foreach ($badge->rules as $rule) {
@@ -186,6 +203,11 @@ final class BadgeAwarderService implements BadgeAwarder
                         } elseif ($rule->event === 'lesson_completed') {
                             $reqCount = (int) ($conds['count'] ?? 1);
                             if ($completedLessonIds->count() >= $reqCount) {
+                                $shouldAward = true;
+                            }
+                        } elseif ($rule->event === 'lab_completed') {
+                            $reqCount = (int) ($conds['count'] ?? 3);
+                            if ($completedLabsCount >= $reqCount) {
                                 $shouldAward = true;
                             }
                         }

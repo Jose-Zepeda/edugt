@@ -12,7 +12,9 @@ use App\Domain\Diagnostic\Models\DiagnosticQuestion;
 use App\Domain\Diagnostic\Models\DiagnosticTest;
 use App\Domain\Gamification\Models\Badge;
 use App\Domain\Gamification\Models\BadgeRule;
+use App\Domain\Lab\Models\LabChallenge;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
@@ -28,6 +30,7 @@ class ContentSeeder extends Seeder
         $this->seedBadges();
         $this->seedCurriculum();
         $this->seedDiagnostics();
+        $this->seedLabChallenges();
     }
 
     private function seedBadges(): void
@@ -39,6 +42,7 @@ class ContentSeeder extends Seeder
             ['slug' => 'mago-del-control', 'title' => 'Mago del Control', 'description' => 'Dominaste las estructuras condicionales.', 'event' => 'quiz_passed', 'conditions' => ['count' => 2]],
             ['slug' => 'maestro-del-bucle', 'title' => 'Maestro del Bucle', 'description' => 'Dominaste las estructuras cíclicas.', 'event' => 'quiz_passed', 'conditions' => ['count' => 3]],
             ['slug' => 'depurador-elite', 'title' => 'Depurador Élite', 'description' => 'Aprobaste un cuestionario en el primer intento.', 'event' => 'quiz_passed', 'conditions' => ['count' => 1, 'attempt_number' => 1]],
+            ['slug' => 'arquitecto-algoritmos', 'title' => 'Arquitecto de Algoritmos', 'description' => 'Superaste al menos 3 prácticas en el Laboratorio de Pseudocódigo y Prueba de Escritorio.', 'event' => 'lab_completed', 'conditions' => ['count' => 3]],
         ];
 
         foreach ($badges as $b) {
@@ -754,6 +758,658 @@ class ContentSeeder extends Seeder
                     );
                 }
             }
+        }
+    }
+
+    private function seedLabChallenges(): void
+    {
+        if (! Schema::hasTable('lab_challenges')) {
+            return;
+        }
+
+        $modules = Module::query()->orderBy('order_index')->get();
+        $mod1 = $modules->get(0);
+        $mod2 = $modules->get(1);
+        $mod3 = $modules->get(2);
+
+        $challenges = [
+            // =================================================================
+            // MÓDULO 1: VARIABLES Y EXPRESIONES
+            // =================================================================
+            [
+                'slug' => 'lab-1-intercambio-variables',
+                'module_id' => $mod1?->id,
+                'title' => 'Práctica 1.1: Intercambio de Variables con Auxiliar',
+                'description' => 'Simula en memoria cómo intercambiar el contenido de dos variables (a y b) usando una variable temporal auxiliar sin perder ningún dato en el proceso.',
+                'dimension' => 'variables',
+                'difficulty' => 'beginner',
+                'xp_reward' => 40,
+                'order_index' => 1,
+                'simulator_json' => [
+                    'code_lines' => [
+                        'a = 15',
+                        'b = 40',
+                        'aux = a',
+                        'a = b',
+                        'b = aux',
+                        'print("Intercambio listo:", a, b)',
+                    ],
+                    'variables_names' => ['a', 'b', 'aux'],
+                    'steps' => [
+                        [
+                            'line' => 1,
+                            'vars' => ['a' => 15, 'b' => '—', 'aux' => '—'],
+                            'changed' => 'a',
+                            'output' => null,
+                            'explanation' => 'Se reserva el espacio en memoria para la variable "a" y se le asigna el valor entero 15.',
+                        ],
+                        [
+                            'line' => 2,
+                            'vars' => ['a' => 15, 'b' => 40, 'aux' => '—'],
+                            'changed' => 'b',
+                            'output' => null,
+                            'explanation' => 'Se asigna el valor inicial 40 a la variable "b". Ahora tenemos a = 15 y b = 40.',
+                        ],
+                        [
+                            'line' => 3,
+                            'vars' => ['a' => 15, 'b' => 40, 'aux' => 15],
+                            'changed' => 'aux',
+                            'output' => null,
+                            'explanation' => '¡Paso crítico! Respaldamos el valor original de "a" (15) dentro de la variable temporal "aux" antes de sobreescribir "a".',
+                        ],
+                        [
+                            'line' => 4,
+                            'vars' => ['a' => 40, 'b' => 40, 'aux' => 15],
+                            'changed' => 'a',
+                            'output' => null,
+                            'explanation' => 'Copiamos el valor de "b" (40) dentro de "a". Aunque "a" y "b" valen 40 momentáneamente, el 15 original sigue a salvo en "aux".',
+                        ],
+                        [
+                            'line' => 5,
+                            'vars' => ['a' => 40, 'b' => 15, 'aux' => 15],
+                            'changed' => 'b',
+                            'output' => null,
+                            'explanation' => 'Recuperamos el valor guardado en "aux" (15) y lo asignamos a "b". ¡Los valores han quedado intercambiados!',
+                        ],
+                        [
+                            'line' => 6,
+                            'vars' => ['a' => 40, 'b' => 15, 'aux' => 15],
+                            'changed' => null,
+                            'output' => 'Intercambio listo: 40 15',
+                            'explanation' => 'La instrucción print() envía a consola los valores finales: a = 40 y b = 15.',
+                        ],
+                    ],
+                ],
+                'challenge_json' => [
+                    'prompt' => 'Ordena los bloques lógicos para intercambiar correctamente los valores de las variables x = 80 e y = 25 usando la variable temporal temp.',
+                    'blocks' => [
+                        ['id' => 'b3', 'code' => 'x = y'],
+                        ['id' => 'b1', 'code' => 'x = 80  ;  y = 25'],
+                        ['id' => 'b4', 'code' => 'y = temp'],
+                        ['id' => 'b2', 'code' => 'temp = x'],
+                    ],
+                    'trace_question' => 'Al finalizar la prueba de escritorio de los 4 bloques ordenados, ¿qué valores quedan almacenados en "x", en "y" y en "temp" respectivamente?',
+                    'trace_options' => [
+                        ['id' => 'opt_a', 'label' => 'x = 25,  y = 80,  temp = 80'],
+                        ['id' => 'opt_b', 'label' => 'x = 25,  y = 25,  temp = 80'],
+                        ['id' => 'opt_c', 'label' => 'x = 80,  y = 25,  temp = 25'],
+                    ],
+                ],
+                'solution_json' => [
+                    'correct_block_order' => ['b1', 'b2', 'b3', 'b4'],
+                    'correct_trace_option' => 'opt_a',
+                    'explanation_success' => '¡Excelente prueba de escritorio! Guardaste primero x en temp (80), pasaste y hacia x (25) y finalmente asignaste temp hacia y (80).',
+                    'explanation_error_order' => 'Revisa la secuencia: primero debes inicializar (x = 80 ; y = 25), luego respaldar x en temp (temp = x), después asignar x = y, y por último y = temp.',
+                    'explanation_error_trace' => 'Recuerda que temp conserva el valor original de x (80) incluso después de asignarlo a y.',
+                ],
+            ],
+            [
+                'slug' => 'lab-2-jerarquia-facturacion',
+                'module_id' => $mod1?->id,
+                'title' => 'Práctica 1.2: Cálculo de Subtotal y Descuento en Memoria',
+                'description' => 'Realiza la traza de memoria de un algoritmo aritmético que calcula el total a pagar por útiles escolares aplicando descuento.',
+                'dimension' => 'abstraction',
+                'difficulty' => 'beginner',
+                'xp_reward' => 40,
+                'order_index' => 2,
+                'simulator_json' => [
+                    'code_lines' => [
+                        'precio = 50',
+                        'cantidad = 3',
+                        'subtotal = precio * cantidad',
+                        'descuento = 25',
+                        'total = subtotal - descuento',
+                        'print("Total a pagar Q:", total)',
+                    ],
+                    'variables_names' => ['precio', 'cantidad', 'subtotal', 'descuento', 'total'],
+                    'steps' => [
+                        [
+                            'line' => 1,
+                            'vars' => ['precio' => 50, 'cantidad' => '—', 'subtotal' => '—', 'descuento' => '—', 'total' => '—'],
+                            'changed' => 'precio',
+                            'output' => null,
+                            'explanation' => 'Se inicializa la variable "precio" con el valor unitario de 50.',
+                        ],
+                        [
+                            'line' => 2,
+                            'vars' => ['precio' => 50, 'cantidad' => 3, 'subtotal' => '—', 'descuento' => '—', 'total' => '—'],
+                            'changed' => 'cantidad',
+                            'output' => null,
+                            'explanation' => 'Se almacena la cantidad de artículos (3) en memoria.',
+                        ],
+                        [
+                            'line' => 3,
+                            'vars' => ['precio' => 50, 'cantidad' => 3, 'subtotal' => 150, 'descuento' => '—', 'total' => '—'],
+                            'changed' => 'subtotal',
+                            'output' => null,
+                            'explanation' => 'Se evalúa precio * cantidad (50 * 3 = 150) y el resultado se guarda en "subtotal".',
+                        ],
+                        [
+                            'line' => 4,
+                            'vars' => ['precio' => 50, 'cantidad' => 3, 'subtotal' => 150, 'descuento' => 25, 'total' => '—'],
+                            'changed' => 'descuento',
+                            'output' => null,
+                            'explanation' => 'Se define un cupón de descuento fijo de 25 quetzales.',
+                        ],
+                        [
+                            'line' => 5,
+                            'vars' => ['precio' => 50, 'cantidad' => 3, 'subtotal' => 150, 'descuento' => 25, 'total' => 125],
+                            'changed' => 'total',
+                            'output' => null,
+                            'explanation' => 'Se resta subtotal - descuento (150 - 25 = 125) y se almacena en "total".',
+                        ],
+                        [
+                            'line' => 6,
+                            'vars' => ['precio' => 50, 'cantidad' => 3, 'subtotal' => 150, 'descuento' => 25, 'total' => 125],
+                            'changed' => null,
+                            'output' => 'Total a pagar Q: 125',
+                            'explanation' => 'Se imprime en pantalla el resultado final almacenado en "total".',
+                        ],
+                    ],
+                ],
+                'challenge_json' => [
+                    'prompt' => 'Ordena las instrucciones para calcular el puntaje total de un jugador que gana 4 monedas de 20 puntos cada una y luego recibe un bono extra de 15 puntos.',
+                    'blocks' => [
+                        ['id' => 'b3', 'code' => 'puntaje_final = base + bono'],
+                        ['id' => 'b1', 'code' => 'monedas = 4  ;  valor = 20'],
+                        ['id' => 'b4', 'code' => 'print(puntaje_final)'],
+                        ['id' => 'b2', 'code' => 'base = monedas * valor  ;  bono = 15'],
+                    ],
+                    'trace_question' => 'Según la prueba de escritorio, ¿qué valores tendrán las variables "base" y "puntaje_final" al terminar la ejecución?',
+                    'trace_options' => [
+                        ['id' => 'opt_a', 'label' => 'base = 24,  puntaje_final = 39'],
+                        ['id' => 'opt_b', 'label' => 'base = 80,  puntaje_final = 95'],
+                        ['id' => 'opt_c', 'label' => 'base = 80,  puntaje_final = 65'],
+                    ],
+                ],
+                'solution_json' => [
+                    'correct_block_order' => ['b1', 'b2', 'b3', 'b4'],
+                    'correct_trace_option' => 'opt_b',
+                    'explanation_success' => '¡Correcto! Primero se definen las variables de entrada, luego se calcula base = 4 * 20 (80), después se suma el bono de 15 obteniendo 95, y finalmente se muestra el resultado.',
+                    'explanation_error_order' => 'No puedes usar las variables "base" y "bono" antes de haberlas calculado. Primero declara monedas y valor, luego calcula base y bono, suma en puntaje_final y por último imprime.',
+                    'explanation_error_trace' => 'Multiplica monedas * valor (4 * 20 = 80) para obtener "base", y luego súmale el bono (80 + 15 = 95).',
+                ],
+            ],
+
+            // =================================================================
+            // MÓDULO 2: ESTRUCTURAS CONDICIONALES
+            // =================================================================
+            [
+                'slug' => 'lab-3-condicional-aprobacion',
+                'module_id' => $mod2?->id,
+                'title' => 'Práctica 2.1: Ramificación Condicional (if / else)',
+                'description' => 'Observa cómo el procesador evalúa una expresión lógica booleana y salta únicamente al bloque verdadero o falso según la nota del estudiante.',
+                'dimension' => 'conditionals',
+                'difficulty' => 'intermediate',
+                'xp_reward' => 40,
+                'order_index' => 3,
+                'simulator_json' => [
+                    'code_lines' => [
+                        'nota = 78',
+                        'minimo = 70',
+                        'if (nota >= minimo):',
+                        '    estado = "APROBADO"',
+                        'else:',
+                        '    estado = "REPROBADO"',
+                        'print("Resultado:", estado)',
+                    ],
+                    'variables_names' => ['nota', 'minimo', 'nota >= minimo', 'estado'],
+                    'steps' => [
+                        [
+                            'line' => 1,
+                            'vars' => ['nota' => 78, 'minimo' => '—', 'nota >= minimo' => '—', 'estado' => '—'],
+                            'changed' => 'nota',
+                            'output' => null,
+                            'explanation' => 'Se guarda la calificación obtenida por el estudiante: nota = 78.',
+                        ],
+                        [
+                            'line' => 2,
+                            'vars' => ['nota' => 78, 'minimo' => 70, 'nota >= minimo' => '—', 'estado' => '—'],
+                            'changed' => 'minimo',
+                            'output' => null,
+                            'explanation' => 'Se establece el criterio mínimo de aprobación en 70 puntos.',
+                        ],
+                        [
+                            'line' => 3,
+                            'vars' => ['nota' => 78, 'minimo' => 70, 'nota >= minimo' => 'true', 'estado' => '—'],
+                            'changed' => 'nota >= minimo',
+                            'output' => null,
+                            'explanation' => 'Se evalúa la condición relacional (78 >= 70). Como es Verdadera (true), el flujo entra al bloque del if e ignora el bloque else.',
+                        ],
+                        [
+                            'line' => 4,
+                            'vars' => ['nota' => 78, 'minimo' => 70, 'nota >= minimo' => 'true', 'estado' => '"APROBADO"'],
+                            'changed' => 'estado',
+                            'output' => null,
+                            'explanation' => 'Se ejecuta la línea interna del if asignando "APROBADO" a la variable estado.',
+                        ],
+                        [
+                            'line' => 7,
+                            'vars' => ['nota' => 78, 'minimo' => 70, 'nota >= minimo' => 'true', 'estado' => '"APROBADO"'],
+                            'changed' => null,
+                            'output' => 'Resultado: APROBADO',
+                            'explanation' => 'El programa salta por completo las líneas 5 y 6 (else) y continúa en la línea 7 imprimiendo el resultado.',
+                        ],
+                    ],
+                ],
+                'challenge_json' => [
+                    'prompt' => 'Construye la estructura condicional para aplicar un descuento de Q30 si la compra supera o iguala los Q200, o Q0 en caso contrario.',
+                    'blocks' => [
+                        ['id' => 'b3', 'code' => '    descuento = 30'],
+                        ['id' => 'b1', 'code' => 'compra = 160'],
+                        ['id' => 'b4', 'code' => 'else:  descuento = 0'],
+                        ['id' => 'b2', 'code' => 'if (compra >= 200):'],
+                        ['id' => 'b5', 'code' => 'pago_final = compra - descuento'],
+                    ],
+                    'trace_question' => 'Dado que "compra" inicia en 160, ¿qué camino toma el condicional y cuál es el valor de "pago_final"?',
+                    'trace_options' => [
+                        ['id' => 'opt_a', 'label' => 'La condición es true  →  descuento = 30,  pago_final = 130'],
+                        ['id' => 'opt_b', 'label' => 'La condición es false →  descuento = 0,   pago_final = 160'],
+                        ['id' => 'opt_c', 'label' => 'La condición es false →  descuento = 30,  pago_final = 130'],
+                    ],
+                ],
+                'solution_json' => [
+                    'correct_block_order' => ['b1', 'b2', 'b3', 'b4', 'b5'],
+                    'correct_trace_option' => 'opt_b',
+                    'explanation_success' => '¡Dominio total! Estructuraste el bloque if/else en orden jerárquico y determinaste que 160 >= 200 es false, por lo que descuento = 0 y pago_final = 160.',
+                    'explanation_error_order' => 'Recuerda la estructura: primero inicializa "compra", luego evalúa "if (compra >= 200):", seguido de la acción verdadera (descuento = 30), luego el "else:" y finalmente el cálculo de "pago_final".',
+                    'explanation_error_trace' => 'Observa que compra vale 160. Al evaluar 160 >= 200 el resultado es Falso (false), por lo que salta al else (descuento = 0) y pago_final queda en 160.',
+                ],
+            ],
+            [
+                'slug' => 'lab-4-operadores-logicos-beca',
+                'module_id' => $mod2?->id,
+                'title' => 'Práctica 2.2: Condición Compuesta con Operador AND',
+                'description' => 'Analiza en memoria cómo se evalúan dos condiciones simultáneas unidas por el operador lógico AND para otorgar una beca estudiantil.',
+                'dimension' => 'decomposition',
+                'difficulty' => 'intermediate',
+                'xp_reward' => 40,
+                'order_index' => 4,
+                'simulator_json' => [
+                    'code_lines' => [
+                        'promedio = 90',
+                        'asistencia = 82',
+                        'cond_nota = (promedio >= 85)',
+                        'cond_asist = (asistencia >= 85)',
+                        'if (cond_nota and cond_asist):',
+                        '    beca = "OTORGADA"',
+                        'else:',
+                        '    beca = "DENEGADA"',
+                        'print("Estado de beca:", beca)',
+                    ],
+                    'variables_names' => ['promedio', 'asistencia', 'cond_nota', 'cond_asist', 'beca'],
+                    'steps' => [
+                        [
+                            'line' => 1,
+                            'vars' => ['promedio' => 90, 'asistencia' => '—', 'cond_nota' => '—', 'cond_asist' => '—', 'beca' => '—'],
+                            'changed' => 'promedio',
+                            'output' => null,
+                            'explanation' => 'Se registra el promedio académico del estudiante (90 puntos).',
+                        ],
+                        [
+                            'line' => 2,
+                            'vars' => ['promedio' => 90, 'asistencia' => 82, 'cond_nota' => '—', 'cond_asist' => '—', 'beca' => '—'],
+                            'changed' => 'asistencia',
+                            'output' => null,
+                            'explanation' => 'Se registra el porcentaje de asistencia del estudiante (82%).',
+                        ],
+                        [
+                            'line' => 3,
+                            'vars' => ['promedio' => 90, 'asistencia' => 82, 'cond_nota' => 'true', 'cond_asist' => '—', 'beca' => '—'],
+                            'changed' => 'cond_nota',
+                            'output' => null,
+                            'explanation' => 'Primera condición: 90 >= 85 se evalúa como Verdadero (true).',
+                        ],
+                        [
+                            'line' => 4,
+                            'vars' => ['promedio' => 90, 'asistencia' => 82, 'cond_nota' => 'true', 'cond_asist' => 'false', 'beca' => '—'],
+                            'changed' => 'cond_asist',
+                            'output' => null,
+                            'explanation' => 'Segunda condición: 82 >= 85 se evalúa como Falso (false) porque no alcanzó el 85% requerido.',
+                        ],
+                        [
+                            'line' => 5,
+                            'vars' => ['promedio' => 90, 'asistencia' => 82, 'cond_nota' => 'true', 'cond_asist' => 'false', 'beca' => '—'],
+                            'changed' => null,
+                            'output' => null,
+                            'explanation' => 'El operador AND exige que AMBAS sean true. Como tenemos (true and false), el resultado global es false y salta al bloque else.',
+                        ],
+                        [
+                            'line' => 8,
+                            'vars' => ['promedio' => 90, 'asistencia' => 82, 'cond_nota' => 'true', 'cond_asist' => 'false', 'beca' => '"DENEGADA"'],
+                            'changed' => 'beca',
+                            'output' => null,
+                            'explanation' => 'Se ejecuta la rama del else asignando "DENEGADA" a la variable beca.',
+                        ],
+                        [
+                            'line' => 9,
+                            'vars' => ['promedio' => 90, 'asistencia' => 82, 'cond_nota' => 'true', 'cond_asist' => 'false', 'beca' => '"DENEGADA"'],
+                            'changed' => null,
+                            'output' => 'Estado de beca: DENEGADA',
+                            'explanation' => 'Se muestra en consola el dictamen final.',
+                        ],
+                    ],
+                ],
+                'challenge_json' => [
+                    'prompt' => 'Ordena el algoritmo verificador que permite pasar al nivel avanzado solo si el estudiante tiene nivel >= 3 Y además tiene llave_maestra == true.',
+                    'blocks' => [
+                        ['id' => 'b2', 'code' => 'if (nivel >= 3 and llave_maestra == true):'],
+                        ['id' => 'b4', 'code' => 'else:  acceso = "BLOQUEADO"'],
+                        ['id' => 'b1', 'code' => 'nivel = 4  ;  llave_maestra = true'],
+                        ['id' => 'b3', 'code' => '    acceso = "PERMITIDO"'],
+                    ],
+                    'trace_question' => 'Con los valores iniciales nivel = 4 y llave_maestra = true, ¿qué valor booleano produce la expresión del if y qué valor guarda "acceso"?',
+                    'trace_options' => [
+                        ['id' => 'opt_a', 'label' => 'true and true → true   |  acceso = "PERMITIDO"'],
+                        ['id' => 'opt_b', 'label' => 'true and false → false |  acceso = "BLOQUEADO"'],
+                        ['id' => 'opt_c', 'label' => 'false and true → false |  acceso = "BLOQUEADO"'],
+                    ],
+                ],
+                'solution_json' => [
+                    'correct_block_order' => ['b1', 'b2', 'b3', 'b4'],
+                    'correct_trace_option' => 'opt_a',
+                    'explanation_success' => '¡Perfecto! Ambas partes de la conjunción lógica (4 >= 3 y llave_maestra == true) se cumplen, dando true y asignando acceso = "PERMITIDO".',
+                    'explanation_error_order' => 'Primero debes declarar las variables (nivel = 4 ; llave_maestra = true), luego abrir el condicional if, colocar la instrucción indentada acceso = "PERMITIDO" y cerrar con el bloque else.',
+                    'explanation_error_trace' => 'Como nivel es 4 (que sí es >= 3) y llave_maestra es true, ambas condiciones son verdaderas: true and true produce true.',
+                ],
+            ],
+
+            // =================================================================
+            // MÓDULO 3: ESTRUCTURAS CÍCLICAS (BUCLES)
+            // =================================================================
+            [
+                'slug' => 'lab-5-bucle-while-acumulador',
+                'module_id' => $mod3?->id,
+                'title' => 'Práctica 3.1: Traza de Contador y Acumulador en Bucle while',
+                'description' => 'Inspecciona iteración por iteración cómo un bucle while actualiza un contador y suma valores dentro de un acumulador hasta que la condición se vuelve falsa.',
+                'dimension' => 'loops',
+                'difficulty' => 'advanced',
+                'xp_reward' => 40,
+                'order_index' => 5,
+                'simulator_json' => [
+                    'code_lines' => [
+                        'suma = 0',
+                        'i = 1',
+                        'while (i <= 3):',
+                        '    suma = suma + (i * 10)',
+                        '    i = i + 1',
+                        'print("Suma acumulada:", suma)',
+                    ],
+                    'variables_names' => ['i', 'i <= 3', 'suma'],
+                    'steps' => [
+                        [
+                            'line' => 1,
+                            'vars' => ['i' => '—', 'i <= 3' => '—', 'suma' => 0],
+                            'changed' => 'suma',
+                            'output' => null,
+                            'explanation' => 'Se inicializa el acumulador "suma" en 0 antes de comenzar el ciclo.',
+                        ],
+                        [
+                            'line' => 2,
+                            'vars' => ['i' => 1, 'i <= 3' => '—', 'suma' => 0],
+                            'changed' => 'i',
+                            'output' => null,
+                            'explanation' => 'Se inicializa la variable de control (contador) "i" en 1.',
+                        ],
+                        [
+                            'line' => 3,
+                            'vars' => ['i' => 1, 'i <= 3' => 'true', 'suma' => 0],
+                            'changed' => 'i <= 3',
+                            'output' => null,
+                            'explanation' => 'Iteración 1: Se evalúa (1 <= 3). Es true, por lo que entra al cuerpo del bucle.',
+                        ],
+                        [
+                            'line' => 4,
+                            'vars' => ['i' => 1, 'i <= 3' => 'true', 'suma' => 10],
+                            'changed' => 'suma',
+                            'output' => null,
+                            'explanation' => 'suma = 0 + (1 * 10) → El acumulador "suma" pasa a valer 10.',
+                        ],
+                        [
+                            'line' => 5,
+                            'vars' => ['i' => 2, 'i <= 3' => 'true', 'suma' => 10],
+                            'changed' => 'i',
+                            'output' => null,
+                            'explanation' => 'Se incrementa el contador: i = 1 + 1 = 2.',
+                        ],
+                        [
+                            'line' => 3,
+                            'vars' => ['i' => 2, 'i <= 3' => 'true', 'suma' => 10],
+                            'changed' => 'i <= 3',
+                            'output' => null,
+                            'explanation' => 'Iteración 2: Se evalúa (2 <= 3). Sigue siendo true, repite el ciclo.',
+                        ],
+                        [
+                            'line' => 4,
+                            'vars' => ['i' => 2, 'i <= 3' => 'true', 'suma' => 30],
+                            'changed' => 'suma',
+                            'output' => null,
+                            'explanation' => 'suma = 10 + (2 * 10) → El acumulador "suma" sube a 30.',
+                        ],
+                        [
+                            'line' => 5,
+                            'vars' => ['i' => 3, 'i <= 3' => 'true', 'suma' => 30],
+                            'changed' => 'i',
+                            'output' => null,
+                            'explanation' => 'Se incrementa el contador: i = 2 + 1 = 3.',
+                        ],
+                        [
+                            'line' => 3,
+                            'vars' => ['i' => 3, 'i <= 3' => 'true', 'suma' => 30],
+                            'changed' => 'i <= 3',
+                            'output' => null,
+                            'explanation' => 'Iteración 3: Se evalúa (3 <= 3). Es true por última vez.',
+                        ],
+                        [
+                            'line' => 4,
+                            'vars' => ['i' => 3, 'i <= 3' => 'true', 'suma' => 60],
+                            'changed' => 'suma',
+                            'output' => null,
+                            'explanation' => 'suma = 30 + (3 * 10) → El acumulador "suma" alcanza 60.',
+                        ],
+                        [
+                            'line' => 5,
+                            'vars' => ['i' => 4, 'i <= 3' => 'true', 'suma' => 60],
+                            'changed' => 'i',
+                            'output' => null,
+                            'explanation' => 'Se incrementa el contador: i = 3 + 1 = 4.',
+                        ],
+                        [
+                            'line' => 3,
+                            'vars' => ['i' => 4, 'i <= 3' => 'false', 'suma' => 60],
+                            'changed' => 'i <= 3',
+                            'output' => null,
+                            'explanation' => 'Se evalúa (4 <= 3). Ahora es Falso (false), por lo que el bucle while termina y salta a la línea 6.',
+                        ],
+                        [
+                            'line' => 6,
+                            'vars' => ['i' => 4, 'i <= 3' => 'false', 'suma' => 60],
+                            'changed' => null,
+                            'output' => 'Suma acumulada: 60',
+                            'explanation' => 'Se imprime el total acumulado tras las 3 iteraciones: 60.',
+                        ],
+                    ],
+                ],
+                'challenge_json' => [
+                    'prompt' => 'Ordena los bloques para construir un bucle while que sume los números del 1 al 3 dentro de la variable "total", evitando caer en un ciclo infinito.',
+                    'blocks' => [
+                        ['id' => 'b4', 'code' => '    k = k + 1'],
+                        ['id' => 'b2', 'code' => 'while (k <= 3):'],
+                        ['id' => 'b1', 'code' => 'total = 0  ;  k = 1'],
+                        ['id' => 'b5', 'code' => 'print(total)'],
+                        ['id' => 'b3', 'code' => '    total = total + k'],
+                    ],
+                    'trace_question' => 'Al terminar el bucle y salir a la línea print(total), ¿qué valores exactos tienen "total" y el contador "k" en memoria?',
+                    'trace_options' => [
+                        ['id' => 'opt_a', 'label' => 'total = 6,   k = 3'],
+                        ['id' => 'opt_b', 'label' => 'total = 6,   k = 4'],
+                        ['id' => 'opt_c', 'label' => 'total = 10,  k = 4'],
+                    ],
+                ],
+                'solution_json' => [
+                    'correct_block_order' => ['b1', 'b2', 'b3', 'b4', 'b5'],
+                    'correct_trace_option' => 'opt_b',
+                    'explanation_success' => '¡Brillante! Sumaste 1 + 2 + 3 = 6 antes de incrementar k en cada vuelta, y notaste que el bucle se detiene justo cuando k alcanza el valor 4 (porque 4 <= 3 es falso).',
+                    'explanation_error_order' => 'Primero inicializa (total = 0 ; k = 1), luego abre "while (k <= 3):", dentro suma primero "total = total + k", después incrementa "k = k + 1", y fuera del ciclo imprime "print(total)".',
+                    'explanation_error_trace' => '¡Cuidado con el valor final del contador! En la tercera vuelta k vale 3, suma total = 6 y luego ejecuta k = 3 + 1 = 4. Es con k = 4 que la condición (k <= 3) se vuelve falsa.',
+                ],
+            ],
+            [
+                'slug' => 'lab-6-bucle-for-pares',
+                'module_id' => $mod3?->id,
+                'title' => 'Práctica 3.2: Filtrado con Bucle for y Condicional Anidado',
+                'description' => 'Combina un ciclo repetitivo for con una estructura condicional if usando el operador módulo (%) para contar cuántos números pares hay en una secuencia.',
+                'dimension' => 'algorithms',
+                'difficulty' => 'advanced',
+                'xp_reward' => 40,
+                'order_index' => 6,
+                'simulator_json' => [
+                    'code_lines' => [
+                        'pares = 0',
+                        'for num in [1, 2, 3, 4]:',
+                        '    if (num % 2 == 0):',
+                        '        pares = pares + 1',
+                        'print("Cantidad de pares:", pares)',
+                    ],
+                    'variables_names' => ['num', 'num % 2 == 0', 'pares'],
+                    'steps' => [
+                        [
+                            'line' => 1,
+                            'vars' => ['num' => '—', 'num % 2 == 0' => '—', 'pares' => 0],
+                            'changed' => 'pares',
+                            'output' => null,
+                            'explanation' => 'Se inicializa el contador de números pares en cero.',
+                        ],
+                        [
+                            'line' => 2,
+                            'vars' => ['num' => 1, 'num % 2 == 0' => '—', 'pares' => 0],
+                            'changed' => 'num',
+                            'output' => null,
+                            'explanation' => 'Iteración 1 del for: la variable "num" toma el primer valor de la lista (1).',
+                        ],
+                        [
+                            'line' => 3,
+                            'vars' => ['num' => 1, 'num % 2 == 0' => 'false', 'pares' => 0],
+                            'changed' => 'num % 2 == 0',
+                            'output' => null,
+                            'explanation' => '1 % 2 da residuo 1 (no es 0). Como es impar (false), no incrementa "pares".',
+                        ],
+                        [
+                            'line' => 2,
+                            'vars' => ['num' => 2, 'num % 2 == 0' => 'false', 'pares' => 0],
+                            'changed' => 'num',
+                            'output' => null,
+                            'explanation' => 'Iteración 2 del for: "num" toma el segundo valor de la lista (2).',
+                        ],
+                        [
+                            'line' => 3,
+                            'vars' => ['num' => 2, 'num % 2 == 0' => 'true', 'pares' => 0],
+                            'changed' => 'num % 2 == 0',
+                            'output' => null,
+                            'explanation' => '2 % 2 da residuo 0 (true). Entra al condicional if.',
+                        ],
+                        [
+                            'line' => 4,
+                            'vars' => ['num' => 2, 'num % 2 == 0' => 'true', 'pares' => 1],
+                            'changed' => 'pares',
+                            'output' => null,
+                            'explanation' => 'Se incrementa el contador: pares = 0 + 1 = 1.',
+                        ],
+                        [
+                            'line' => 2,
+                            'vars' => ['num' => 3, 'num % 2 == 0' => 'true', 'pares' => 1],
+                            'changed' => 'num',
+                            'output' => null,
+                            'explanation' => 'Iteración 3 del for: "num" toma el valor 3.',
+                        ],
+                        [
+                            'line' => 3,
+                            'vars' => ['num' => 3, 'num % 2 == 0' => 'false', 'pares' => 1],
+                            'changed' => 'num % 2 == 0',
+                            'output' => null,
+                            'explanation' => '3 % 2 da residuo 1 (false). Salta a la siguiente vuelta del bucle.',
+                        ],
+                        [
+                            'line' => 2,
+                            'vars' => ['num' => 4, 'num % 2 == 0' => 'false', 'pares' => 1],
+                            'changed' => 'num',
+                            'output' => null,
+                            'explanation' => 'Iteración 4 del for: "num" toma el último valor de la lista (4).',
+                        ],
+                        [
+                            'line' => 3,
+                            'vars' => ['num' => 4, 'num % 2 == 0' => 'true', 'pares' => 1],
+                            'changed' => 'num % 2 == 0',
+                            'output' => null,
+                            'explanation' => '4 % 2 da residuo 0 (true). Entra al bloque del if.',
+                        ],
+                        [
+                            'line' => 4,
+                            'vars' => ['num' => 4, 'num % 2 == 0' => 'true', 'pares' => 2],
+                            'changed' => 'pares',
+                            'output' => null,
+                            'explanation' => 'Se incrementa el contador: pares = 1 + 1 = 2.',
+                        ],
+                        [
+                            'line' => 5,
+                            'vars' => ['num' => 4, 'num % 2 == 0' => 'true', 'pares' => 2],
+                            'changed' => null,
+                            'output' => 'Cantidad de pares: 2',
+                            'explanation' => 'Finaliza el recorrido de la lista y muestra el total de números pares encontrados (2).',
+                        ],
+                    ],
+                ],
+                'challenge_json' => [
+                    'prompt' => 'Ordena el algoritmo para recorrer la lista de precios [15, 60, 25, 80] y acumular en "suma_mayores" únicamente aquellos precios que sean mayores o iguales a 50.',
+                    'blocks' => [
+                        ['id' => 'b3', 'code' => '    if (p >= 50):'],
+                        ['id' => 'b1', 'code' => 'suma_mayores = 0'],
+                        ['id' => 'b5', 'code' => 'print(suma_mayores)'],
+                        ['id' => 'b2', 'code' => 'for p in [15, 60, 25, 80]:'],
+                        ['id' => 'b4', 'code' => '        suma_mayores = suma_mayores + p'],
+                    ],
+                    'trace_question' => 'Al concluir las 4 iteraciones del ciclo for, ¿qué valor final queda guardado en la variable "suma_mayores"?',
+                    'trace_options' => [
+                        ['id' => 'opt_a', 'label' => 'suma_mayores = 180  (suma todos los elementos)'],
+                        ['id' => 'opt_b', 'label' => 'suma_mayores = 140  (solo suma 60 + 80)'],
+                        ['id' => 'opt_c', 'label' => 'suma_mayores = 2    (cuenta cuántos cumplen)'],
+                    ],
+                ],
+                'solution_json' => [
+                    'correct_block_order' => ['b1', 'b2', 'b3', 'b4', 'b5'],
+                    'correct_trace_option' => 'opt_b',
+                    'explanation_success' => '¡Excelente dominio de ciclos anidados! Inicializaste el acumulador, recorriste cada precio con for, filtraste con if (p >= 50) y sumaste 60 + 80 = 140.',
+                    'explanation_error_order' => 'El orden correcto es: 1) inicializar suma_mayores = 0, 2) abrir el ciclo for, 3) evaluar el filtro if (p >= 50):, 4) acumular suma_mayores = suma_mayores + p, y 5) imprimir al final.',
+                    'explanation_error_trace' => 'Solo los valores 60 y 80 cumplen la condición (p >= 50). Como la línea suma "+ p", acumula sus valores: 60 + 80 = 140.',
+                ],
+            ],
+        ];
+
+        foreach ($challenges as $ch) {
+            LabChallenge::query()->updateOrCreate(
+                ['slug' => $ch['slug']],
+                $ch
+            );
         }
     }
 }

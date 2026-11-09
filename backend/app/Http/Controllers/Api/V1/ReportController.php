@@ -149,6 +149,19 @@ final class ReportController extends Controller
                 ->pluck('total', 'user_id')
             : collect();
 
+        $totalLabChallenges = \Illuminate\Support\Facades\Schema::hasTable('lab_challenges')
+            ? \App\Domain\Lab\Models\LabChallenge::query()->where('status', 'published')->count()
+            : 0;
+
+        $labCompletedCounts = (! empty($studentIds) && \Illuminate\Support\Facades\Schema::hasTable('lab_attempts'))
+            ? \App\Domain\Lab\Models\LabAttempt::query()
+                ->whereIn('user_id', $studentIds)
+                ->where('completed', true)
+                ->selectRaw('user_id, COUNT(*) as total')
+                ->groupBy('user_id')
+                ->pluck('total', 'user_id')
+            : collect();
+
         // 1. Resumen por Módulo
         $modulesSummary = $modules->map(function ($mod, $idx) use ($studentIds, $completedProgress, $quizAttempts) {
             $cleanTitle = preg_replace('/^Módulo\s*\d+\s*[:.-]?\s*/iu', '', $mod->title);
@@ -203,6 +216,8 @@ final class ReportController extends Controller
             $diagnosticsByUser,
             $xpProfiles,
             $badgeCounts,
+            $labCompletedCounts,
+            $totalLabChallenges,
             $trackLabels
         ) {
             $sid = $m->student_id;
@@ -293,6 +308,8 @@ final class ReportController extends Controller
                 'xp_total' => (int) ($xpProfile?->xp_total ?? 0),
                 'xp_level' => (int) ($xpProfile?->xp_level ?? 1),
                 'badges_count' => (int) ($badgeCounts->get($sid) ?? 0),
+                'lab_completed_count' => (int) ($labCompletedCounts->get($sid) ?? 0),
+                'lab_total_count' => $totalLabChallenges > 0 ? $totalLabChallenges : 6,
             ];
         })->all();
 
@@ -412,6 +429,13 @@ final class ReportController extends Controller
             ? round(collect($studentsRoster)->avg('progress_percent'), 1)
             : 0.0;
 
+        $totalLabCompletions = (int) collect($studentsRoster)->sum('lab_completed_count');
+        $effectiveLabTotal = $totalLabChallenges > 0 ? $totalLabChallenges : 6;
+        $maxPossibleLabs = count($studentsRoster) * $effectiveLabTotal;
+        $labCompletionRate = $maxPossibleLabs > 0
+            ? round(($totalLabCompletions * 100) / $maxPossibleLabs, 1)
+            : 0.0;
+
         return [
             'meta' => [
                 'title' => $classroom ? $classroom->name : ($user->isAdmin() ? 'Consolidado Institucional Global' : 'Consolidado de Mis Aulas'),
@@ -426,6 +450,12 @@ final class ReportController extends Controller
                 'generated_at' => now()->timezone('America/Guatemala')->format('d/m/Y H:i'),
             ],
             'metrics' => ($this->analytics)->metricsForClassroom($classroomId),
+            'lab_summary' => [
+                'total_challenges' => $effectiveLabTotal,
+                'total_completions' => $totalLabCompletions,
+                'avg_per_student' => count($studentsRoster) > 0 ? round($totalLabCompletions / count($studentsRoster), 1) : 0.0,
+                'completion_rate' => $labCompletionRate,
+            ],
             'modules_summary' => $modulesSummary,
             'students' => $studentsRoster,
             'pre_post' => $prePost,

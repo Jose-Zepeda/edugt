@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\ClassroomController;
 use App\Http\Controllers\Api\V1\CurriculumController;
 use App\Http\Controllers\Api\V1\DiagnosticController;
 use App\Http\Controllers\Api\V1\GamificationController;
+use App\Http\Controllers\Api\V1\LabController;
 use App\Http\Controllers\Api\V1\OfflineSyncController;
 use App\Http\Controllers\Api\V1\QuizController;
 use App\Http\Controllers\Api\V1\ReportController;
@@ -84,6 +85,10 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/quizzes/{id}/attempts/{aid}/answers', [QuizController::class, 'answer'])->name('quiz.answer');
         Route::post('/quizzes/{id}/attempts/{aid}/submit', [QuizController::class, 'submit'])->name('quiz.submit');
         Route::get('/quizzes/{id}/attempts', [QuizController::class, 'history'])->name('quiz.history');
+
+        // ---- Laboratorio Algorítmico y Prueba de Escritorio ----
+        Route::get('/lab/challenges', [LabController::class, 'index'])->name('lab.challenges.index');
+        Route::post('/lab/challenges/{id}/submit', [LabController::class, 'submit'])->name('lab.challenges.submit');
 
         // ---- Aulas (RF-19) ----
         Route::post('/classrooms', [ClassroomController::class, 'store'])->name('classroom.store');
