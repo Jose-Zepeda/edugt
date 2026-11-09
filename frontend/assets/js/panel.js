@@ -1424,12 +1424,12 @@ function renderLabWorkbench(ch) {
               <i class="bi bi-memory me-1"></i> Estado de Variables en Memoria (RAM)
             </div>
             <div class="table-responsive">
-              <table class="table table-sm align-middle mb-0" aria-label="Estado de variables en memoria RAM">
+              <table class="table table-sm lab-memory-table align-middle mb-0" aria-label="Estado de variables en memoria RAM">
                 <thead>
                   <tr>
-                    <th scope="col" class="small text-muted" style="font-size:.74rem;">Variable / Expresión</th>
-                    <th scope="col" class="small text-muted text-center" style="font-size:.74rem;">Valor Actual</th>
-                    <th scope="col" class="small text-muted text-end" style="font-size:.74rem;">Estado</th>
+                    <th scope="col" class="small" style="font-size:.74rem;">Variable / Expresión</th>
+                    <th scope="col" class="small text-center" style="font-size:.74rem;">Valor Actual</th>
+                    <th scope="col" class="small text-end" style="font-size:.74rem;">Estado</th>
                   </tr>
                 </thead>
                 <tbody id="sim-memory-tbody"></tbody>
@@ -1559,9 +1559,9 @@ function updateSimulatorView(ch) {
       const val = currentStep.vars?.[vName] ?? '—';
       const isChanged = currentStep.changed === vName;
       return `
-        <tr style="${isChanged ? 'background:var(--edugt-primary-soft);' : ''}">
-          <th scope="row" class="font-monospace small fw-bold" style="color:var(--edugt-text);font-size:.82rem;">${esc(vName)}</th>
-          <td class="text-center font-monospace fw-bold" style="color:${isChanged ? 'var(--edugt-primary)' : 'var(--edugt-text)'};font-size:.86rem;">
+        <tr class="${isChanged ? 'lab-row-changed' : ''}">
+          <th scope="row" class="lab-var-name font-monospace small fw-bold" style="font-size:.82rem;">${esc(vName)}</th>
+          <td class="lab-var-value text-center font-monospace fw-bold" style="font-size:.86rem;">
             ${esc(String(val))}
           </td>
           <td class="text-end">

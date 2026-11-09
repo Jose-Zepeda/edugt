@@ -2793,3 +2793,52 @@ body.auth-body {
   color: var(--edugt-text);
   border-color: var(--edugt-border);
 }
+
+/* ---------- Tabla de Memoria RAM del Laboratorio Algorítmico ---------- */
+.lab-memory-table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--edugt-text);
+  --bs-table-border-color: var(--edugt-border);
+  color: var(--edugt-text);
+  border-color: var(--edugt-border);
+}
+
+.lab-memory-table > :not(caption) > * > * {
+  background-color: transparent !important;
+  color: var(--edugt-text) !important;
+  border-bottom-color: var(--edugt-border) !important;
+  box-shadow: none !important;
+  padding: 0.55rem 0.65rem;
+}
+
+.lab-memory-table thead th {
+  color: var(--edugt-muted) !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-size: 0.72rem;
+  border-bottom: 2px solid var(--edugt-border) !important;
+}
+
+.lab-memory-table tbody tr.lab-row-changed > * {
+  background-color: var(--edugt-primary-soft) !important;
+}
+
+.lab-memory-table .lab-var-name {
+  color: var(--edugt-text) !important;
+  font-weight: 700;
+}
+
+.lab-memory-table .lab-var-value {
+  color: var(--edugt-text) !important;
+  font-weight: 800;
+}
+
+.lab-memory-table tbody tr.lab-row-changed .lab-var-value {
+  color: var(--edugt-primary) !important;
+}
+
+[data-theme="dark"] .lab-memory-table tbody tr.lab-row-changed .lab-var-value {
+  color: #38BDF8 !important;
+}
+
