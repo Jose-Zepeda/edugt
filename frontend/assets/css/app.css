@@ -2842,3 +2842,111 @@ body.auth-body {
   color: #38BDF8 !important;
 }
 
+/* ---------- Bloques Arrastrables (Drag & Drop) del Laboratorio Algorítmico ---------- */
+:root.is-dragging-lab-block,
+:root.is-dragging-lab-block * {
+  cursor: grabbing !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+.lab-blocks-list {
+  position: relative;
+  --drop-marker-color: var(--edugt-primary, #7C3AED);
+}
+
+[data-theme="dark"] .lab-blocks-list {
+  --drop-marker-color: #38BDF8;
+}
+
+@media (forced-colors: active) {
+  .lab-blocks-list {
+    --drop-marker-color: Highlight;
+  }
+}
+
+.lab-blocks-list[data-drop]::before,
+.lab-blocks-list[data-drop]::after {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  z-index: 35;
+}
+
+.lab-blocks-list[data-drop]::before {
+  left: calc(var(--drop-x, 0px) - 5px);
+  top: calc(var(--drop-y, 0px) - 5px);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2.5px solid var(--drop-marker-color);
+  background: var(--edugt-card, #ffffff);
+}
+
+.lab-blocks-list[data-drop]::after {
+  left: calc(var(--drop-x, 0px) + 4px);
+  top: calc(var(--drop-y, 0px) - 1.5px);
+  width: calc(var(--drop-w, 0px) - 4px);
+  height: 3px;
+  border-radius: 999px;
+  background: var(--drop-marker-color);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.45);
+}
+
+.lab-block-item {
+  background: var(--edugt-card-subtle);
+  border-color: var(--edugt-border) !important;
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+  scroll-margin: 0.75rem;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.lab-block-item:hover {
+  border-color: var(--edugt-primary) !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
+}
+
+.lab-block-item:has(.lab-drag-handle:focus-visible) {
+  outline: 2px solid var(--edugt-primary);
+  outline-offset: 2px;
+}
+
+.lab-block-item.is-grabbed {
+  position: relative;
+  z-index: 30;
+  scale: 1.015;
+  background: var(--edugt-card);
+  border-color: var(--edugt-primary) !important;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.28);
+  pointer-events: none;
+}
+
+.lab-drag-handle {
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  color: var(--edugt-muted);
+  opacity: 0.8;
+  border: none;
+  background: transparent;
+  border-radius: 0.4rem;
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.lab-drag-handle:is(:hover, :focus-visible) {
+  background: var(--edugt-primary-soft);
+  color: var(--edugt-primary);
+  opacity: 1;
+  outline: none;
+}
+
+.lab-drag-handle[aria-pressed="true"] {
+  background: var(--edugt-primary);
+  color: #ffffff;
+  opacity: 1;
+}
+
+

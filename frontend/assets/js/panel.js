@@ -1461,12 +1461,13 @@ function renderLabWorkbench(ch) {
       </div>
       <p class="small text-muted mb-3">${esc(ch.challenge?.prompt || '')}</p>
 
-      <!-- Ordenamiento de Bloques de Pseudocódigo -->
+      <!-- Ordenamiento de Bloques de Pseudocódigo (Drag & Drop) -->
       <div class="mb-3">
         <div class="small fw-bold mb-2" style="color:var(--edugt-text);font-size:.84rem;">
-          A) Ordena las líneas del algoritmo usando los botones <kbd>▲</kbd> y <kbd>▼</kbd>:
+          A) Ordena las líneas del algoritmo manteniendo clic y arrastrando cada bloque a su posición correcta:
         </div>
-        <div id="lab-blocks-container" class="d-flex flex-column gap-2"></div>
+        <div id="lab-dnd-live" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+        <div id="lab-blocks-container" class="lab-blocks-list d-flex flex-column gap-2"></div>
       </div>
 
       <!-- Pregunta de Prueba de Escritorio (Radio buttons accesibles) -->
@@ -1591,49 +1592,311 @@ function updateSimulatorView(ch) {
   }
 }
 
+let _labLiveTimer = null;
+function announceLabReorder(msg) {
+  const liveEl = $('#lab-dnd-live');
+  if (!liveEl) return;
+  if (_labLiveTimer) clearTimeout(_labLiveTimer);
+  liveEl.textContent = '';
+  _labLiveTimer = setTimeout(() => {
+    liveEl.textContent = msg;
+  }, 500);
+}
+
+function moveDomNodeBefore(container, item, referenceNode) {
+  if ('moveBefore' in Element.prototype) {
+    container.moveBefore(item, referenceNode);
+  } else if (referenceNode) {
+    referenceNode.before(item);
+  } else {
+    container.append(item);
+  }
+}
+
+function syncBlocksOrderFromDom(container) {
+  const items = Array.from(container.querySelectorAll('.lab-block-item'));
+  const blockMap = new Map(_currentBlocksOrder.map((b) => [String(b.id), b]));
+  const nextOrder = [];
+
+  items.forEach((el, idx) => {
+    const id = el.getAttribute('data-block-id');
+    const block = blockMap.get(String(id));
+    if (block) nextOrder.push(block);
+    const badge = el.querySelector('.lab-block-index');
+    if (badge) badge.textContent = String(idx + 1);
+  });
+
+  if (nextOrder.length === _currentBlocksOrder.length) {
+    _currentBlocksOrder = nextOrder;
+  }
+}
+
+function animateFlipRects(beforeRects, draggedItem = null, draggedReleaseRect = null) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  beforeRects.forEach((oldRect, el) => {
+    const startRect = el === draggedItem && draggedReleaseRect ? draggedReleaseRect : oldRect;
+    const newRect = el.getBoundingClientRect();
+    const dx = startRect.left - newRect.left;
+    const dy = startRect.top - newRect.top;
+    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+
+    el.animate(
+      [{ translate: `${dx}px ${dy}px` }, { translate: '0px 0px' }],
+      { duration: 180, easing: 'cubic-bezier(0.2, 0, 0, 1)' }
+    );
+  });
+}
+
 function renderChallengeBlocks() {
   const container = $('#lab-blocks-container');
   if (!container) return;
 
   container.innerHTML = _currentBlocksOrder.map((block, idx) => `
-    <div class="d-flex align-items-center justify-content-between p-2.5 rounded-3 border"
-         style="background:var(--edugt-card-subtle);border-color:var(--edugt-border)!important;">
-      <div class="d-flex align-items-center gap-2 min-w-0">
-        <span class="badge rounded-pill bg-secondary bg-opacity-10 text-muted fw-bold" style="font-size:.75rem;min-width:26px;">
+    <div class="lab-block-item d-flex align-items-center justify-content-between p-2.5 rounded-3 border"
+         data-block-id="${esc(block.id)}">
+      <div class="d-flex align-items-center gap-2 min-w-0 flex-grow-1">
+        <button type="button"
+                class="lab-drag-handle p-1 d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                aria-pressed="false"
+                aria-label="Reordenar línea: ${esc(block.code)}"
+                title="Mantén clic y arrastra para mover">
+          <i class="bi bi-grip-vertical fs-5" aria-hidden="true"></i>
+        </button>
+        <span class="lab-block-index badge rounded-pill bg-secondary bg-opacity-10 text-muted fw-bold flex-shrink-0" style="font-size:.75rem;min-width:26px;">
           ${idx + 1}
         </span>
         <code class="fw-bold" style="color:var(--edugt-text);font-size:.86rem;white-space:pre-wrap;">${esc(block.code)}</code>
       </div>
-      <div class="d-flex align-items-center gap-1 flex-shrink-0 ms-2">
-        <button type="button"
-                class="btn btn-sm btn-google px-2 py-1"
-                onclick="window.moveLabBlock(${idx}, -1)"
-                aria-label="Mover bloque ${esc(block.code)} hacia arriba"
-                ${idx === 0 ? 'disabled' : ''}>
-          <i class="bi bi-arrow-up"></i>
-        </button>
-        <button type="button"
-                class="btn btn-sm btn-google px-2 py-1"
-                onclick="window.moveLabBlock(${idx}, 1)"
-                aria-label="Mover bloque ${esc(block.code)} hacia abajo"
-                ${idx === _currentBlocksOrder.length - 1 ? 'disabled' : ''}>
-          <i class="bi bi-arrow-down"></i>
-        </button>
-      </div>
+      <span class="lab-drag-hint small text-muted flex-shrink-0 ms-2 d-none d-sm-inline-flex align-items-center gap-1" aria-hidden="true" style="font-size:.73rem;">
+        <i class="bi bi-arrows-move"></i> Arrastrar
+      </span>
     </div>
   `).join('');
+
+  initLabBlocksDragAndDrop(container);
 }
 
-window.moveLabBlock = function (index, direction) {
-  const targetIndex = index + direction;
-  if (targetIndex < 0 || targetIndex >= _currentBlocksOrder.length) return;
+function initLabBlocksDragAndDrop(container) {
+  let activeDrag = null;
+  let kbGrabbedItem = null;
+  let kbOriginalNextSibling = null;
 
-  const temp = _currentBlocksOrder[index];
-  _currentBlocksOrder[index] = _currentBlocksOrder[targetIndex];
-  _currentBlocksOrder[targetIndex] = temp;
+  function updateDropMarker(referenceNode, draggedItem) {
+    const items = Array.from(container.querySelectorAll('.lab-block-item'));
+    if (referenceNode === draggedItem || referenceNode === draggedItem.nextElementSibling) {
+      container.removeAttribute('data-drop');
+      return;
+    }
 
-  renderChallengeBlocks();
-};
+    const containerRect = container.getBoundingClientRect();
+    let dropY = containerRect.top;
+
+    if (referenceNode) {
+      const refIdx = items.indexOf(referenceNode);
+      const prevEl = refIdx > 0 ? items[refIdx - 1] : null;
+      const refRect = referenceNode.getBoundingClientRect();
+      if (prevEl && prevEl !== draggedItem) {
+        const prevRect = prevEl.getBoundingClientRect();
+        dropY = (prevRect.bottom + refRect.top) / 2;
+      } else {
+        dropY = refRect.top - 4;
+      }
+    } else if (items.length > 0) {
+      const lastEl = items[items.length - 1];
+      const lastRect = lastEl.getBoundingClientRect();
+      dropY = lastRect.bottom + 4;
+    }
+
+    container.setAttribute('data-drop', '');
+    container.style.setProperty('--drop-x', `${containerRect.left}px`);
+    container.style.setProperty('--drop-y', `${dropY}px`);
+    container.style.setProperty('--drop-w', `${containerRect.width}px`);
+  }
+
+  function findReferenceNodeFromPointer(clientY) {
+    const items = Array.from(container.querySelectorAll('.lab-block-item'));
+    const containerRect = container.getBoundingClientRect();
+    const clampedY = Math.max(containerRect.top, Math.min(containerRect.bottom, clientY));
+    const localY = clampedY - containerRect.top - container.clientTop + container.scrollTop;
+
+    for (const child of items) {
+      const midpoint = child.offsetTop + child.offsetHeight / 2;
+      if (midpoint > localY) {
+        return child;
+      }
+    }
+    return null;
+  }
+
+  function cleanupPointerDrag() {
+    if (!activeDrag) return;
+    const { item, handle, pointerId, onMove, onUp, onCancel, onKeyDown, onLostCapture } = activeDrag;
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onCancel);
+    document.removeEventListener('keydown', onKeyDown, true);
+    handle.removeEventListener('lostpointercapture', onLostCapture);
+    try {
+      if (handle.hasPointerCapture(pointerId)) {
+        handle.releasePointerCapture(pointerId);
+      }
+    } catch (_) {}
+    container.removeAttribute('data-drop');
+    container.style.removeProperty('--drop-x');
+    container.style.removeProperty('--drop-y');
+    container.style.removeProperty('--drop-w');
+    document.documentElement.classList.remove('is-dragging-lab-block');
+    item.classList.remove('is-grabbed');
+    item.style.translate = '';
+    activeDrag = null;
+  }
+
+  container.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || activeDrag) return;
+    const item = e.target.closest('.lab-block-item');
+    if (!item || !container.contains(item)) return;
+
+    e.preventDefault();
+    const handle = item.querySelector('.lab-drag-handle') || item;
+    const pointerId = e.pointerId;
+    const startY = e.clientY;
+    const startScrollTop = container.scrollTop;
+
+    item.getAnimations().forEach((anim) => anim.finish());
+    handle.setPointerCapture(pointerId);
+    document.documentElement.classList.add('is-dragging-lab-block');
+    item.classList.add('is-grabbed');
+
+    let currentReferenceNode = item.nextElementSibling;
+
+    const onMove = (moveEvt) => {
+      if (!activeDrag || moveEvt.pointerId !== pointerId) return;
+      const dy = (moveEvt.clientY - startY) + (container.scrollTop - startScrollTop);
+      item.style.translate = `0px ${dy}px`;
+      currentReferenceNode = findReferenceNodeFromPointer(moveEvt.clientY);
+      updateDropMarker(currentReferenceNode, item);
+    };
+
+    const onUp = (upEvt) => {
+      if (!activeDrag || upEvt.pointerId !== pointerId) return;
+      const items = Array.from(container.querySelectorAll('.lab-block-item'));
+      const beforeRects = new Map(items.map((el) => [el, el.getBoundingClientRect()]));
+      const releasedRect = item.getBoundingClientRect();
+
+      const shouldMove = currentReferenceNode !== item && currentReferenceNode !== item.nextElementSibling;
+      cleanupPointerDrag();
+
+      if (shouldMove) {
+        moveDomNodeBefore(container, item, currentReferenceNode);
+        syncBlocksOrderFromDom(container);
+        item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        animateFlipRects(beforeRects, item, releasedRect);
+        const newIdx = Array.from(container.querySelectorAll('.lab-block-item')).indexOf(item) + 1;
+        const codeText = item.querySelector('code')?.textContent || 'Bloque';
+        announceLabReorder(`${codeText} movido a la posición ${newIdx} de ${_currentBlocksOrder.length}.`);
+      } else {
+        animateFlipRects(beforeRects, item, releasedRect);
+      }
+    };
+
+    const onCancel = (cancelEvt) => {
+      if (!activeDrag || (cancelEvt.pointerId !== undefined && cancelEvt.pointerId !== pointerId)) return;
+      const releasedRect = item.getBoundingClientRect();
+      cleanupPointerDrag();
+      const beforeRects = new Map([[item, releasedRect]]);
+      animateFlipRects(beforeRects, item, releasedRect);
+      announceLabReorder('Reordenamiento cancelado.');
+    };
+
+    const onKeyDown = (keyEvt) => {
+      if (keyEvt.key === 'Escape' && activeDrag) {
+        keyEvt.preventDefault();
+        keyEvt.stopPropagation();
+        onCancel({});
+      }
+    };
+
+    const onLostCapture = () => {
+      if (activeDrag && !handle.hasPointerCapture(pointerId)) {
+        onCancel({});
+      }
+    };
+
+    activeDrag = { item, handle, pointerId, onMove, onUp, onCancel, onKeyDown, onLostCapture };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onCancel);
+    document.addEventListener('keydown', onKeyDown, true);
+    handle.addEventListener('lostpointercapture', onLostCapture);
+  });
+
+  // Soporte accesible de teclado (Espacio/Enter para sujetar/soltar, Flechas para mover, Escape para cancelar)
+  container.addEventListener('keydown', (e) => {
+    const handle = e.target.closest('.lab-drag-handle');
+    if (!handle) return;
+    const item = handle.closest('.lab-block-item');
+    if (!item) return;
+
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      if (kbGrabbedItem === item) {
+        handle.setAttribute('aria-pressed', 'false');
+        item.classList.remove('is-grabbed');
+        kbGrabbedItem = null;
+        kbOriginalNextSibling = null;
+        const idx = Array.from(container.querySelectorAll('.lab-block-item')).indexOf(item) + 1;
+        announceLabReorder(`Bloque soltado en la posición ${idx}.`);
+      } else {
+        kbGrabbedItem = item;
+        kbOriginalNextSibling = item.nextElementSibling;
+        handle.setAttribute('aria-pressed', 'true');
+        item.classList.add('is-grabbed');
+        announceLabReorder('Bloque seleccionado. Usa flecha arriba o abajo para mover, Espacio para soltar o Escape para cancelar.');
+      }
+      return;
+    }
+
+    if (kbGrabbedItem !== item) return;
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      const items = Array.from(container.querySelectorAll('.lab-block-item'));
+      const beforeRects = new Map(items.map((el) => [el, el.getBoundingClientRect()]));
+      moveDomNodeBefore(container, item, kbOriginalNextSibling);
+      syncBlocksOrderFromDom(container);
+      handle.setAttribute('aria-pressed', 'false');
+      item.classList.remove('is-grabbed');
+      kbGrabbedItem = null;
+      kbOriginalNextSibling = null;
+      item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      handle.focus({ preventScroll: true });
+      animateFlipRects(beforeRects);
+      announceLabReorder('Reordenamiento cancelado.');
+      return;
+    }
+
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const items = Array.from(container.querySelectorAll('.lab-block-item'));
+      const idx = items.indexOf(item);
+      const refNode = e.key === 'ArrowUp'
+        ? (idx > 0 ? items[idx - 1] : undefined)
+        : (idx < items.length - 1 ? items[idx + 1].nextElementSibling : undefined);
+
+      if (refNode === undefined) return;
+
+      const beforeRects = new Map(items.map((el) => [el, el.getBoundingClientRect()]));
+      moveDomNodeBefore(container, item, refNode);
+      syncBlocksOrderFromDom(container);
+      item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      handle.focus({ preventScroll: true });
+      animateFlipRects(beforeRects);
+      const newIdx = Array.from(container.querySelectorAll('.lab-block-item')).indexOf(item) + 1;
+      announceLabReorder(`Posición ${newIdx} de ${_currentBlocksOrder.length}.`);
+    }
+  });
+}
 
 function renderTraceOptions(ch) {
   const container = $('#lab-trace-options');
