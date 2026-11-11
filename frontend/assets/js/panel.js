@@ -1304,23 +1304,19 @@ async function loadLabChallenges() {
   }
 }
 
+function formatLabTitle(rawTitle) {
+  return String(rawTitle || '').replace(/^Pr[áa]ctica\s+\d+(?:\.\d+)?\s*:\s*/i, '');
+}
+
 function renderLabList() {
   const listEl = $('#lab-challenges-list');
   if (!listEl) return;
 
-  let currentModNum = null;
   let html = '';
 
   _labChallenges.forEach((ch) => {
-    if (ch.module_number !== currentModNum) {
-      currentModNum = ch.module_number;
-      html += `
-        <div class="small fw-bold text-uppercase mt-2 mb-1 px-1" style="font-size:.72rem;letter-spacing:.05em;color:var(--edugt-muted);">
-          Módulo ${ch.module_number}: ${esc(ch.module_title)}
-        </div>`;
-    }
-
     const isSelected = ch.id === _activeLabId;
+    const cleanTitle = formatLabTitle(ch.title);
     const statusBadge = ch.completed
       ? `<span class="badge rounded-pill px-2 py-0.5" style="background:var(--edugt-green-soft);color:var(--edugt-green);font-size:.7rem;"><i class="bi bi-check-circle-fill me-1"></i>Superada (+${ch.xp_awarded || ch.xp_reward} XP)</span>`
       : `<span class="badge rounded-pill px-2 py-0.5" style="background:var(--edugt-primary-soft);color:var(--edugt-primary);font-size:.7rem;">+${ch.xp_reward} XP</span>`;
@@ -1331,7 +1327,7 @@ function renderLabList() {
               style="background:${isSelected ? 'var(--edugt-primary-soft)' : 'var(--edugt-card-subtle)'};border-color:${isSelected ? 'var(--edugt-primary)' : 'var(--edugt-border)'}!important;cursor:pointer;"
               onclick="window.selectLabChallenge(${ch.id})">
         <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
-          <span class="fw-bold small" style="color:var(--edugt-text);font-size:.86rem;">${esc(ch.title)}</span>
+          <span class="fw-bold small" style="color:var(--edugt-text);font-size:.86rem;">${esc(cleanTitle)}</span>
           ${statusBadge}
         </div>
         <div class="text-muted text-truncate" style="font-size:.76rem;">
@@ -1375,7 +1371,7 @@ function renderLabWorkbench(ch) {
           </span>
           ${ch.completed ? `<span class="badge rounded-pill px-2.5 py-1 fw-bold" style="background:var(--edugt-green-soft);color:var(--edugt-green);font-size:.72rem;"><i class="bi bi-patch-check-fill me-1"></i>Práctica Completada</span>` : ''}
         </div>
-        <h3 class="h5 fw-bold mb-1" style="color:var(--edugt-text);">${esc(ch.title)}</h3>
+        <h3 class="h5 fw-bold mb-1" style="color:var(--edugt-text);">${esc(formatLabTitle(ch.title))}</h3>
         <p class="mb-0 text-muted" style="font-size:.86rem;">${esc(ch.description)}</p>
       </div>
     </div>

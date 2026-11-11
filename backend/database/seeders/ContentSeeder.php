@@ -779,7 +779,7 @@ class ContentSeeder extends Seeder
             [
                 'slug' => 'lab-1-intercambio-variables',
                 'module_id' => $mod1?->id,
-                'title' => 'Práctica 1.1: Intercambio de Variables con Auxiliar',
+                'title' => 'Intercambio de Variables con Auxiliar',
                 'description' => 'Simula en memoria cómo intercambiar el contenido de dos variables (a y b) usando una variable temporal auxiliar sin perder ningún dato en el proceso.',
                 'dimension' => 'variables',
                 'difficulty' => 'beginner',
@@ -866,7 +866,7 @@ class ContentSeeder extends Seeder
             [
                 'slug' => 'lab-2-jerarquia-facturacion',
                 'module_id' => $mod1?->id,
-                'title' => 'Práctica 1.2: Cálculo de Subtotal y Descuento en Memoria',
+                'title' => 'Cálculo de Subtotal y Descuento en Memoria',
                 'description' => 'Realiza la traza de memoria de un algoritmo aritmético que calcula el total a pagar por útiles escolares aplicando descuento.',
                 'dimension' => 'abstraction',
                 'difficulty' => 'beginner',
@@ -957,7 +957,7 @@ class ContentSeeder extends Seeder
             [
                 'slug' => 'lab-3-condicional-aprobacion',
                 'module_id' => $mod2?->id,
-                'title' => 'Práctica 2.1: Ramificación Condicional (if / else)',
+                'title' => 'Ramificación Condicional (if / else)',
                 'description' => 'Observa cómo el procesador evalúa una expresión lógica booleana y salta únicamente al bloque verdadero o falso según la nota del estudiante.',
                 'dimension' => 'conditionals',
                 'difficulty' => 'intermediate',
@@ -1039,7 +1039,7 @@ class ContentSeeder extends Seeder
             [
                 'slug' => 'lab-4-operadores-logicos-beca',
                 'module_id' => $mod2?->id,
-                'title' => 'Práctica 2.2: Condición Compuesta con Operador AND',
+                'title' => 'Condición Compuesta con Operador AND',
                 'description' => 'Analiza en memoria cómo se evalúan dos condiciones simultáneas unidas por el operador lógico AND para otorgar una beca estudiantil.',
                 'dimension' => 'decomposition',
                 'difficulty' => 'intermediate',
@@ -1140,7 +1140,7 @@ class ContentSeeder extends Seeder
             [
                 'slug' => 'lab-5-bucle-while-acumulador',
                 'module_id' => $mod3?->id,
-                'title' => 'Práctica 3.1: Traza de Contador y Acumulador en Bucle while',
+                'title' => 'Traza de Contador y Acumulador en Bucle while',
                 'description' => 'Inspecciona iteración por iteración cómo un bucle while actualiza un contador y suma valores dentro de un acumulador hasta que la condición se vuelve falsa.',
                 'dimension' => 'loops',
                 'difficulty' => 'advanced',
@@ -1277,7 +1277,7 @@ class ContentSeeder extends Seeder
             [
                 'slug' => 'lab-6-bucle-for-pares',
                 'module_id' => $mod3?->id,
-                'title' => 'Práctica 3.2: Filtrado con Bucle for y Condicional Anidado',
+                'title' => 'Filtrado con Bucle for y Condicional Anidado',
                 'description' => 'Combina un ciclo repetitivo for con una estructura condicional if usando el operador módulo (%) para contar cuántos números pares hay en una secuencia.',
                 'dimension' => 'algorithms',
                 'difficulty' => 'advanced',
