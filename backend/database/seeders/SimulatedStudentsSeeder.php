@@ -137,7 +137,7 @@ class SimulatedStudentsSeeder extends Seeder
                 'classroom_id' => $aulaMarta->id,
                 'streak' => 4,
                 'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 1, 'loops' => 0]],
-                'post_scores' => ['correct' => 11, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => null,
                 'completed_modules' => [1, 2],
                 'quizzes' => [
                     ['mod' => 1, 'attempts' => [80]],
@@ -152,16 +152,17 @@ class SimulatedStudentsSeeder extends Seeder
                 'avatar_url' => 'assets/img/avatars/avatar-11.jpg',
                 'learning_track' => 'intermediate',
                 'classroom_id' => $aulaMarta->id,
-                'streak' => 3,
+                'streak' => 5,
                 'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 1, 'loops' => 0]],
-                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
-                'completed_modules' => [1, 2],
+                'post_scores' => ['correct' => 11, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'completed_modules' => [1, 2, 3],
                 'quizzes' => [
                     ['mod' => 1, 'attempts' => [80]],
                     ['mod' => 2, 'attempts' => [60, 80]],
+                    ['mod' => 3, 'attempts' => [80]],
                 ],
-                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
-                'xp' => 280,
+                'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control', 'maestro-del-bucle', 'maestro-pseudocodigo'],
+                'xp' => 420,
             ],
             [
                 'email' => 'cristian.lemus.navas@gmail.com',
@@ -273,7 +274,7 @@ class SimulatedStudentsSeeder extends Seeder
                 'classroom_id' => $aulaMarta->id,
                 'streak' => 2,
                 'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 0, 'loops' => 0]],
-                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => null,
                 'completed_modules' => [1],
                 'extra_lessons' => [2 => [0]],
                 'quizzes' => [
@@ -338,7 +339,7 @@ class SimulatedStudentsSeeder extends Seeder
                 'classroom_id' => $aulaMarta->id,
                 'streak' => 1,
                 'pre_scores' => ['correct' => 5, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 0, 'loops' => 0]],
-                'post_scores' => ['correct' => 9, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => null,
                 'completed_modules' => [1],
                 'quizzes' => [
                     ['mod' => 1, 'attempts' => [80]],
@@ -447,7 +448,7 @@ class SimulatedStudentsSeeder extends Seeder
                 'classroom_id' => $aulaCarlos->id,
                 'streak' => 5,
                 'pre_scores' => ['correct' => 8, 'dims' => ['abstraction' => 1, 'decomposition' => 2, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
-                'post_scores' => ['correct' => 12, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 1]],
+                'post_scores' => null,
                 'completed_modules' => [1, 2],
                 'extra_lessons' => [3 => [0, 1]],
                 'quizzes' => [
@@ -466,10 +467,11 @@ class SimulatedStudentsSeeder extends Seeder
                 'streak' => 4,
                 'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
                 'post_scores' => ['correct' => 11, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
-                'completed_modules' => [1, 2],
+                'completed_modules' => [1, 2, 3],
                 'quizzes' => [
                     ['mod' => 1, 'attempts' => [80]],
                     ['mod' => 2, 'attempts' => [60, 80]],
+                    ['mod' => 3, 'attempts' => [80]],
                 ],
                 'badges' => ['novato-logica', 'explorador-variables', 'mago-del-control'],
                 'xp' => 280,
@@ -482,7 +484,7 @@ class SimulatedStudentsSeeder extends Seeder
                 'classroom_id' => $aulaCarlos->id,
                 'streak' => 3,
                 'pre_scores' => ['correct' => 6, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 1, 'conditionals' => 1, 'loops' => 0]],
-                'post_scores' => ['correct' => 10, 'dims' => ['abstraction' => 2, 'decomposition' => 1, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => null,
                 'completed_modules' => [1, 2],
                 'quizzes' => [
                     ['mod' => 1, 'attempts' => [80]],
@@ -743,7 +745,7 @@ class SimulatedStudentsSeeder extends Seeder
                 'classroom_id' => $aulaLucia->id,
                 'streak' => 4,
                 'pre_scores' => ['correct' => 7, 'dims' => ['abstraction' => 1, 'decomposition' => 1, 'pattern_recognition' => 1, 'algorithms' => 1, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
-                'post_scores' => ['correct' => 11, 'dims' => ['abstraction' => 2, 'decomposition' => 2, 'pattern_recognition' => 2, 'algorithms' => 2, 'variables' => 2, 'conditionals' => 1, 'loops' => 0]],
+                'post_scores' => null,
                 'completed_modules' => [1, 2],
                 'quizzes' => [
                     ['mod' => 1, 'attempts' => [80]],
@@ -979,8 +981,28 @@ class SimulatedStudentsSeeder extends Seeder
                 }
             }
 
-            // B. Post-test Diagnóstico (Día de cierre del taller presencial)
-            if ($postTest && ! empty($cfg['post_scores'])) {
+            // Coherencia pedagógica estricta:
+            // - Si un alumno del estudio piloto (@gmail.com) estaba en Mód. 2 ([1, 2]) y tenía Post-test,
+            //   completamos su Módulo 3 ([1, 2, 3]) para que el Post-test sea 100% válido.
+            // - Si un alumno aún no ha completado los 3 módulos (ej. estudiante1, estudiante3, o alumnos en Mód. 1),
+            //   NO puede haber realizado el Post-test ni tener Certificado PDF.
+            $isTestAccount = str_ends_with($cfg['email'], '@edugt.test');
+            if (! $isTestAccount && ! empty($cfg['post_scores']) && count($cfg['completed_modules'] ?? []) === 2) {
+                $cfg['completed_modules'] = [1, 2, 3];
+                $cfg['extra_lessons'] = [];
+                $quizMods = collect($cfg['quizzes'] ?? [])->pluck('mod')->all();
+                if (! in_array(3, $quizMods, true)) {
+                    $cfg['quizzes'][] = ['mod' => 3, 'attempts' => [80]];
+                }
+            }
+
+            $hasCompletedAllModules = count($cfg['completed_modules'] ?? []) >= $modules->count();
+            if (! $hasCompletedAllModules) {
+                $cfg['post_scores'] = null;
+            }
+
+            // B. Post-test Diagnóstico (Solo puede existir si completó todos los módulos)
+            if ($postTest && ! empty($cfg['post_scores']) && $hasCompletedAllModules) {
                 $scoreTotal = (int) round(($cfg['post_scores']['correct'] * 100) / 14);
                 $dimScores = [];
                 foreach ($dimensionsList as $d) {
@@ -1014,6 +1036,16 @@ class SimulatedStudentsSeeder extends Seeder
                             'answered_at' => now()->subDays(2)->setTime(10, rand(16, 25)),
                         ]
                     );
+                }
+            } else {
+                // Eliminar cualquier Post-test previo si el estudiante no ha completado todos los módulos
+                $oldPost = DiagnosticAttempt::query()
+                    ->where('user_id', $user->id)
+                    ->where('kind', 'post')
+                    ->first();
+                if ($oldPost !== null) {
+                    DiagnosticAnswer::query()->where('diagnostic_attempt_id', $oldPost->id)->delete();
+                    $oldPost->delete();
                 }
             }
 

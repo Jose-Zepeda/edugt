@@ -478,6 +478,35 @@ final class ReportController extends Controller
 
         abort_unless($postAttempt !== null, 403, 'Debes completar los módulos y la Evaluación Final (Post-test) para obtener tu certificado.');
 
+        $publishedModules = \App\Domain\Curriculum\Models\Module::query()
+            ->where('status', 'published')
+            ->with(['lessons' => fn ($q) => $q->where('status', 'published'), 'quiz'])
+            ->get();
+
+        $completedLessonIds = \App\Domain\Curriculum\Models\LessonProgress::query()
+            ->where('user_id', $user->id)
+            ->where('completed', true)
+            ->pluck('lesson_id')
+            ->flip();
+
+        foreach ($publishedModules as $mod) {
+            $standardLessons = $mod->lessons->filter(
+                fn ($l) => ! $l->requires_quiz_pass && ! str_contains(mb_strtolower($l->title), 'evaluación')
+            );
+            foreach ($standardLessons as $lesson) {
+                abort_unless($completedLessonIds->has($lesson->id), 403, 'Debes completar todas las lecciones de los módulos antes de descargar tu certificado.');
+            }
+            if ($mod->quiz !== null) {
+                $quizPassed = \App\Domain\Assessments\Models\QuizAttempt::query()
+                    ->where('user_id', $user->id)
+                    ->where('quiz_id', $mod->quiz->id)
+                    ->where('status', 'submitted')
+                    ->where('score', '>=', $mod->quiz->passing_score ?? 70)
+                    ->exists();
+                abort_unless($quizPassed, 403, 'Debes aprobar todas las evaluaciones de módulo antes de descargar tu certificado.');
+            }
+        }
+
         $preAttempt = \App\Domain\Diagnostic\Models\DiagnosticAttempt::query()
             ->where('user_id', $user->id)
             ->where('kind', 'pre')

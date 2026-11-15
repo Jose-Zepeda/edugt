@@ -99,9 +99,9 @@ final class CurriculumController extends Controller
             ->keyBy('kind');
 
         $preAttempt = $diagAttempts->get('pre');
-        $postAttempt = $diagAttempts->get('post');
+        $postAttempt = $allModulesCompleted ? $diagAttempts->get('post') : null;
         $preCompleted = $preAttempt !== null || $user->learning_track !== null;
-        $postCompleted = $postAttempt !== null;
+        $postCompleted = $allModulesCompleted && $postAttempt !== null;
 
         $dimensionLabels = [
             'abstraction' => 'Abstracción',

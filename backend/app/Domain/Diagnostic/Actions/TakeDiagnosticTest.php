@@ -30,6 +30,14 @@ final readonly class TakeDiagnosticTest
             ]);
         }
 
+        // El Post-test requiere haber completado todos los módulos publicados y sus evaluaciones
+        if ($kind === 'post' && ! $this->hasCompletedAllModules($user)) {
+            throw new HttpResponseException(response()->json([
+                'message' => 'Debes completar todos los módulos y aprobar sus evaluaciones antes de realizar la Evaluación Final (Post-test).',
+                'code' => 'LOCKED_CONTENT',
+            ], 403));
+        }
+
         // RF-6: una sola presentación por kind — si ya está completed, 409
         $existing = DiagnosticAttempt::query()
             ->where('user_id', $user->id)
@@ -132,5 +140,50 @@ final readonly class TakeDiagnosticTest
 
             return $attempt->refresh();
         });
+    }
+
+    private function hasCompletedAllModules(User $user): bool
+    {
+        $modules = \App\Domain\Curriculum\Models\Module::query()
+            ->where('status', 'published')
+            ->with(['lessons' => fn ($q) => $q->where('status', 'published'), 'quiz'])
+            ->get();
+
+        if ($modules->isEmpty()) {
+            return false;
+        }
+
+        $completedLessonIds = \App\Domain\Curriculum\Models\LessonProgress::query()
+            ->where('user_id', $user->id)
+            ->where('completed', true)
+            ->pluck('lesson_id')
+            ->flip();
+
+        foreach ($modules as $module) {
+            $standardLessons = $module->lessons->filter(
+                fn ($l) => ! $l->requires_quiz_pass && ! str_contains(mb_strtolower($l->title), 'evaluación')
+            );
+
+            foreach ($standardLessons as $lesson) {
+                if (! $completedLessonIds->has($lesson->id)) {
+                    return false;
+                }
+            }
+
+            if ($module->quiz !== null) {
+                $passed = \App\Domain\Assessments\Models\QuizAttempt::query()
+                    ->where('user_id', $user->id)
+                    ->where('quiz_id', $module->quiz->id)
+                    ->where('status', 'submitted')
+                    ->where('score', '>=', $module->quiz->passing_score ?? 70)
+                    ->exists();
+
+                if (! $passed) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }
